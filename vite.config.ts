@@ -57,6 +57,17 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  // 监听 0.0.0.0，局域网内其它设备（手机 / 平板）可直接访问
+  server: {
+    host: true,
+    port: 5173,
+    strictPort: true,
+  },
+  preview: {
+    host: true,
+    port: 4173,
+    strictPort: true,
+  },
   build: {
     target: 'es2020',
     cssTarget: 'chrome87',
