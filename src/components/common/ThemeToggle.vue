@@ -27,14 +27,17 @@ const label = () =>
   height: 36px;
   display: grid;
   place-items: center;
-  border: 1px solid transparent;
+  border: 1px solid var(--border);
   border-radius: var(--radius-full);
-  background: transparent;
-  transition: all var(--duration-fast) var(--ease);
+  background: var(--bg-soft);
+  color: var(--text-2);
+  transition: all var(--duration) var(--ease-spring);
 }
 .theme-btn:hover {
   background: var(--primary-soft);
   border-color: var(--primary-soft-2);
+  color: var(--primary);
+  transform: scale(1.12) rotate(20deg);
 }
 .theme-btn:active {
   transform: scale(0.92);

@@ -2,8 +2,16 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
-import type { SiteSettings } from '@/types'
+import type { AccentKey, SiteSettings } from '@/types'
 import { getJSON, setJSON } from '@/utils/storage'
+
+/** 各强调色对应的浏览器 UI 着色（用于 theme-color） */
+const ACCENT_HEX: Record<AccentKey, string> = {
+  blue: '#2563eb',
+  pink: '#e879b0',
+  green: '#0d9488',
+  orange: '#ea580c',
+}
 
 const DEFAULTS: SiteSettings = {
   theme: 'auto',
@@ -26,7 +34,12 @@ export const useSettingsStore = defineStore('settings', () => {
     const resolved = theme === 'auto' ? (prefersDark ? 'dark' : 'light') : theme
     document.documentElement.dataset.theme = resolved
     const meta = document.querySelector('meta[name="theme-color"]')
-    if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0d1420' : '#2563eb')
+    if (meta) {
+      meta.setAttribute(
+        'content',
+        resolved === 'dark' ? '#08080f' : ACCENT_HEX[settings.value.accent] ?? '#2563eb',
+      )
+    }
   }
 
   function applyAll() {

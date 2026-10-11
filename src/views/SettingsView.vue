@@ -24,6 +24,7 @@ const accents: { key: AccentKey; label: string; color: string }[] = [
   { key: 'blue', label: '晴空蓝', color: '#2563eb' },
   { key: 'green', label: '常青绿', color: '#0d9488' },
   { key: 'orange', label: '活力橙', color: '#ea580c' },
+  { key: 'pink', label: '樱花粉紫', color: '#e879b0' },
 ]
 const fontSizes: { key: FontSizeKey; label: string }[] = [
   { key: 'sm', label: '小' },

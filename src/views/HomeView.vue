@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 import Carousel from '@/components/common/Carousel.vue'
 import CountdownTimer from '@/components/common/CountdownTimer.vue'
@@ -20,6 +20,15 @@ const latestAlbums = computed(() => content.publicAlbums.slice(0, 3))
 const latestVideos = computed(() => content.publicVideos.slice(0, 3))
 const latestArticles = computed(() => content.publicArticles.slice(0, 4))
 const notices = computed(() => content.publicAnnouncements.slice(0, 4))
+
+/* hero 背景视差：轻微下移 + 渐隐，跟随首屏滚动 */
+const parallax = ref(0)
+function onScroll() {
+  const y = window.scrollY
+  parallax.value = y < window.innerHeight ? y : window.innerHeight
+}
+onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
+onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 </script>
 
 <template>
@@ -42,21 +51,28 @@ const notices = computed(() => content.publicAnnouncements.slice(0, 4))
     <template v-else>
       <!-- 班级名片 + 倒计时 -->
       <section class="container section hero-wrap">
-        <article class="class-card card">
-          <LazyImage
+        <article class="class-card">
+          <div
             class="card-bg"
-            src="/images/misc/class-card-bg.svg"
-            alt=""
-            aspect="16 / 9"
-            radius="var(--radius-md)"
-            eager
-          />
+            :style="{ transform: `scale(1.12) translateY(${parallax * 0.22}px)` }"
+          >
+            <LazyImage
+              src="/images/misc/class-card-bg.svg"
+              alt=""
+              aspect="16 / 9"
+              radius="0"
+              eager
+            />
+          </div>
           <div class="card-content">
             <p class="eyebrow">
               <span class="eyebrow-dot" aria-hidden="true"></span>
-              {{ content.classInfo.school }}
+              {{ content.classInfo.school }} · {{ content.classInfo.grade }}
             </p>
-            <h1 class="class-name">{{ content.classInfo.fullName }}</h1>
+            <h1 class="class-name">
+              我们是<br />
+              <span class="grad-text">{{ content.classInfo.shortName }}</span>
+            </h1>
             <p class="motto">「{{ content.classInfo.motto }}」</p>
             <p class="slogan">{{ content.classInfo.slogan }}</p>
             <p class="intro">{{ content.classInfo.description }}</p>
@@ -67,13 +83,15 @@ const notices = computed(() => content.publicAnnouncements.slice(0, 4))
               </li>
             </ul>
             <div class="hero-actions">
-              <RouterLink to="/about" class="btn hero-btn-primary">了解我们 →</RouterLink>
+              <RouterLink to="/about" class="btn btn--gradient hero-btn-primary"
+                >了解我们 →</RouterLink
+              >
               <RouterLink to="/albums" class="btn hero-btn-ghost">逛逛相册</RouterLink>
             </div>
           </div>
         </article>
 
-        <aside class="countdown-card card" aria-label="毕业倒计时">
+        <aside v-reveal="{ type: 'left', delay: 1 }" class="countdown-card card" aria-label="毕业倒计时">
           <div class="count-head">
             <span class="count-label">⏳ 距离毕业典礼</span>
             <span class="count-date-chip">{{ content.classInfo.graduationAt }}</span>
@@ -85,13 +103,13 @@ const notices = computed(() => content.publicAnnouncements.slice(0, 4))
       </section>
 
       <!-- 轮播 -->
-      <section class="container section" aria-label="班级风采">
+      <section v-reveal class="container section" aria-label="班级风采">
         <Carousel :slides="content.slides" />
       </section>
 
       <!-- 公告 -->
-      <section v-if="notices.length" class="container section">
-        <SectionHeader title="班级公告" subtitle="来自班委会与老师们的最新消息" />
+      <section v-if="notices.length" v-reveal class="container section">
+        <SectionHeader tag="Notice" title="班级公告" subtitle="来自班委会与老师们的最新消息" />
         <ul class="notice-list">
           <li
             v-for="n in notices"
@@ -110,8 +128,8 @@ const notices = computed(() => content.publicAnnouncements.slice(0, 4))
       </section>
 
       <!-- 最新相册 -->
-      <section class="container section">
-        <SectionHeader title="最新相册" subtitle="咔嚓，把时光存档" to="/albums" />
+      <section v-reveal class="container section">
+        <SectionHeader tag="Album" title="最新相册" subtitle="咔嚓，把时光存档" to="/albums" />
         <SkeletonBlock v-if="content.loading" variant="grid" :count="3" />
         <div v-else-if="latestAlbums.length" class="grid-3">
           <AlbumCard v-for="a in latestAlbums" :key="a.id" :album="a" />
@@ -127,8 +145,8 @@ const notices = computed(() => content.publicAnnouncements.slice(0, 4))
       </section>
 
       <!-- 最新视频 -->
-      <section class="container section">
-        <SectionHeader title="最新视频" subtitle="动态记录，声临其境" to="/videos" />
+      <section v-reveal class="container section">
+        <SectionHeader tag="Video" title="最新视频" subtitle="动态记录，声临其境" to="/videos" />
         <div v-if="latestVideos.length" class="grid-3">
           <VideoCard v-for="v in latestVideos" :key="v.id" :video="v" />
         </div>
@@ -143,8 +161,8 @@ const notices = computed(() => content.publicAnnouncements.slice(0, 4))
       </section>
 
       <!-- 最新文章 -->
-      <section class="container section">
-        <SectionHeader title="最新文章" subtitle="笔尖下的2419" to="/articles" />
+      <section v-reveal class="container section">
+        <SectionHeader tag="Article" title="最新文章" subtitle="笔尖下的2419" to="/articles" />
         <div v-if="latestArticles.length" class="articles-grid">
           <ArticleCard :article="latestArticles[0]" featured class="featured" />
           <div class="article-list">
@@ -187,23 +205,30 @@ const notices = computed(() => content.publicAnnouncements.slice(0, 4))
   position: relative;
   overflow: hidden;
   padding: 0;
-  border: none;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-2);
+  min-height: clamp(360px, 46vw, 460px);
+  isolation: isolate;
 }
 .card-bg {
   position: absolute;
   inset: 0;
+  will-change: transform;
 }
 .card-bg :deep(.img) {
-  filter: saturate(1.05);
+  filter: saturate(1.1) contrast(1.05);
+  height: 100% !important;
 }
 .card-content {
   position: relative;
-  padding: clamp(22px, 4vw, 40px);
+  z-index: 1;
+  padding: clamp(24px, 4vw, 44px);
   background: linear-gradient(
     105deg,
-    rgba(8, 16, 36, 0.92) 0%,
-    rgba(8, 16, 36, 0.78) 45%,
-    rgba(8, 16, 36, 0.42) 100%
+    rgba(6, 8, 18, 0.94) 0%,
+    rgba(6, 8, 18, 0.82) 46%,
+    rgba(6, 8, 18, 0.38) 100%
   );
   color: #fff;
   height: 100%;
@@ -214,38 +239,60 @@ const notices = computed(() => content.publicAnnouncements.slice(0, 4))
 .eyebrow {
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
   gap: 8px;
-  font-size: 0.82rem;
+  padding: 7px 18px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 0.76rem;
   letter-spacing: 2px;
-  opacity: 0.9;
-  font-weight: 600;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.92);
 }
 .eyebrow-dot {
   width: 8px;
   height: 8px;
   border-radius: var(--radius-full);
   background: #34d399;
-  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.25);
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.28);
+  animation: pulse-dot 2.4s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
 }
 .class-name {
+  font-family: var(--font-display);
   color: #fff;
-  font-size: clamp(1.45rem, 4vw, 2.15rem);
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.4);
 }
 .motto {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #a5f3fc;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  font-weight: 800;
+  color: #f9a8d4;
+  letter-spacing: 1px;
 }
 .slogan {
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  opacity: 0.8;
-  letter-spacing: 1px;
+  opacity: 0.78;
+  letter-spacing: 2px;
 }
 .intro {
   font-size: 0.88rem;
-  line-height: 1.85;
+  line-height: 1.9;
   opacity: 0.88;
   max-width: 58ch;
   display: -webkit-box;
@@ -255,29 +302,37 @@ const notices = computed(() => content.publicAnnouncements.slice(0, 4))
   margin-top: 2px;
 }
 .stats {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
   gap: var(--space-2);
   margin-top: auto;
 }
 .stat-chip {
   display: flex;
   flex-direction: column;
-  padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.12);
+  align-items: center;
+  padding: 12px 10px;
+  background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: var(--radius-sm);
-  backdrop-filter: blur(6px);
-  min-width: 86px;
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all var(--duration) var(--ease-spring);
+}
+.stat-chip:hover {
+  transform: translateY(-4px) scale(1.04);
+  background: rgba(255, 255, 255, 0.18);
 }
 .stat-chip strong {
-  font-size: 1.12rem;
+  font-size: 1.15rem;
+  font-weight: 900;
   font-variant-numeric: tabular-nums;
   line-height: 1.3;
 }
 .stat-chip span {
   font-size: 0.7rem;
-  opacity: 0.8;
+  opacity: 0.78;
+  margin-top: 2px;
 }
 .hero-actions {
   display: flex;
@@ -286,27 +341,20 @@ const notices = computed(() => content.publicAnnouncements.slice(0, 4))
   margin-top: var(--space-2);
 }
 .hero-btn-primary {
-  background: #fff;
-  color: #0f172a;
-  border-radius: var(--radius-full);
-  padding: 0.55em 1.4em;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-}
-.hero-btn-primary:hover {
-  background: #e2e8f0;
-  color: #0f172a;
+  padding: 0.6em 1.6em;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 .hero-btn-ghost {
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.32);
   color: #fff;
-  border-radius: var(--radius-full);
-  padding: 0.55em 1.4em;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .hero-btn-ghost:hover {
   background: rgba(255, 255, 255, 0.24);
   color: #fff;
+  box-shadow: none;
 }
 
 .countdown-card {

@@ -134,7 +134,7 @@ export interface BackupPayload {
 }
 
 export type ThemeMode = 'light' | 'dark' | 'auto'
-export type AccentKey = 'blue' | 'green' | 'orange'
+export type AccentKey = 'blue' | 'green' | 'orange' | 'pink'
 export type FontSizeKey = 'sm' | 'md' | 'lg'
 
 export interface SiteSettings {

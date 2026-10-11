@@ -70,12 +70,21 @@ const parts = computed(() => {
   min-width: 3.4em;
   padding: var(--space-2) var(--space-3);
   background: var(--primary-soft);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--primary-soft-2);
+  border-radius: var(--radius-md);
+  transition: transform var(--duration) var(--ease-spring);
+}
+.unit:hover {
+  transform: translateY(-3px) scale(1.05);
 }
 .unit strong {
-  font-size: 1.5rem;
+  font-size: 1.55rem;
+  font-weight: 900;
   font-variant-numeric: tabular-nums;
-  color: var(--primary);
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   line-height: 1.2;
 }
 .unit span {

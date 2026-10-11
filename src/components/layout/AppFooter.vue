@@ -28,11 +28,26 @@ const year = new Date().getFullYear()
 
 <style scoped>
 .site-footer {
+  position: relative;
+  z-index: 1;
   border-top: 1px solid var(--border);
-  background: var(--card);
-  padding: var(--space-8) 0;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  padding: var(--space-10) 0 var(--space-8);
   color: var(--text-3);
   font-size: 0.85rem;
+}
+.site-footer::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, 70%);
+  height: 1px;
+  background: var(--primary-gradient);
+  opacity: 0.6;
 }
 .footer-inner {
   display: flex;
@@ -42,7 +57,10 @@ const year = new Date().getFullYear()
   text-align: center;
 }
 .footer-brand strong {
-  color: var(--text-2);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: 0.5px;
+  color: var(--text);
 }
 .footer-brand p {
   margin-top: 4px;
@@ -50,13 +68,21 @@ const year = new Date().getFullYear()
 .footer-links {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-4);
+  gap: var(--space-2);
   justify-content: center;
 }
 .footer-links a {
   color: var(--text-2);
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  font-weight: 600;
+  transition: all var(--duration) var(--ease-spring);
 }
 .footer-links a:hover {
   color: var(--primary);
+  border-color: var(--primary-soft-2);
+  background: var(--primary-soft);
+  transform: translateY(-2px);
 }
 </style>

@@ -47,9 +47,9 @@ const ui = useUiStore()
   bottom: 0;
   z-index: var(--z-header);
   display: flex;
-  background: color-mix(in srgb, var(--card) 90%, transparent);
-  backdrop-filter: blur(14px) saturate(1.4);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(30px) saturate(1.8);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
   border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -73,12 +73,12 @@ const ui = useUiStore()
   padding: 0;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: color var(--duration-fast) var(--ease);
+  transition: color var(--duration) var(--ease-out-quart);
 }
 .bottom-icon {
   font-size: 1.2rem;
   line-height: 1;
-  transition: transform var(--duration-fast) var(--ease);
+  transition: transform var(--duration) var(--ease-spring);
 }
 .bottom-link::before {
   content: '';

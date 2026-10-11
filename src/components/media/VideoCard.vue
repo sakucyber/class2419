@@ -59,17 +59,17 @@ function progressPercent(id: string) {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
   border-radius: var(--radius-full);
-  background: rgba(8, 15, 30, 0.55);
+  background: var(--primary-gradient);
   color: #fff;
   display: grid;
   place-items: center;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   padding-left: 3px;
-  backdrop-filter: blur(4px);
-  transition: all var(--duration) var(--ease);
+  box-shadow: 0 6px 22px var(--glow);
+  transition: all var(--duration) var(--ease-spring);
 }
 .duration {
   position: absolute;
@@ -97,12 +97,13 @@ function progressPercent(id: string) {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.3);
+  height: 3px;
+  background: rgba(255, 255, 255, 0.25);
 }
 .bar {
   height: 100%;
-  background: var(--primary);
+  background: var(--primary-gradient);
+  box-shadow: 0 0 10px var(--glow);
 }
 .body {
   padding: var(--space-4);

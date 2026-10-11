@@ -66,12 +66,27 @@ watch(
   () => closeDrawer(),
 )
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+/* 向下滚动时收起导航栏，向上滚动时立刻出现 */
+const navHidden = ref(false)
+let lastY = 0
+function onScroll() {
+  const y = window.scrollY
+  navHidden.value = y > lastY && y > 120 && !ui.drawerOpen
+  lastY = y
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+  window.addEventListener('scroll', onScroll, { passive: true })
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('scroll', onScroll)
+})
 </script>
 
 <template>
-  <header class="site-header">
+  <header class="site-header" :class="{ hide: navHidden }">
     <div class="container header-inner">
       <RouterLink to="/" class="brand" aria-label="返回首页">
         <span class="brand-badge" aria-hidden="true">2419</span>
@@ -212,14 +227,21 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </template>
 
 <style scoped>
+/* 用 sticky 而非 fixed：隐藏时只是 transform 移出视口，不改变文档流，内容不会跳动 */
 .site-header {
   position: sticky;
   top: 0;
   z-index: var(--z-header);
-  background: color-mix(in srgb, var(--card) 82%, transparent);
-  backdrop-filter: blur(14px) saturate(1.4);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter: blur(30px) saturate(1.8);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
   border-bottom: 1px solid var(--border);
+  transition:
+    transform 0.5s var(--ease-out-expo),
+    background-color var(--duration) var(--ease-out-quart);
+}
+.site-header.hide {
+  transform: translateY(-100%);
 }
 
 .header-inner {
@@ -251,10 +273,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   border-radius: 12px;
   background: var(--primary-gradient);
   color: #fff;
-  font-weight: 800;
-  font-size: 0.78rem;
+  font-weight: 900;
+  font-size: 0.76rem;
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 40%, transparent);
+  box-shadow: 0 4px 14px var(--glow);
+  transition: transform var(--duration) var(--ease-spring);
+}
+.brand:hover .brand-badge {
+  transform: scale(1.08) rotate(-6deg);
 }
 .brand-text {
   display: flex;
@@ -263,15 +289,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   min-width: 0;
 }
 .brand-text strong {
-  font-size: 0.95rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .brand-text small {
   color: var(--text-3);
-  font-size: 0.7rem;
-  letter-spacing: 1px;
+  font-size: 0.68rem;
+  letter-spacing: 2px;
 }
 
 .main-nav {
@@ -281,21 +309,35 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   flex: 1;
 }
 .nav-link {
-  padding: 0.45em 1em;
+  position: relative;
+  padding: 0.45em 1.05em;
   border-radius: var(--radius-full);
   color: var(--text-2);
-  font-weight: 600;
-  font-size: 0.93rem;
-  transition: all var(--duration-fast) var(--ease);
+  font-weight: 700;
+  font-size: 0.84rem;
+  letter-spacing: 0.3px;
+  transition: all var(--duration) var(--ease-spring);
 }
 .nav-link:hover {
   color: var(--primary);
   background: var(--primary-soft);
+  transform: translateY(-2px);
 }
 .nav-link.active {
   color: var(--primary);
   background: var(--primary-soft);
   box-shadow: inset 0 0 0 1px var(--primary-soft-2);
+}
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  width: 18px;
+  height: 2px;
+  border-radius: var(--radius-full);
+  background: var(--primary-gradient);
+  transform: translateX(-50%);
 }
 
 /* 右侧操作区：不压缩 */
@@ -307,22 +349,23 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   gap: 6px;
 }
 
-/* 统一圆形图标按钮 */
+/* 统一圆形图标按钮：玻璃底 + spring 反馈 */
 .icon-btn {
   width: 36px;
   height: 36px;
   display: grid;
   place-items: center;
-  border: 1px solid transparent;
+  border: 1px solid var(--border);
   border-radius: var(--radius-full);
-  background: transparent;
+  background: var(--bg-soft);
   color: var(--text-2);
-  transition: all var(--duration-fast) var(--ease);
+  transition: all var(--duration) var(--ease-spring);
 }
 .icon-btn:hover {
   background: var(--primary-soft);
   color: var(--primary);
   border-color: var(--primary-soft-2);
+  transform: scale(1.1) rotate(-8deg);
 }
 .icon-btn:active {
   transform: scale(0.92);
@@ -350,7 +393,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   width: min(320px, 86vw);
   height: 100%;
   max-height: 100%;
-  background: var(--card);
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(30px) saturate(1.8);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
   border-left: 1px solid var(--border);
   padding: var(--space-4);
   display: flex;
@@ -410,11 +455,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   align-items: center;
   gap: var(--space-3);
   padding: 12px 12px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   color: var(--text);
   font-weight: 600;
   font-size: 0.95rem;
-  transition: all var(--duration-fast) var(--ease);
+  transition: all var(--duration) var(--ease-spring);
+}
+.drawer-link:hover {
+  transform: translateX(4px);
 }
 .drawer-link:hover,
 .drawer-link.active {

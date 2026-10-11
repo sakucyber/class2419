@@ -15,13 +15,14 @@ body {
   margin: 0;
   font-family: var(--font-sans);
   font-size: 1rem;
-  line-height: 1.65;
+  line-height: 1.7;
   color: var(--text);
   background: var(--bg);
   transition:
     background-color var(--duration) var(--ease),
     color var(--duration) var(--ease);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 h1,
@@ -91,17 +92,20 @@ hr {
 
 ::selection {
   background: var(--primary-soft-2);
+  color: var(--text);
 }
 
-/* 滚动条（WebKit） */
+/* 滚动条（WebKit）：细条 + 渐变滑块 */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
+  background: var(--primary-gradient);
   border-radius: var(--radius-full);
-  border: 2px solid var(--bg);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  opacity: 0.8;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -143,52 +147,58 @@ hr {
   color: var(--primary-contrast);
 }
 
-/* 卡片 */
+/* 卡片：玻璃拟态 + 大圆角 */
 .card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-1);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   transition:
-    box-shadow var(--duration) var(--ease),
-    transform var(--duration) var(--ease),
-    border-color var(--duration) var(--ease);
+    box-shadow var(--duration-slow) var(--ease-out-expo),
+    transform var(--duration-slow) var(--ease-out-expo),
+    border-color var(--duration-slow) var(--ease-out-expo),
+    background-color var(--duration-slow) var(--ease-out-expo);
 }
 
 .card-hover:hover {
-  box-shadow: var(--shadow-2);
-  transform: translateY(-3px);
+  box-shadow: var(--shadow-3);
+  transform: translateY(-6px) scale(1.012);
   border-color: var(--border-strong);
+  background: var(--card-hover);
 }
 
-/* 按钮 */
+/* 按钮：胶囊形 + spring 反馈 */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: 0.55em 1.15em;
+  padding: 0.6em 1.4em;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.5;
   background: var(--primary);
   color: var(--primary-contrast);
   transition:
-    background-color var(--duration-fast) var(--ease),
-    border-color var(--duration-fast) var(--ease),
-    transform var(--duration-fast) var(--ease),
-    box-shadow var(--duration-fast) var(--ease);
+    background-color var(--duration-fast) var(--ease-out-quart),
+    border-color var(--duration-fast) var(--ease-out-quart),
+    transform var(--duration) var(--ease-spring),
+    box-shadow var(--duration) var(--ease-out-quart);
   user-select: none;
   white-space: nowrap;
 }
 .btn:hover {
   background: var(--primary-hover);
   color: var(--primary-contrast);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--glow);
 }
 .btn:active {
-  transform: scale(0.97);
+  transform: scale(0.96);
 }
 .btn:disabled {
   opacity: 0.55;
@@ -222,8 +232,19 @@ hr {
   color: #fff;
 }
 .btn--sm {
-  padding: 0.35em 0.8em;
+  padding: 0.35em 1em;
   font-size: 0.85rem;
+}
+/* 渐变实心按钮 */
+.btn--gradient {
+  background: var(--primary-gradient);
+  color: #fff;
+  box-shadow: 0 4px 16px var(--glow);
+}
+.btn--gradient:hover {
+  background: var(--primary-gradient);
+  color: #fff;
+  box-shadow: 0 8px 26px var(--glow);
 }
 .btn--icon {
   padding: 0;
@@ -252,10 +273,12 @@ hr {
 .select,
 .textarea {
   width: 100%;
-  padding: 0.55em 0.85em;
+  padding: 0.6em 1em;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   color: var(--text);
   transition:
     border-color var(--duration-fast) var(--ease),
@@ -286,7 +309,10 @@ hr {
   background: var(--bg-soft);
   border: 1px solid var(--border);
   border-radius: var(--radius-full);
-  transition: all var(--duration-fast) var(--ease);
+  transition: all var(--duration) var(--ease-spring);
+}
+button.chip:hover {
+  transform: translateY(-2px);
 }
 .chip--active,
 .chip--primary {
@@ -341,6 +367,91 @@ button.chip:hover {
   color: var(--text-2);
 }
 
+/* ===== 视觉增强工具类 ===== */
+
+/* 渐变文字 */
+.grad-text {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 200%;
+  animation: grad-shift 6s ease infinite;
+}
+@keyframes grad-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* 章节小标签（参考站的 sec-tag） */
+.sec-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 16px;
+  border-radius: var(--radius-full);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-soft-2);
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* 展示型标题 */
+.display-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  line-height: 1.25;
+}
+
+/* 滚动入场（配合 v-reveal 指令） */
+[data-reveal] {
+  opacity: 0;
+  transition:
+    opacity 0.8s var(--ease-out-expo),
+    transform 0.8s var(--ease-out-expo);
+  transition-delay: calc(var(--reveal-delay, 0) * 110ms);
+  will-change: opacity, transform;
+}
+[data-reveal='up'] {
+  transform: translateY(48px);
+}
+[data-reveal='down'] {
+  transform: translateY(-40px);
+}
+[data-reveal='left'] {
+  transform: translateX(-56px);
+}
+[data-reveal='right'] {
+  transform: translateX(56px);
+}
+[data-reveal='scale'] {
+  transform: scale(0.9);
+}
+[data-reveal].reveal-in {
+  opacity: 1;
+  transform: none;
+}
+/* 尊重系统减弱动效偏好 */
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+}
+html.no-animations [data-reveal] {
+  opacity: 1;
+  transform: none;
+}
+
 /* 页面渐入 */
 .page-enter-active,
 .page-leave-active {
@@ -357,8 +468,10 @@ button.chip:hover {
   transform: translateY(-6px);
 }
 
-/* 主内容区（为移动端底部导航留白） */
+/* 主内容区（为移动端底部导航留白）；z-index 1 保证盖在环境背景之上 */
 .main-content {
+  position: relative;
+  z-index: 1;
   min-height: calc(100vh - var(--header-h));
   padding-bottom: var(--space-12);
 }

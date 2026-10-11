@@ -2,6 +2,7 @@ import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 
 import App from './App.vue'
+import { reveal } from './directives/reveal'
 import router from './router'
 import { useSettingsStore } from './store/settings'
 import './styles/base.css'
@@ -10,6 +11,7 @@ import './styles/variables.css'
 const app = createApp(App)
 app.use(createPinia())
 app.use(router)
+app.directive('reveal', reveal)
 
 // 挂载前应用主题设置，避免闪烁
 const settingsStore = useSettingsStore()
