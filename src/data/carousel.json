@@ -1,30 +1,30 @@
 [
   {
     "id": "slide-1",
-    "image": "/images/carousel/slide-1.svg",
-    "title": "青春启航",
-    "subtitle": "欢迎来到2419班的线上小家",
+    "image": "/images/carousel/test-1.svg",
+    "title": "测试轮播一",
+    "subtitle": "这是一段测试副标题文字。",
     "link": "/about"
   },
   {
     "id": "slide-2",
-    "image": "/images/carousel/slide-2.svg",
-    "title": "运动赛场",
-    "subtitle": "秋季运动会高燃合集已上线",
+    "image": "/images/carousel/test-2.svg",
+    "title": "测试轮播二",
+    "subtitle": "这是一段测试副标题文字。",
     "link": "/albums"
   },
   {
     "id": "slide-3",
-    "image": "/images/carousel/slide-3.svg",
-    "title": "研学路上",
-    "subtitle": "读万卷书，行万里路",
+    "image": "/images/carousel/test-3.svg",
+    "title": "测试轮播三",
+    "subtitle": "这是一段测试副标题文字。",
     "link": "/articles"
   },
   {
     "id": "slide-4",
-    "image": "/images/carousel/slide-4.svg",
-    "title": "艺术舞台",
-    "subtitle": "元旦晚会的星光属于每一个人",
+    "image": "/images/carousel/test-4.svg",
+    "title": "测试轮播四",
+    "subtitle": "这是一段测试副标题文字。",
     "link": "/videos"
   }
 ]

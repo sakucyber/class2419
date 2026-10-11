@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 600" width="1600" height="600" role="img" aria-label="测试图片 3">
+  <defs>
+    <pattern id="chk" width="80" height="80" patternUnits="userSpaceOnUse">
+      <rect width="80" height="80" fill="#3b414d"/>
+      <rect width="40" height="40" fill="#454c59"/>
+      <rect x="40" y="40" width="40" height="40" fill="#454c59"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="600" fill="url(#chk)"/>
+  <rect x="1" y="1" width="1598" height="598" fill="none" stroke="#5b6373" stroke-width="2"/>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">
+    <text x="800" y="300" font-size="60" font-weight="700" fill="#cfd6e2">测试图片 3</text>
+    <text x="800" y="352" font-size="26" fill="#98a1b2">TEST_IMAGE_3 · 1600 × 600</text>
+  </g>
+</svg>
