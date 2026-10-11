@@ -2,23 +2,40 @@
 import { useRoute } from 'vue-router'
 
 import { bottomNav } from '@/router'
+import { useUiStore } from '@/store/ui'
 
 const route = useRoute()
+const ui = useUiStore()
 </script>
 
 <template>
   <nav class="bottom-nav" aria-label="底部导航">
-    <RouterLink
-      v-for="item in bottomNav"
-      :key="item.path"
-      :to="item.path"
-      class="bottom-link"
-      :class="{ active: route.meta.nav === item.path }"
-      :aria-current="route.meta.nav === item.path ? 'page' : undefined"
-    >
-      <span class="bottom-icon" aria-hidden="true">{{ item.icon }}</span>
-      <span class="bottom-label">{{ item.title }}</span>
-    </RouterLink>
+    <template v-for="item in bottomNav" :key="item.path">
+      <!-- 「更多」不再跳转 /about，而是打开右侧抽屉菜单 -->
+      <button
+        v-if="item.action === 'drawer'"
+        type="button"
+        class="bottom-link"
+        :class="{ active: ui.drawerOpen }"
+        aria-haspopup="dialog"
+        :aria-expanded="ui.drawerOpen"
+        @click="ui.toggleDrawer()"
+      >
+        <span class="bottom-icon" aria-hidden="true">{{ ui.drawerOpen ? '✕' : item.icon }}</span>
+        <span class="bottom-label">{{ item.title }}</span>
+      </button>
+
+      <RouterLink
+        v-else
+        :to="item.path"
+        class="bottom-link"
+        :class="{ active: route.meta.nav === item.path }"
+        :aria-current="route.meta.nav === item.path ? 'page' : undefined"
+      >
+        <span class="bottom-icon" aria-hidden="true">{{ item.icon }}</span>
+        <span class="bottom-label">{{ item.title }}</span>
+      </RouterLink>
+    </template>
   </nav>
 </template>
 
@@ -49,6 +66,13 @@ const route = useRoute()
   color: var(--text-3);
   font-size: 0.68rem;
   font-weight: 600;
+  font-family: inherit;
+  /* button 复位 */
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   transition: color var(--duration-fast) var(--ease);
 }
 .bottom-icon {

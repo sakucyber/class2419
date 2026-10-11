@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useContentStore } from '@/store/content'
@@ -27,11 +27,9 @@ watch(
   () => props.open,
   async (open) => {
     if (open) {
-      document.body.style.overflow = 'hidden'
       await nextTick()
       inputEl.value?.focus()
     } else {
-      document.body.style.overflow = ''
       keyword.value = ''
     }
   },
@@ -40,9 +38,6 @@ watch(
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') close()
 }
-onBeforeUnmount(() => {
-  document.body.style.overflow = ''
-})
 
 function go(hit: { to: string }) {
   close()

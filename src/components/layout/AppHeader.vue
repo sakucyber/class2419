@@ -1,29 +1,77 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import SearchOverlay from '@/components/common/SearchOverlay.vue'
 import ThemeToggle from '@/components/common/ThemeToggle.vue'
 import { mainNav, moreNav } from '@/router'
 import { useAuthStore } from '@/store/auth'
+import { useSettingsStore } from '@/store/settings'
+import { useUiStore } from '@/store/ui'
 
 const route = useRoute()
 const auth = useAuthStore()
+const settings = useSettingsStore()
+const ui = useUiStore()
 
-const drawerOpen = ref(false)
-const searchOpen = ref(false)
+const drawerEl = ref<HTMLElement | null>(null)
+let lastFocused: HTMLElement | null = null
+
+const THEME_ORDER = ['auto', 'light', 'dark'] as const
+const themeIcon = () =>
+  ({ auto: '🖥️', light: '☀️', dark: '🌙' })[settings.settings.theme]
 
 function closeDrawer() {
-  drawerOpen.value = false
+  ui.closeDrawer()
 }
 
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') closeDrawer()
+function cycleTheme() {
+  const idx = THEME_ORDER.indexOf(settings.settings.theme)
+  settings.settings.theme = THEME_ORDER[(idx + 1) % THEME_ORDER.length]
 }
+
+function scrollTop() {
+  closeDrawer()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function openSearch() {
+  closeDrawer()
+  ui.openSearch()
+}
+
+/* Escape 关闭：挂在 window 上，抽屉打开时即使焦点在链接上也能生效 */
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && ui.drawerOpen) closeDrawer()
+}
+
+/* 抽屉展开时锁定滚动、移入焦点；关闭时把焦点还给触发按钮 */
+watch(
+  () => ui.drawerOpen,
+  async (open) => {
+    if (open) {
+      lastFocused = (document.activeElement as HTMLElement) ?? null
+      await nextTick()
+      drawerEl.value?.focus()
+    } else {
+      lastFocused?.focus?.()
+      lastFocused = null
+    }
+  },
+)
+
+/* 路由变化时自动收起抽屉 */
+watch(
+  () => route.fullPath,
+  () => closeDrawer(),
+)
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
-  <header class="site-header" @keydown="onKeydown">
+  <header class="site-header">
     <div class="container header-inner">
       <RouterLink to="/" class="brand" aria-label="返回首页">
         <span class="brand-badge" aria-hidden="true">2419</span>
@@ -46,7 +94,7 @@ function onKeydown(e: KeyboardEvent) {
       </nav>
 
       <div class="header-actions">
-        <button class="icon-btn" aria-label="全站搜索" title="搜索" @click="searchOpen = true">
+        <button class="icon-btn" aria-label="全站搜索" title="搜索" @click="ui.openSearch()">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" />
             <path d="M16.5 16.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -62,11 +110,13 @@ function onKeydown(e: KeyboardEvent) {
         </RouterLink>
         <button
           class="icon-btn menu-toggle"
-          aria-label="打开菜单"
-          :aria-expanded="drawerOpen"
-          @click="drawerOpen = !drawerOpen"
+          aria-label="更多菜单"
+          title="更多菜单"
+          aria-haspopup="dialog"
+          :aria-expanded="ui.drawerOpen"
+          @click="ui.toggleDrawer()"
         >
-          <svg v-if="!drawerOpen" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <svg v-if="!ui.drawerOpen" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
           </svg>
           <svg v-else viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -75,15 +125,28 @@ function onKeydown(e: KeyboardEvent) {
         </button>
       </div>
     </div>
+  </header>
 
-    <!-- 移动端抽屉 -->
+  <!--
+    注意：抽屉必须 Teleport 到 body。
+    .site-header 用了 backdrop-filter，它会让 position:fixed 的子孙以 header 为包含块，
+    抽屉留在 header 内会只剩 60px 高，菜单项全部被裁掉。
+  -->
+  <Teleport to="body">
     <transition name="drawer">
-      <div v-if="drawerOpen" class="drawer-mask" @click.self="closeDrawer">
-        <nav class="drawer" aria-label="更多菜单" role="dialog" aria-modal="true">
+      <div v-if="ui.drawerOpen" class="drawer-mask" @click.self="closeDrawer">
+        <nav
+          ref="drawerEl"
+          class="drawer"
+          tabindex="-1"
+          role="dialog"
+          aria-modal="true"
+          aria-label="更多菜单"
+        >
           <div class="drawer-head">
             <div class="drawer-profile">
               <span class="drawer-avatar" aria-hidden="true">2419</span>
-              <div>
+              <div class="drawer-profile-text">
                 <strong>{{ auth.isLoggedIn ? auth.username : '新屋岭中学2419班' }}</strong>
                 <small>{{ auth.isLoggedIn ? '已登录管理员' : '聚是一团火，散是满天星' }}</small>
               </div>
@@ -95,6 +158,7 @@ function onKeydown(e: KeyboardEvent) {
             </button>
           </div>
 
+          <p class="drawer-divider">浏览</p>
           <RouterLink
             v-for="item in mainNav"
             :key="item.path"
@@ -109,24 +173,42 @@ function onKeydown(e: KeyboardEvent) {
           </RouterLink>
 
           <p class="drawer-divider">更多</p>
-
           <RouterLink
             v-for="item in moreNav"
             :key="item.path"
             :to="item.path"
             class="drawer-link"
+            :class="{ active: route.meta.nav === item.path }"
             @click="closeDrawer"
           >
             <span class="drawer-icon" aria-hidden="true">{{ item.icon }}</span>
             {{ item.title }}
             <span class="arrow" aria-hidden="true">›</span>
           </RouterLink>
+
+          <p class="drawer-divider">快捷操作</p>
+          <div class="drawer-quick">
+            <button type="button" class="quick-btn" @click="openSearch">
+              <span class="q-icon" aria-hidden="true">🔍</span>
+              全站搜索
+            </button>
+            <button type="button" class="quick-btn" @click="cycleTheme">
+              <span class="q-icon" aria-hidden="true">{{ themeIcon() }}</span>
+              切换主题
+            </button>
+            <button type="button" class="quick-btn" @click="scrollTop">
+              <span class="q-icon" aria-hidden="true">⬆️</span>
+              回到顶部
+            </button>
+          </div>
+
+          <p class="drawer-foot">新屋岭中学2419班 · 班级空间</p>
         </nav>
       </div>
     </transition>
+  </Teleport>
 
-    <SearchOverlay v-model:open="searchOpen" />
-  </header>
+  <SearchOverlay v-model:open="ui.searchOpen" />
 </template>
 
 <style scoped>
@@ -253,19 +335,21 @@ function onKeydown(e: KeyboardEvent) {
   display: grid;
 }
 
-/* 抽屉 */
+/* ---------- 抽屉（Teleport 到 body） ---------- */
 .drawer-mask {
   position: fixed;
   inset: 0;
-  background: var(--overlay);
   z-index: var(--z-drawer);
+  background: var(--overlay);
+  overscroll-behavior: contain;
 }
 .drawer {
   position: absolute;
   top: 0;
   right: 0;
-  width: min(300px, 84vw);
+  width: min(320px, 86vw);
   height: 100%;
+  max-height: 100%;
   background: var(--card);
   border-left: 1px solid var(--border);
   padding: var(--space-4);
@@ -274,6 +358,8 @@ function onKeydown(e: KeyboardEvent) {
   gap: 2px;
   box-shadow: var(--shadow-3);
   overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none;
   padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
 }
 .drawer-head {
@@ -290,6 +376,16 @@ function onKeydown(e: KeyboardEvent) {
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
+}
+.drawer-profile-text {
+  min-width: 0;
+}
+.drawer-profile-text strong {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.95rem;
 }
 .drawer-profile small {
   display: block;
@@ -353,6 +449,50 @@ function onKeydown(e: KeyboardEvent) {
   color: var(--text-3);
 }
 
+/* 快捷操作 */
+.drawer-quick {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+.quick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+  color: var(--text-2);
+  font-size: 0.74rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
+}
+.quick-btn:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary-soft-2);
+  color: var(--primary);
+}
+.quick-btn:active {
+  transform: scale(0.96);
+}
+.q-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.drawer-foot {
+  margin: auto 0 0;
+  padding-top: var(--space-5);
+  text-align: center;
+  color: var(--text-3);
+  font-size: 0.72rem;
+}
+
 .drawer-enter-active,
 .drawer-leave-active {
   transition: opacity var(--duration) var(--ease);
@@ -384,14 +524,14 @@ function onKeydown(e: KeyboardEvent) {
     width: 34px;
     height: 34px;
   }
+  .admin-btn {
+    display: none;
+  }
 }
 
 @media (min-width: 900px) {
   .main-nav {
     display: flex;
-  }
-  .menu-toggle {
-    display: none;
   }
   .brand-text strong {
     font-size: 1.02rem;

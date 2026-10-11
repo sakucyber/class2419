@@ -7,6 +7,8 @@ export interface NavItem {
   icon: string
   /** 是否出现在移动端底部导航 */
   inBottomNav?: boolean
+  /** 特殊行为：不跳转，而是打开右侧抽屉菜单（此时 path 仅作占位） */
+  action?: 'drawer'
 }
 
 /** 桌面端主导航 */
@@ -24,10 +26,10 @@ export const bottomNav: NavItem[] = [
   { path: '/albums', title: '相册', icon: '🖼️', inBottomNav: true },
   { path: '/videos', title: '视频', icon: '🎬', inBottomNav: true },
   { path: '/articles', title: '文章', icon: '📝', inBottomNav: true },
-  { path: '/about', title: '更多', icon: '☰', inBottomNav: true },
+  { path: '#more', title: '更多', icon: '☰', inBottomNav: true, action: 'drawer' },
 ]
 
-/** 抽屉 / 更多菜单 */
+/** 抽屉「更多」分组 */
 export const moreNav: NavItem[] = [
   { path: '/admin', title: '投稿 / 管理', icon: '✏️' },
   { path: '/settings', title: '设置', icon: '⚙️' },

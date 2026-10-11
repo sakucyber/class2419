@@ -2,6 +2,9 @@ node_modules
 dist
 *.local
 *.log
+*.tsbuildinfo
+.workbuddy/
+聊天记录.json
 .DS_Store
 .vscode/*
 !.vscode/extensions.json
