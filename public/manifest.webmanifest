@@ -1,0 +1,19 @@
+{
+  "name": "新屋岭中学2419班 · 班级空间",
+  "short_name": "2419班",
+  "description": "新屋岭初级中学2419班班级空间 —— 相册、视频、文章与班级记忆。",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f8fb",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

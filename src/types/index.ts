@@ -1,0 +1,145 @@
+/** 全站共享类型定义 */
+
+export type ContentSource = 'seed' | 'user'
+
+export interface Photo {
+  id: string
+  src: string
+  caption?: string
+  width?: number
+  height?: number
+}
+
+export interface Album {
+  id: string
+  title: string
+  description: string
+  cover: string
+  category: string
+  tags: string[]
+  photos: Photo[]
+  author: string
+  createdAt: string
+  likes: number
+  source: ContentSource
+  draft?: boolean
+}
+
+export interface VideoItem {
+  id: string
+  title: string
+  description: string
+  cover: string
+  category: string
+  tags: string[]
+  author: string
+  createdAt: string
+  /** 本地 / 同源视频地址，也可能是 idb: 前缀的 IndexedDB 引用 */
+  src?: string
+  /** 外链播放器（Bilibili / YouTube iframe） */
+  embedUrl?: string
+  /** 仅跳转的外部链接 */
+  externalUrl?: string
+  duration?: string
+  source: ContentSource
+  draft?: boolean
+}
+
+export interface Article {
+  id: string
+  title: string
+  excerpt: string
+  cover: string
+  category: string
+  tags: string[]
+  author: string
+  createdAt: string
+  updatedAt?: string
+  readingMinutes: number
+  /** Markdown 原文 */
+  content: string
+  source: ContentSource
+  draft?: boolean
+}
+
+export interface Announcement {
+  id: string
+  title: string
+  content: string
+  createdAt: string
+  pinned?: boolean
+  level?: 'info' | 'success' | 'warning'
+  source: ContentSource
+}
+
+export interface Slide {
+  id: string
+  image: string
+  title: string
+  subtitle?: string
+  link?: string
+}
+
+export interface Member {
+  id: string
+  name: string
+  role: string
+  intro: string
+  tags: string[]
+}
+
+export interface Honor {
+  id: string
+  title: string
+  level: string
+  date: string
+  description: string
+  icon: string
+}
+
+export interface TimelineNode {
+  id: string
+  date: string
+  title: string
+  description: string
+  tag?: string
+}
+
+export interface ClassInfo {
+  school: string
+  fullName: string
+  shortName: string
+  grade: string
+  motto: string
+  slogan: string
+  foundedAt: string
+  graduationAt: string
+  teacher: string
+  description: string
+  stats: { label: string; value: string }[]
+}
+
+export interface UserContentBundle {
+  albums: Album[]
+  videos: VideoItem[]
+  articles: Article[]
+  announcements: Announcement[]
+}
+
+export interface BackupPayload {
+  version: 1
+  exportedAt: string
+  app: string
+  data: UserContentBundle
+}
+
+export type ThemeMode = 'light' | 'dark' | 'auto'
+export type AccentKey = 'blue' | 'green' | 'orange'
+export type FontSizeKey = 'sm' | 'md' | 'lg'
+
+export interface SiteSettings {
+  theme: ThemeMode
+  accent: AccentKey
+  fontSize: FontSizeKey
+  animations: boolean
+}

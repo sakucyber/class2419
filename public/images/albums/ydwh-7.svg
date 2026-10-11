@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200" width="900" height="1200" role="img" aria-hidden="true">
+  <defs>
+    <linearGradient id="g2022" x1="0" y1="0" x2="1" y2="1" gradientTransform="rotate(88 .5 .5)">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="1200" fill="url(#g2022)"/>
+  <circle cx="32%" cy="86%" r="34" fill="#ffffff" opacity="0.13"/>
+  <circle cx="78%" cy="79%" r="29" fill="#ffffff" opacity="0.20"/>
+  <circle cx="9%" cy="65%" r="25" fill="#ffffff" opacity="0.12"/>
+  <circle cx="26%" cy="63%" r="13" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="3"/>
+  <rect x="10%" y="50%" width="34" height="30" rx="15" fill="#ffffff" opacity="0.1" transform="rotate(-10 17% 68%)"/>
+  <circle cx="576.0" cy="336.0" r="1.8" fill="#ffffff" opacity="0.25"/><circle cx="608.1" cy="336.0" r="1.8" fill="#ffffff" opacity="0.25"/><circle cx="640.3" cy="336.0" r="1.8" fill="#ffffff" opacity="0.25"/><circle cx="672.4" cy="336.0" r="1.8" fill="#ffffff" opacity="0.25"/><circle cx="704.6" cy="336.0" r="1.8" fill="#ffffff" opacity="0.25"/><circle cx="576.0" cy="368.1" r="1.8" fill="#ffffff" opacity="0.25"/><circle cx="608.1" cy="368.1" r="1.8" fill="#ffffff" opacity="0.25"/><circle cx="640.3" cy="368.1" r="1.8" fill="#ffffff" opacity="0.25"/><circle cx="672.4" cy="368.1" r="1.8" fill="#ffffff" opacity="0.25"/><circle cx="704.6" cy="368.1" r="1.8" fill="#ffffff" opacity="0.25"/><circle cx="576.0" cy="400.3" r="1.8" fill="#ffffff" opacity="0.25"/><circle cx="608.1" cy="400.3" r="1.8" fill="#ffffff" opacity="0.25"/><circle cx="640.3" cy="400.3" r="1.8" fill="#ffffff" opacity="0.25"/><circle cx="672.4" cy="400.3" r="1.8" fill="#ffffff" opacity="0.25"/><circle cx="704.6" cy="400.3" r="1.8" fill="#ffffff" opacity="0.25"/>
+</svg>
