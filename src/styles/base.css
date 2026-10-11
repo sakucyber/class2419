@@ -276,13 +276,37 @@ hr {
   padding: 0.6em 1em;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  background: var(--card);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  /* 用不透明底色（而非 --card）：原生弹层会参考控件底色，
+     半透明会让暗色主题下的下拉/日期弹层变成白底 + 浅字 */
+  background-color: var(--field-bg);
   color: var(--text);
   transition:
     border-color var(--duration-fast) var(--ease),
     box-shadow var(--duration-fast) var(--ease);
+}
+
+/* 下拉框完全自绘：关掉 UA 外观后，底色/文字/箭头 100% 由我们控制，
+   暗色主题下不会出现白底浅字或箭头看不清 */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.6em;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2390a0b8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9em center;
+  background-size: 1em 1em;
+}
+
+/* 原生下拉选项：再显式指定一次底色与文字色，双保险 */
+.select option,
+.select optgroup {
+  background-color: var(--field-bg);
+  color: var(--text);
+}
+.select option:checked {
+  background-color: var(--primary);
+  color: var(--primary-contrast);
 }
 .input:focus,
 .select:focus,

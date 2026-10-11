@@ -19,7 +19,7 @@ function progressPercent(id: string) {
   <RouterLink :to="`/videos/${video.id}`" class="video-card card card-hover">
     <div class="cover">
       <LazyImage :src="video.cover" :alt="video.title" aspect="16 / 9" radius="0" />
-      <span class="play" aria-hidden="true">▶</span>
+      <span class="play" aria-hidden="true"><AppIcon name="play" :size="20" filled /></span>
       <span v-if="video.duration" class="duration">{{ video.duration }}</span>
       <span v-if="video.embedUrl" class="ext" title="外链视频"><AppIcon name="link" :size="13" :stroke-width="2" /></span>
       <div v-if="progressPercent(video.id) > 2" class="progress" aria-hidden="true">
@@ -67,10 +67,11 @@ function progressPercent(id: string) {
   color: #fff;
   display: grid;
   place-items: center;
-  font-size: 1.05rem;
-  padding-left: 3px;
   box-shadow: 0 6px 22px var(--glow);
   transition: all var(--duration) var(--ease-spring);
+}
+.play :deep(.app-icon) {
+  margin-left: 2px; /* 三角形视觉居中 */
 }
 .duration {
   position: absolute;

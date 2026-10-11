@@ -55,6 +55,9 @@
   color-scheme: light;
   --bg: #fbf7ff;
   --bg-soft: rgba(126, 86, 165, 0.06);
+  /* 表单控件必须用不透明底色：原生下拉/日期弹层会参考控件底色，
+     半透明会导致暗色主题下弹层变白底、浅字看不清 */
+  --field-bg: #ffffff;
   --card: rgba(255, 255, 255, 0.72);
   --card-hover: rgba(255, 255, 255, 0.95);
   --text: #241f33;
@@ -82,6 +85,7 @@
   color-scheme: dark;
   --bg: #08080f;
   --bg-soft: rgba(255, 255, 255, 0.05);
+  --field-bg: #141a26;
   --card: rgba(255, 255, 255, 0.045);
   --card-hover: rgba(255, 255, 255, 0.085);
   --text: #f2eef8;

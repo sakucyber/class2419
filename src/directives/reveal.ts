@@ -12,6 +12,9 @@ export interface RevealOptions {
 
 let observer: IntersectionObserver | null = null
 
+/** 每个元素的兜底定时器，卸载时清理 */
+const timers = new WeakMap<Element, number>()
+
 function ensureObserver(): IntersectionObserver {
   if (observer) return observer
   observer = new IntersectionObserver(
@@ -40,9 +43,26 @@ export const reveal: Directive<HTMLElement, string | RevealOptions | undefined> 
       el.classList.add('reveal-in')
       return
     }
+
     ensureObserver().observe(el)
+
+    /**
+     * 兜底：内容默认是 opacity:0，万一观察器回调没送达（部分内嵌 WebView、
+     * 极端渲染时序），上方首屏内容就会一直不可见。2.5s 后若仍在视口内且未展示，
+     * 直接展示。只兜底视口内的元素，不影响下方元素的滚动入场。
+     */
+    const fallback = window.setTimeout(() => {
+      if (el.classList.contains('reveal-in')) return
+      const rect = el.getBoundingClientRect()
+      const vh = window.innerHeight || document.documentElement.clientHeight
+      if (rect.top < vh && rect.bottom > 0) el.classList.add('reveal-in')
+    }, 2500)
+    timers.set(el, fallback)
   },
   unmounted(el) {
+    const t = timers.get(el)
+    if (t !== undefined) window.clearTimeout(t)
+    timers.delete(el)
     observer?.unobserve(el)
   },
 }

@@ -71,8 +71,8 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
               {{ content.classInfo.school }} · {{ content.classInfo.grade }}
             </p>
             <h1 class="class-name">
-              我们是<br />
-              <span class="grad-text">{{ content.classInfo.shortName }}</span>
+              <span class="cn-pre">我们是</span
+              ><span class="grad-text">{{ content.classInfo.shortName }}</span>
             </h1>
             <p class="motto">「{{ content.classInfo.motto }}」</p>
             <p class="slogan">{{ content.classInfo.slogan }}</p>
@@ -94,7 +94,10 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 
         <aside v-reveal="{ type: 'left', delay: 1 }" class="countdown-card card" aria-label="中考倒计时">
           <div class="count-head">
-            <span class="count-label">⏳ 距离中考</span>
+            <span class="count-label">
+              <AppIcon name="hourglass" :size="15" />
+              距离中考
+            </span>
             <span class="count-date-chip">{{ formatDate(content.classInfo.examAt, true) }}</span>
           </div>
           <CountdownTimer label="中考" :target="content.classInfo.examAt" />
@@ -207,8 +210,21 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   border-radius: var(--radius-xl);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-2);
-  min-height: clamp(360px, 46vw, 460px);
+  min-height: clamp(320px, 38vw, 420px);
   isolation: isolate;
+}
+/* 遮罩单独一层，这样右侧能留出更多图片空间，文字区也能收窄 */
+.class-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    100deg,
+    rgba(6, 8, 18, 0.95) 0%,
+    rgba(6, 8, 18, 0.86) 48%,
+    rgba(6, 8, 18, 0.34) 100%
+  );
 }
 .card-bg {
   position: absolute;
@@ -222,18 +238,13 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 .card-content {
   position: relative;
   z-index: 1;
-  padding: clamp(24px, 4vw, 44px);
-  background: linear-gradient(
-    105deg,
-    rgba(6, 8, 18, 0.94) 0%,
-    rgba(6, 8, 18, 0.82) 46%,
-    rgba(6, 8, 18, 0.38) 100%
-  );
+  padding: clamp(24px, 3.5vw, 40px);
   color: #fff;
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 10px;
+  max-width: 660px;
 }
 .eyebrow {
   display: inline-flex;
@@ -271,89 +282,114 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 .class-name {
   font-family: var(--font-display);
   color: #fff;
-  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-size: clamp(1.75rem, 4.6vw, 2.6rem);
   font-weight: 900;
   line-height: 1.2;
   letter-spacing: 1px;
+  margin-top: 4px;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.4);
 }
+/* 「我们是」压到 0.55 倍，让班号成为唯一视觉焦点 */
+.cn-pre {
+  font-size: 0.55em;
+  font-weight: 700;
+  letter-spacing: 3px;
+  margin-right: 0.25em;
+  vertical-align: 0.14em;
+  opacity: 0.85;
+}
 .motto {
-  font-size: clamp(1rem, 2vw, 1.2rem);
+  font-size: clamp(0.92rem, 1.8vw, 1.05rem);
   font-weight: 800;
-  color: #f9a8d4;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
+  color: #fff;
 }
 .slogan {
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  opacity: 0.78;
   letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.6);
 }
 .intro {
-  font-size: 0.88rem;
-  line-height: 1.9;
-  opacity: 0.88;
-  max-width: 58ch;
+  margin-top: 6px;
+  font-size: 0.86rem;
+  line-height: 1.85;
+  color: rgba(255, 255, 255, 0.78);
+  max-width: 56ch;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-top: 2px;
 }
 .stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
-  gap: var(--space-2);
-  margin-top: auto;
-}
-.stat-chip {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px 10px;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: var(--space-4);
+}
+/* 扁胶囊：数值与标签同一行，比原来的两行大方块紧凑很多 */
+.stat-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 16px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: var(--radius-md);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  border-radius: var(--radius-full);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   transition: all var(--duration) var(--ease-spring);
 }
 .stat-chip:hover {
-  transform: translateY(-4px) scale(1.04);
+  transform: translateY(-3px);
   background: rgba(255, 255, 255, 0.18);
 }
 .stat-chip strong {
-  font-size: 1.15rem;
+  font-size: 1.02rem;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
-  line-height: 1.3;
+  line-height: 1.2;
 }
 .stat-chip span {
-  font-size: 0.7rem;
-  opacity: 0.78;
-  margin-top: 2px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.72);
 }
 .hero-actions {
   display: flex;
-  gap: var(--space-3);
+  gap: 10px;
   flex-wrap: wrap;
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
+}
+.hero-btn-primary,
+.hero-btn-ghost {
+  padding: 0.58em 1.5em;
+  font-size: 0.9rem;
 }
 .hero-btn-primary {
-  padding: 0.6em 1.6em;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 .hero-btn-ghost {
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   color: #fff;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 .hero-btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.22);
   color: #fff;
   box-shadow: none;
+}
+
+@media (max-width: 720px) {
+  .card-content {
+    max-width: 100%;
+    gap: 8px;
+  }
+  .intro {
+    -webkit-line-clamp: 2;
+  }
 }
 
 .countdown-card {
@@ -386,6 +422,9 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   position: relative;
 }
 .count-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--text-2);
   font-size: 0.88rem;
   font-weight: 700;
