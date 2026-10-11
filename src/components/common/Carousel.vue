@@ -122,10 +122,15 @@ function onKeydown(e: KeyboardEvent) {
   overflow: hidden;
   box-shadow: var(--shadow-2);
 }
-/* 宽屏下限制高度：16/6 的图在超宽容器里会变成一整屏的大色块 */
+/* 宽屏下限制高度：16/6 的图在超宽容器里会变成一整屏的大色块。
+   注意必须给 .viewport 确定高度（不能只给 max-height），
+   否则 .slide/.lazy-image 会按图片固有比例撑高，底部（含标题字幕）被 overflow 裁掉。 */
 @media (min-width: 1200px) {
   .viewport {
-    max-height: clamp(340px, 26vw, 430px);
+    height: clamp(340px, 26vw, 430px);
+  }
+  .slide {
+    height: 100%;
   }
   .viewport :deep(.lazy-image) {
     height: 100%;
