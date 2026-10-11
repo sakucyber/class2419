@@ -75,7 +75,6 @@ function parseAlbum(v: unknown): Album | null {
     photos: parsePhotos(o.photos),
     author: str(o.author, '匿名').slice(0, 30),
     createdAt: str(o.createdAt, new Date().toISOString()),
-    likes: typeof o.likes === 'number' ? Math.max(0, Math.floor(o.likes)) : 0,
     source: 'user',
     draft: o.draft === true,
   }

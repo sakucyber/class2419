@@ -5,15 +5,12 @@ import { useInteractionStore, type Kind } from '@/store/interaction'
 const props = defineProps<{
   kind: Kind
   id: string
-  baseLikes: number
   shareTitle?: string
 }>()
 
 const interaction = useInteractionStore()
 
-const liked = () => interaction.isLiked(props.kind, props.id)
 const faved = () => interaction.isFavorite(props.kind, props.id)
-const likeCount = () => props.baseLikes + (liked() ? 1 : 0)
 
 async function share() {
   const url = window.location.href
@@ -37,16 +34,6 @@ async function share() {
 
 <template>
   <div class="media-actions">
-    <button
-      class="action-btn"
-      :class="{ on: liked() }"
-      :aria-pressed="liked()"
-      :aria-label="liked() ? '取消点赞' : '点赞'"
-      @click="interaction.toggleLike(kind, id)"
-    >
-      <AppIcon name="heart" :size="17" :filled="liked()" />
-      <span>点赞 {{ likeCount() }}</span>
-    </button>
     <button
       class="action-btn"
       :class="{ on: faved() }"
@@ -89,13 +76,15 @@ async function share() {
   color: var(--primary);
   background: var(--primary-soft);
 }
+/* 收藏选中态：琥珀色 */
 .action-btn.on {
-  color: #e11d48;
-  border-color: #fecdd3;
-  background: #fff1f2;
+  color: #d97706;
+  border-color: rgba(217, 119, 6, 0.35);
+  background: rgba(217, 119, 6, 0.1);
 }
 [data-theme='dark'] .action-btn.on {
-  background: rgba(225, 29, 72, 0.12);
-  border-color: rgba(225, 29, 72, 0.35);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.12);
 }
 </style>

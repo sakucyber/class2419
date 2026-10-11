@@ -161,10 +161,10 @@ const related = computed(() =>
             <p class="meta">
               <span class="meta-item"><AppIcon name="pencil" :size="15" /> {{ video.author }}</span>
               <time :datetime="video.createdAt">{{ formatDate(video.createdAt) }}</time>
-              <span v-if="video.duration">⏱ {{ video.duration }}</span>
+              <span v-if="video.duration" class="meta-item"><AppIcon name="clock" :size="15" /> {{ video.duration }}</span>
             </p>
             <p class="desc">{{ video.description }}</p>
-            <MediaActions :id="video.id" kind="video" :base-likes="0" :share-title="video.title" />
+            <MediaActions :id="video.id" kind="video" :share-title="video.title" />
           </article>
         </div>
 

@@ -77,7 +77,6 @@ function submit() {
     photos: photos.value,
     author: form.author.trim() || '匿名同学',
     createdAt: props.album?.createdAt || new Date().toISOString(),
-    likes: props.album?.likes || 0,
     source: 'user',
     draft: form.draft,
   }

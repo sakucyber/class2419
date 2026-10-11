@@ -26,14 +26,6 @@ const interaction = useInteractionStore()
       <h3 class="title">{{ album.title }}</h3>
       <p class="desc">{{ album.description }}</p>
       <div class="foot">
-        <span class="likes" :class="{ on: interaction.isLiked('album', album.id) }">
-          <AppIcon
-            name="heart"
-            :size="15"
-            :filled="interaction.isLiked('album', album.id)"
-          />
-          {{ album.likes + (interaction.isLiked('album', album.id) ? 1 : 0) }}
-        </span>
         <span class="author">{{ album.author }}</span>
       </div>
     </div>
@@ -115,14 +107,5 @@ const interaction = useInteractionStore()
   margin-top: auto;
   padding-top: var(--space-2);
   border-top: 1px dashed var(--border);
-}
-.likes {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-.likes.on {
-  color: #e11d48;
-  font-weight: 700;
 }
 </style>

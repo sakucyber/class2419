@@ -116,7 +116,7 @@ async function doReset() {
     <section class="card block" aria-labelledby="data-title">
       <h2 id="data-title">数据管理</h2>
       <p class="block-desc">
-        本站在浏览器本地（localStorage / IndexedDB）保存你的投稿、点赞与观看进度。
+        本站在浏览器本地（localStorage / IndexedDB）保存你的收藏与观看进度。
         清除浏览器数据会导致这些内容丢失，重要稿件请先「导出备份」。
       </p>
       <div class="btn-row">

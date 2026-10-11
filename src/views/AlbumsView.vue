@@ -13,7 +13,7 @@ const content = useContentStore()
 
 const keyword = ref('')
 const category = ref('全部')
-const sort = ref<'newest' | 'oldest' | 'popular'>('newest')
+const sort = ref<'newest' | 'oldest'>('newest')
 const layout = ref<'grid' | 'masonry'>('grid')
 const pageSize = 8
 const shown = ref(pageSize)
@@ -32,7 +32,6 @@ const filtered = computed(() => {
   list = [...list]
   if (sort.value === 'newest') list.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
   if (sort.value === 'oldest') list.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1))
-  if (sort.value === 'popular') list.sort((a, b) => b.likes - a.likes)
   return list
 })
 
@@ -106,7 +105,6 @@ function resetFilters() {
         <select v-model="sort" class="select" aria-label="排序方式">
           <option value="newest">最新优先</option>
           <option value="oldest">最早优先</option>
-          <option value="popular">最受欢迎</option>
         </select>
       </label>
     </div>

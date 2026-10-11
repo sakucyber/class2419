@@ -77,7 +77,6 @@ async function downloadAll() {
           <MediaActions
             :id="album.id"
             kind="album"
-            :base-likes="album.likes"
             :share-title="album.title"
           >
             <button class="action-btn" aria-label="下载全部" @click="downloadAll">

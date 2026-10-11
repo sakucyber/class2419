@@ -10,7 +10,7 @@ const props = withDefaults(
     size?: number | string
     /** 描边粗细 */
     strokeWidth?: number | string
-    /** 实心填充（点赞/收藏的选中态） */
+    /** 实心填充（收藏等选中态） */
     filled?: boolean
   }>(),
   { size: 20, strokeWidth: 1.8, filled: false },

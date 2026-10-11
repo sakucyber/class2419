@@ -21,7 +21,6 @@ export interface Album {
   photos: Photo[]
   author: string
   createdAt: string
-  likes: number
   source: ContentSource
   draft?: boolean
 }

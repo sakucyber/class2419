@@ -166,7 +166,6 @@ const neighbors = computed(() => {
                 <MediaActions
                   :id="article.id"
                   kind="article"
-                  :base-likes="0"
                   :share-title="article.title"
                 />
               </footer>

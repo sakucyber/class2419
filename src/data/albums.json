@@ -1,256 +1,266 @@
 [
   {
     "id": "alb-military",
-    "title": "军训时光",
-    "description": "烈日下的队列、拉歌与第一次集体合影。那几天我们晒得黝黑，却把「2419」喊得最响。",
+    "title": "测试相册一",
+    "description": "这是一段测试描述文字，用于占位预览布局效果。",
     "cover": "/images/albums/jxsg-1.svg",
-    "category": "校园生活",
-    "tags": ["军训", "成长", "集体"],
-    "author": "赖银辉老师",
+    "category": "测试分类一",
+    "tags": [
+      "测试标签一",
+      "测试标签二"
+    ],
+    "author": "测试作者",
     "createdAt": "2024-09-12T10:00:00.000Z",
-    "likes": 36,
     "source": "seed",
     "photos": [
       {
         "id": "alb-military-p1",
         "src": "/images/albums/jxsg-1.svg",
-        "caption": "开营仪式"
+        "caption": "测试照片说明 1"
       },
       {
         "id": "alb-military-p2",
         "src": "/images/albums/jxsg-2.svg",
-        "caption": "站军姿"
+        "caption": "测试照片说明 2"
       },
       {
         "id": "alb-military-p3",
         "src": "/images/albums/jxsg-3.svg",
-        "caption": "方阵训练"
+        "caption": "测试照片说明 3"
       },
       {
         "id": "alb-military-p4",
         "src": "/images/albums/jxsg-4.svg",
-        "caption": "拉歌比赛"
+        "caption": "测试照片说明 4"
       },
       {
         "id": "alb-military-p5",
         "src": "/images/albums/jxsg-5.svg",
-        "caption": "内务整理"
+        "caption": "测试照片说明 5"
       },
       {
         "id": "alb-military-p6",
         "src": "/images/albums/jxsg-6.svg",
-        "caption": "急救演练"
+        "caption": "测试照片说明 6"
       },
       {
         "id": "alb-military-p7",
         "src": "/images/albums/jxsg-7.svg",
-        "caption": "汇报演出"
+        "caption": "测试照片说明 7"
       },
       {
         "id": "alb-military-p8",
         "src": "/images/albums/jxsg-8.svg",
-        "caption": "结营合影"
+        "caption": "测试照片说明 8"
       }
     ]
   },
   {
     "id": "alb-sports",
-    "title": "秋季运动会",
-    "description": "发令枪响的那一刻，全班的呐喊差点掀翻看台。我们拿下了团体总分年级第二。",
+    "title": "测试相册二",
+    "description": "这是一段测试描述文字，用于占位预览布局效果。",
     "cover": "/images/albums/ydydh-1.svg",
-    "category": "活动",
-    "tags": ["运动会", "拼搏", "荣誉"],
-    "author": "陈子豪",
+    "category": "测试分类二",
+    "tags": [
+      "测试标签二",
+      "测试标签三"
+    ],
+    "author": "测试作者",
     "createdAt": "2025-10-24T16:00:00.000Z",
-    "likes": 52,
     "source": "seed",
     "photos": [
       {
         "id": "alb-sports-p1",
         "src": "/images/albums/ydydh-1.svg",
-        "caption": "入场方阵"
+        "caption": "测试照片说明 1"
       },
       {
         "id": "alb-sports-p2",
         "src": "/images/albums/ydydh-2.svg",
-        "caption": "百米冲刺"
+        "caption": "测试照片说明 2"
       },
       {
         "id": "alb-sports-p3",
         "src": "/images/albums/ydydh-3.svg",
-        "caption": "接力交接"
+        "caption": "测试照片说明 3"
       },
       {
         "id": "alb-sports-p4",
         "src": "/images/albums/ydydh-4.svg",
-        "caption": "跳远瞬间"
+        "caption": "测试照片说明 4"
       },
       {
         "id": "alb-sports-p5",
         "src": "/images/albums/ydydh-5.svg",
-        "caption": "实心球"
+        "caption": "测试照片说明 5"
       },
       {
         "id": "alb-sports-p6",
         "src": "/images/albums/ydydh-6.svg",
-        "caption": "啦啦队"
+        "caption": "测试照片说明 6"
       },
       {
         "id": "alb-sports-p7",
         "src": "/images/albums/ydydh-7.svg",
-        "caption": "看台花絮"
+        "caption": "测试照片说明 7"
       },
       {
         "id": "alb-sports-p8",
         "src": "/images/albums/ydydh-8.svg",
-        "caption": "颁奖时刻"
+        "caption": "测试照片说明 8"
       }
     ]
   },
   {
     "id": "alb-newyear",
-    "title": "元旦晚会",
-    "description": "从排练到登台，二十天的汗水换来全场大合唱。灯光亮起时，我们就是彼此的星光。",
+    "title": "测试相册三",
+    "description": "这是一段测试描述文字，用于占位预览布局效果。",
     "cover": "/images/albums/ydwh-1.svg",
-    "category": "活动",
-    "tags": ["晚会", "才艺", "合唱"],
-    "author": "苏雨桐",
+    "category": "测试分类二",
+    "tags": [
+      "测试标签三",
+      "测试标签四"
+    ],
+    "author": "测试作者",
     "createdAt": "2025-12-31T20:00:00.000Z",
-    "likes": 48,
     "source": "seed",
     "photos": [
       {
         "id": "alb-newyear-p1",
         "src": "/images/albums/ydwh-1.svg",
-        "caption": "后台准备"
+        "caption": "测试照片说明 1"
       },
       {
         "id": "alb-newyear-p2",
         "src": "/images/albums/ydwh-2.svg",
-        "caption": "开场舞"
+        "caption": "测试照片说明 2"
       },
       {
         "id": "alb-newyear-p3",
         "src": "/images/albums/ydwh-3.svg",
-        "caption": "乐器合奏"
+        "caption": "测试照片说明 3"
       },
       {
         "id": "alb-newyear-p4",
         "src": "/images/albums/ydwh-4.svg",
-        "caption": "朗诵"
+        "caption": "测试照片说明 4"
       },
       {
         "id": "alb-newyear-p5",
         "src": "/images/albums/ydwh-5.svg",
-        "caption": "小品现场"
+        "caption": "测试照片说明 5"
       },
       {
         "id": "alb-newyear-p6",
         "src": "/images/albums/ydwh-6.svg",
-        "caption": "合唱时刻"
+        "caption": "测试照片说明 6"
       },
       {
         "id": "alb-newyear-p7",
         "src": "/images/albums/ydwh-7.svg",
-        "caption": "谢幕"
+        "caption": "测试照片说明 7"
       },
       {
         "id": "alb-newyear-p8",
         "src": "/images/albums/ydwh-8.svg",
-        "caption": "观众席"
+        "caption": "测试照片说明 8"
       }
     ]
   },
   {
     "id": "alb-study",
-    "title": "春日研学之旅",
-    "description": "走出教室的那天，山野成了最大的课堂。我们记录植物、测量河流，也记录彼此的笑脸。",
+    "title": "测试相册四",
+    "description": "这是一段测试描述文字，用于占位预览布局效果。",
     "cover": "/images/albums/cryx-1.svg",
-    "category": "研学",
-    "tags": ["研学", "自然", "实践"],
-    "author": "王子涵",
+    "category": "测试分类三",
+    "tags": [
+      "测试标签四",
+      "测试标签五"
+    ],
+    "author": "测试作者",
     "createdAt": "2026-04-10T14:00:00.000Z",
-    "likes": 41,
     "source": "seed",
     "photos": [
       {
         "id": "alb-study-p1",
         "src": "/images/albums/cryx-1.svg",
-        "caption": "出发清晨"
+        "caption": "测试照片说明 1"
       },
       {
         "id": "alb-study-p2",
         "src": "/images/albums/cryx-2.svg",
-        "caption": "山路行进"
+        "caption": "测试照片说明 2"
       },
       {
         "id": "alb-study-p3",
         "src": "/images/albums/cryx-3.svg",
-        "caption": "植物观察"
+        "caption": "测试照片说明 3"
       },
       {
         "id": "alb-study-p4",
         "src": "/images/albums/cryx-4.svg",
-        "caption": "溪流测量"
+        "caption": "测试照片说明 4"
       },
       {
         "id": "alb-study-p5",
         "src": "/images/albums/cryx-5.svg",
-        "caption": "午餐野炊"
+        "caption": "测试照片说明 5"
       },
       {
         "id": "alb-study-p6",
         "src": "/images/albums/cryx-6.svg",
-        "caption": "合影留念"
+        "caption": "测试照片说明 6"
       },
       {
         "id": "alb-study-p7",
         "src": "/images/albums/cryx-7.svg",
-        "caption": "返程巴士"
+        "caption": "测试照片说明 7"
       }
     ]
   },
   {
     "id": "alb-daily",
-    "title": "教室日常",
-    "description": "早读的书声、课间的追逐、黑板报前的忙碌——平凡的日子闪着细碎的光。",
+    "title": "测试相册五",
+    "description": "这是一段测试描述文字，用于占位预览布局效果。",
     "cover": "/images/albums/jcr-1.svg",
-    "category": "日常",
-    "tags": ["日常", "教室", "温馨"],
-    "author": "班级宣传组",
+    "category": "测试分类四",
+    "tags": [
+      "测试标签五",
+      "测试标签一"
+    ],
+    "author": "测试作者",
     "createdAt": "2026-03-15T08:00:00.000Z",
-    "likes": 29,
     "source": "seed",
     "photos": [
       {
         "id": "alb-daily-p1",
         "src": "/images/albums/jcr-1.svg",
-        "caption": "早读时光"
+        "caption": "测试照片说明 1"
       },
       {
         "id": "alb-daily-p2",
         "src": "/images/albums/jcr-2.svg",
-        "caption": "黑板报"
+        "caption": "测试照片说明 2"
       },
       {
         "id": "alb-daily-p3",
         "src": "/images/albums/jcr-3.svg",
-        "caption": "课间十分钟"
+        "caption": "测试照片说明 3"
       },
       {
         "id": "alb-daily-p4",
         "src": "/images/albums/jcr-4.svg",
-        "caption": "运动会前夜"
+        "caption": "测试照片说明 4"
       },
       {
         "id": "alb-daily-p5",
         "src": "/images/albums/jcr-5.svg",
-        "caption": "生日会"
+        "caption": "测试照片说明 5"
       },
       {
         "id": "alb-daily-p6",
         "src": "/images/albums/jcr-6.svg",
-        "caption": "黄昏教室"
+        "caption": "测试照片说明 6"
       }
     ]
   }
