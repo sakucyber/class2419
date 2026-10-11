@@ -57,24 +57,6 @@ const content = useContentStore()
         </li>
       </ul>
     </section>
-
-    <!-- 时间线 -->
-    <section v-reveal class="section">
-      <SectionHeader tag="Timeline" title="班级时间线" subtitle="我们的故事，从 2024 年 9 月 1 日开始" />
-      <ol class="timeline">
-        <li v-for="node in content.timeline" :key="node.id" class="node">
-          <span class="dot" aria-hidden="true"></span>
-          <div class="node-body card">
-            <div class="node-head">
-              <time :datetime="node.date">{{ node.date }}</time>
-              <span v-if="node.tag" class="chip">{{ node.tag }}</span>
-            </div>
-            <h3>{{ node.title }}</h3>
-            <p>{{ node.description }}</p>
-          </div>
-        </li>
-      </ol>
-    </section>
   </div>
 </template>
 
@@ -218,6 +200,16 @@ const content = useContentStore()
     grid-template-columns: repeat(2, 1fr);
   }
 }
+@media (min-width: 1200px) {
+  .honor-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 1600px) {
+  .honor-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
 .honor {
   display: flex;
   gap: var(--space-4);
@@ -249,60 +241,5 @@ const content = useContentStore()
   margin-top: 6px;
   color: var(--text-2);
   font-size: 0.88rem;
-}
-
-.timeline {
-  position: relative;
-  padding-left: 26px;
-  display: grid;
-  gap: var(--space-4);
-}
-.timeline::before {
-  content: '';
-  position: absolute;
-  left: 8px;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: linear-gradient(var(--primary), var(--border));
-  border-radius: var(--radius-full);
-}
-.node {
-  position: relative;
-}
-.dot {
-  position: absolute;
-  left: -26px;
-  top: 20px;
-  width: 18px;
-  height: 18px;
-  border-radius: var(--radius-full);
-  background: var(--card);
-  border: 4px solid var(--primary);
-  box-shadow: var(--shadow-1);
-  z-index: 1;
-}
-.node-body {
-  padding: var(--space-4) var(--space-5);
-}
-.node-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: 6px;
-}
-.node-head time {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--primary);
-  font-variant-numeric: tabular-nums;
-}
-.node-body h3 {
-  font-size: 1.05rem;
-  margin-bottom: 4px;
-}
-.node-body p {
-  color: var(--text-2);
-  font-size: 0.9rem;
 }
 </style>

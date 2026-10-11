@@ -102,7 +102,6 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
           </div>
           <CountdownTimer label="中考" :target="content.classInfo.examAt" />
           <p class="count-note">笔锋所至，皆是心之所向。稳住，2419。</p>
-          <RouterLink to="/about" class="count-link">查看班级时间线 →</RouterLink>
         </aside>
       </section>
 
@@ -396,11 +395,21 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   padding: var(--space-6);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
   justify-content: center;
   background: var(--card);
   position: relative;
   overflow: hidden;
+}
+/* 数字块撑满卡片宽度，避免宽屏下右侧留白 */
+.countdown-card :deep(.countdown) {
+  width: 100%;
+}
+.countdown-card :deep(.unit) {
+  flex: 1;
+}
+.countdown-card :deep(.sep) {
+  flex: none;
 }
 .countdown-card::before {
   content: '';
@@ -444,13 +453,6 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   color: var(--text-3);
   font-size: 0.85rem;
 }
-.count-link {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--primary);
-  width: fit-content;
-}
-
 /* 公告 */
 .notice-list {
   display: grid;
@@ -489,13 +491,13 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   font-size: 0.9rem;
 }
 
-/* 网格 */
+/* 网格：卡片宽度保持在 300~400px 区间，宽屏靠增加列数而不是拉大卡片 */
 .grid-3 {
   display: grid;
   gap: var(--space-4);
   grid-template-columns: 1fr;
 }
-@media (min-width: 640px) {
+@media (min-width: 620px) {
   .grid-3 {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -503,6 +505,11 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 @media (min-width: 960px) {
   .grid-3 {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 1600px) {
+  .grid-3 {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 

@@ -156,6 +156,11 @@ h1 {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+@media (min-width: 1600px) {
+  .grid-3 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
 .load-more {
   display: flex;
   justify-content: center;

@@ -216,6 +216,16 @@ h1 {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+@media (min-width: 1600px) {
+  .grid-3 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+@media (min-width: 1600px) {
+  .grid-3 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
 
 .masonry {
   columns: 1;
@@ -229,6 +239,16 @@ h1 {
 @media (min-width: 960px) {
   .masonry {
     columns: 3;
+  }
+}
+@media (min-width: 1600px) {
+  .masonry {
+    columns: 4;
+  }
+}
+@media (min-width: 1600px) {
+  .masonry {
+    columns: 4;
   }
 }
 .masonry :deep(.album-card) {

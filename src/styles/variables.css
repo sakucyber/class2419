@@ -149,6 +149,18 @@
   --glow: rgba(234, 88, 12, 0.28);
 }
 
+/* ---- 容器宽度：随屏幕放宽，避免宽屏下大面积留白 ---- */
+@media (min-width: 1440px) {
+  :root {
+    --container-w: 1380px;
+  }
+}
+@media (min-width: 1800px) {
+  :root {
+    --container-w: 1620px;
+  }
+}
+
 /* ---- 字号缩放 ---- */
 html[data-font-size='sm'] {
   font-size: 14px;

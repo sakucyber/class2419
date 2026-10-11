@@ -183,6 +183,16 @@ async function downloadAll() {
     grid-template-columns: repeat(4, 1fr);
   }
 }
+@media (min-width: 1600px) {
+  .photo-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+@media (min-width: 1600px) {
+  .photo-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
 .photo {
   position: relative;
   padding: 0;

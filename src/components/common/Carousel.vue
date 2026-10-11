@@ -122,6 +122,16 @@ function onKeydown(e: KeyboardEvent) {
   overflow: hidden;
   box-shadow: var(--shadow-2);
 }
+/* 宽屏下限制高度：16/6 的图在超宽容器里会变成一整屏的大色块 */
+@media (min-width: 1200px) {
+  .viewport {
+    max-height: clamp(340px, 26vw, 430px);
+  }
+  .viewport :deep(.lazy-image) {
+    height: 100%;
+    aspect-ratio: auto !important;
+  }
+}
 .slide {
   display: block;
   position: relative;
