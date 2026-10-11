@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '@/components/common/AppIcon.vue'
 import LazyImage from '@/components/common/LazyImage.vue'
 import { useInteractionStore } from '@/store/interaction'
 import type { Album } from '@/types'
@@ -12,9 +13,9 @@ const interaction = useInteractionStore()
   <RouterLink :to="`/albums/${album.id}`" class="album-card card card-hover">
     <div class="cover">
       <LazyImage :src="album.cover" :alt="album.title" aspect="4 / 3" radius="0" />
-      <span class="count-badge" aria-hidden="true">📷 {{ album.photos.length }}</span>
+      <span class="count-badge"><AppIcon name="camera" :size="13" :stroke-width="2" /> {{ album.photos.length }}</span>
       <span v-if="interaction.isFavorite('album', album.id)" class="fav-badge" aria-label="已收藏"
-        >⭐</span
+        ><AppIcon name="star" :size="17" filled /></span
       >
     </div>
     <div class="body">
@@ -26,7 +27,11 @@ const interaction = useInteractionStore()
       <p class="desc">{{ album.description }}</p>
       <div class="foot">
         <span class="likes" :class="{ on: interaction.isLiked('album', album.id) }">
-          {{ interaction.isLiked('album', album.id) ? '❤️' : '🤍' }}
+          <AppIcon
+            name="heart"
+            :size="15"
+            :filled="interaction.isLiked('album', album.id)"
+          />
           {{ album.likes + (interaction.isLiked('album', album.id) ? 1 : 0) }}
         </span>
         <span class="author">{{ album.author }}</span>
@@ -54,6 +59,9 @@ const interaction = useInteractionStore()
 }
 .count-badge {
   position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   left: var(--space-3);
   bottom: var(--space-3);
   padding: 2px 10px;
@@ -68,7 +76,8 @@ const interaction = useInteractionStore()
   position: absolute;
   right: var(--space-3);
   top: var(--space-3);
-  font-size: 1rem;
+  color: #fbbf24;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
 }
 .body {
   padding: var(--space-4);
@@ -106,6 +115,11 @@ const interaction = useInteractionStore()
   margin-top: auto;
   padding-top: var(--space-2);
   border-top: 1px dashed var(--border);
+}
+.likes {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 .likes.on {
   color: #e11d48;

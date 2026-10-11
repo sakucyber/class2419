@@ -1,10 +1,13 @@
 /** 路由与菜单配置化：新增页面只需在此登记 */
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
+import type { IconName } from '@/components/common/icons'
+
 export interface NavItem {
   path: string
   title: string
-  icon: string
+  /** 线性图标名（见 components/common/icons.ts），不再用 emoji */
+  icon: IconName
   /** 是否出现在移动端底部导航 */
   inBottomNav?: boolean
   /** 特殊行为：不跳转，而是打开右侧抽屉菜单（此时 path 仅作占位） */
@@ -13,27 +16,24 @@ export interface NavItem {
 
 /** 桌面端主导航 */
 export const mainNav: NavItem[] = [
-  { path: '/', title: '首页', icon: '🏠' },
-  { path: '/albums', title: '相册', icon: '🖼️' },
-  { path: '/videos', title: '视频', icon: '🎬' },
-  { path: '/articles', title: '文章', icon: '📝' },
-  { path: '/about', title: '关于班级', icon: '🏫' },
+  { path: '/', title: '首页', icon: 'home' },
+  { path: '/albums', title: '相册', icon: 'image' },
+  { path: '/videos', title: '视频', icon: 'video' },
+  { path: '/articles', title: '文章', icon: 'article' },
+  { path: '/about', title: '关于班级', icon: 'school' },
 ]
 
 /** 移动端底部导航 */
 export const bottomNav: NavItem[] = [
-  { path: '/', title: '首页', icon: '🏠', inBottomNav: true },
-  { path: '/albums', title: '相册', icon: '🖼️', inBottomNav: true },
-  { path: '/videos', title: '视频', icon: '🎬', inBottomNav: true },
-  { path: '/articles', title: '文章', icon: '📝', inBottomNav: true },
-  { path: '#more', title: '更多', icon: '☰', inBottomNav: true, action: 'drawer' },
+  { path: '/', title: '首页', icon: 'home', inBottomNav: true },
+  { path: '/albums', title: '相册', icon: 'image', inBottomNav: true },
+  { path: '/videos', title: '视频', icon: 'video', inBottomNav: true },
+  { path: '/articles', title: '文章', icon: 'article', inBottomNav: true },
+  { path: '#more', title: '更多', icon: 'menu', inBottomNav: true, action: 'drawer' },
 ]
 
 /** 抽屉「更多」分组 */
-export const moreNav: NavItem[] = [
-  { path: '/admin', title: '投稿 / 管理', icon: '✏️' },
-  { path: '/settings', title: '设置', icon: '⚙️' },
-]
+export const moreNav: NavItem[] = [{ path: '/settings', title: '设置', icon: 'gear' }]
 
 const SITE_NAME = '新屋岭中学2419班'
 
@@ -91,12 +91,6 @@ const routes: RouteRecordRaw[] = [
     name: 'search',
     component: () => import('@/views/SearchView.vue'),
     meta: { title: '搜索' },
-  },
-  {
-    path: '/admin',
-    name: 'admin',
-    component: () => import('@/views/AdminView.vue'),
-    meta: { title: '投稿 / 管理' },
   },
   {
     path: '/settings',

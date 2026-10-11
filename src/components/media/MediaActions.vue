@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '@/components/common/AppIcon.vue'
 import { useInteractionStore, type Kind } from '@/store/interaction'
 
 const props = defineProps<{
@@ -43,7 +44,7 @@ async function share() {
       :aria-label="liked() ? '取消点赞' : '点赞'"
       @click="interaction.toggleLike(kind, id)"
     >
-      <span aria-hidden="true">{{ liked() ? '❤️' : '🤍' }}</span>
+      <AppIcon name="heart" :size="17" :filled="liked()" />
       <span>点赞 {{ likeCount() }}</span>
     </button>
     <button
@@ -53,11 +54,11 @@ async function share() {
       :aria-label="faved() ? '取消收藏' : '收藏'"
       @click="interaction.toggleFavorite(kind, id)"
     >
-      <span aria-hidden="true">{{ faved() ? '⭐' : '☆' }}</span>
+      <AppIcon name="star" :size="17" :filled="faved()" />
       <span>{{ faved() ? '已收藏' : '收藏' }}</span>
     </button>
     <button class="action-btn" aria-label="分享" @click="share">
-      <span aria-hidden="true">🔗</span>
+      <AppIcon name="link" :size="17" />
       <span>分享</span>
     </button>
     <slot />

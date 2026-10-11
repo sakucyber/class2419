@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 
+import AppIcon from '@/components/common/AppIcon.vue'
 import { bottomNav } from '@/router'
 import { useUiStore } from '@/store/ui'
 
@@ -21,7 +22,7 @@ const ui = useUiStore()
         :aria-expanded="ui.drawerOpen"
         @click="ui.toggleDrawer()"
       >
-        <span class="bottom-icon" aria-hidden="true">{{ ui.drawerOpen ? '✕' : item.icon }}</span>
+        <AppIcon class="bottom-icon" :name="ui.drawerOpen ? 'close' : item.icon" :size="21" />
         <span class="bottom-label">{{ item.title }}</span>
       </button>
 
@@ -32,7 +33,7 @@ const ui = useUiStore()
         :class="{ active: route.meta.nav === item.path }"
         :aria-current="route.meta.nav === item.path ? 'page' : undefined"
       >
-        <span class="bottom-icon" aria-hidden="true">{{ item.icon }}</span>
+        <AppIcon class="bottom-icon" :name="item.icon" :size="21" />
         <span class="bottom-label">{{ item.title }}</span>
       </RouterLink>
     </template>
@@ -76,8 +77,6 @@ const ui = useUiStore()
   transition: color var(--duration) var(--ease-out-quart);
 }
 .bottom-icon {
-  font-size: 1.2rem;
-  line-height: 1;
   transition: transform var(--duration) var(--ease-spring);
 }
 .bottom-link::before {

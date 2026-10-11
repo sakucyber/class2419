@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '@/components/common/AppIcon.vue'
 import LazyImage from '@/components/common/LazyImage.vue'
 import { useInteractionStore } from '@/store/interaction'
 import type { VideoItem } from '@/types'
@@ -20,7 +21,7 @@ function progressPercent(id: string) {
       <LazyImage :src="video.cover" :alt="video.title" aspect="16 / 9" radius="0" />
       <span class="play" aria-hidden="true">▶</span>
       <span v-if="video.duration" class="duration">{{ video.duration }}</span>
-      <span v-if="video.embedUrl" class="ext" title="外链视频">🔗</span>
+      <span v-if="video.embedUrl" class="ext" title="外链视频"><AppIcon name="link" :size="13" :stroke-width="2" /></span>
       <div v-if="progressPercent(video.id) > 2" class="progress" aria-hidden="true">
         <div class="bar" :style="{ width: progressPercent(video.id) + '%' }"></div>
       </div>

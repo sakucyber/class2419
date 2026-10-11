@@ -1,4 +1,5 @@
 /** 全站共享类型定义 */
+import type { IconName } from '@/components/common/icons'
 
 export type ContentSource = 'seed' | 'user'
 
@@ -80,21 +81,14 @@ export interface Slide {
   link?: string
 }
 
-export interface Member {
-  id: string
-  name: string
-  role: string
-  intro: string
-  tags: string[]
-}
-
 export interface Honor {
   id: string
   title: string
   level: string
   date: string
   description: string
-  icon: string
+  /** 线性图标名（见 components/common/icons.ts） */
+  icon: IconName
 }
 
 export interface TimelineNode {
@@ -114,6 +108,8 @@ export interface ClassInfo {
   slogan: string
   foundedAt: string
   graduationAt: string
+  /** 中考开始时间（首页倒计时用） */
+  examAt: string
   teacher: string
   description: string
   stats: { label: string; value: string }[]

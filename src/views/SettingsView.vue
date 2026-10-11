@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { DEMO_PASSWORD, useAuthStore } from '@/store/auth'
+import AppIcon from '@/components/common/AppIcon.vue'
+import type { IconName } from '@/components/common/icons'
 import { useContentStore } from '@/store/content'
 import { useInteractionStore } from '@/store/interaction'
 import { useSettingsStore } from '@/store/settings'
@@ -10,15 +11,14 @@ import type { AccentKey, FontSizeKey, ThemeMode } from '@/types'
 const settingsStore = useSettingsStore()
 const content = useContentStore()
 const interaction = useInteractionStore()
-const auth = useAuthStore()
 
 const confirmReset = ref(false)
 const message = ref('')
 
-const themes: { key: ThemeMode; label: string; icon: string }[] = [
-  { key: 'light', label: '亮色', icon: '☀️' },
-  { key: 'dark', label: '暗色', icon: '🌙' },
-  { key: 'auto', label: '跟随系统', icon: '🌗' },
+const themes: { key: ThemeMode; label: string; icon: IconName }[] = [
+  { key: 'light', label: '亮色', icon: 'sun' },
+  { key: 'dark', label: '暗色', icon: 'moon' },
+  { key: 'auto', label: '跟随系统', icon: 'monitor' },
 ]
 const accents: { key: AccentKey; label: string; color: string }[] = [
   { key: 'blue', label: '晴空蓝', color: '#2563eb' },
@@ -64,7 +64,7 @@ async function doReset() {
           :aria-checked="settingsStore.settings.theme === t.key"
           @click="settingsStore.settings.theme = t.key"
         >
-          <span aria-hidden="true">{{ t.icon }}</span>
+          <AppIcon :name="t.icon" :size="17" />
           {{ t.label }}
         </button>
       </div>
@@ -120,7 +120,6 @@ async function doReset() {
         清除浏览器数据会导致这些内容丢失，重要稿件请先「导出备份」。
       </p>
       <div class="btn-row">
-        <button class="btn btn--ghost" @click="$router.push('/admin')">前往投稿 / 管理</button>
         <button class="btn btn--danger" :disabled="confirmReset" @click="confirmReset = true">
           重置全部本地数据
         </button>
@@ -139,11 +138,7 @@ async function doReset() {
         <li><strong>项目：</strong>新屋岭中学2419班班级空间（纯前端静态站点）</li>
         <li><strong>技术栈：</strong>Vue 3 + Vite + TypeScript + Vue Router + Pinia</li>
         <li><strong>部署：</strong>可直接发布到 GitHub Pages / Netlify / Vercel</li>
-        <li>
-          <strong>本地管理密码：</strong>
-          <code>{{ auth.isLoggedIn ? '已登录（' + auth.username + '）' : DEMO_PASSWORD }}</code>
-          （仅前端演示，非真实鉴权，请勿存放敏感信息）
-        </li>
+        <li><strong>数据来源：</strong>内容以静态 JSON / Markdown 形式随仓库一起发布</li>
       </ul>
     </section>
   </div>

@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
+import AppIcon from '@/components/common/AppIcon.vue'
 import { useContentStore } from '@/store/content'
 import { debounce } from '@/utils/format'
 
@@ -71,7 +72,7 @@ const typeLabel: Record<string, string> = {
       <div class="search-mask" @click="close"></div>
       <div class="search-panel">
         <form class="search-bar" role="search" @submit.prevent="submit">
-          <span aria-hidden="true">🔍</span>
+          <AppIcon class="search-icon" name="search" :size="18" :stroke-width="2" />
           <input
             ref="inputEl"
             v-model="keyword"
@@ -103,7 +104,7 @@ const typeLabel: Record<string, string> = {
               </li>
             </ul>
             <div v-else class="state-block">
-              <span class="state-icon" aria-hidden="true">🧭</span>
+              <AppIcon class="state-icon" name="compass" :size="42" :stroke-width="1.4" />
               <p class="state-title">没有找到相关内容</p>
               <p>
                 换个关键词试试，或前往
@@ -150,6 +151,10 @@ const typeLabel: Record<string, string> = {
     opacity: 0;
     transform: translateY(-12px) scale(0.98);
   }
+}
+.search-icon {
+  color: var(--text-3);
+  flex: none;
 }
 .search-bar {
   display: flex;

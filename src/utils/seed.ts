@@ -7,7 +7,6 @@ import announcementsSeed from '@/data/announcements.json'
 import carouselSeed from '@/data/carousel.json'
 import classInfoSeed from '@/data/classInfo.json'
 import honorsSeed from '@/data/honors.json'
-import membersSeed from '@/data/members.json'
 import timelineSeed from '@/data/timeline.json'
 import videosSeed from '@/data/videos.json'
 import type {
@@ -15,7 +14,6 @@ import type {
   Announcement,
   Article,
   Honor,
-  Member,
   Slide,
   TimelineNode,
   VideoItem,
@@ -83,7 +81,6 @@ export const seedVideos = videosSeed as unknown as VideoItem[]
 export const seedAnnouncements = announcementsSeed as unknown as Announcement[]
 export const seedSlides = carouselSeed as unknown as Slide[]
 export const seedClassInfo = classInfoSeed
-export const seedMembers = membersSeed as unknown as Member[]
 export const seedHonors = honorsSeed as unknown as Honor[]
 export const seedTimeline = timelineSeed as unknown as TimelineNode[]
 export { seedArticles }

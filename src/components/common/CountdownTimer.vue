@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
-const props = defineProps<{ target: string }>()
+const props = withDefaults(defineProps<{ target: string; label?: string }>(), {
+  label: '倒计时',
+})
 
 const now = ref(Date.now())
 let timer: ReturnType<typeof setInterval> | null = null
@@ -30,7 +32,7 @@ const parts = computed(() => {
 </script>
 
 <template>
-  <div class="countdown" role="timer" :aria-label="`距离毕业还有 ${parts.day} 天`">
+  <div class="countdown" role="timer" :aria-label="`距离${props.label}还有 ${parts.day} 天`">
     <template v-if="!parts.done">
       <div class="unit">
         <strong>{{ parts.day }}</strong>
@@ -52,7 +54,7 @@ const parts = computed(() => {
         <span>秒</span>
       </div>
     </template>
-    <p v-else class="done-msg">毕业快乐，2419！🎓</p>
+    <p v-else class="done-msg">{{ props.label }}开始了，2419 加油！</p>
   </div>
 </template>
 

@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
+import AppIcon from '@/components/common/AppIcon.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
 import MediaActions from '@/components/media/MediaActions.vue'
@@ -118,7 +119,7 @@ const neighbors = computed(() => {
 
       <EmptyState
         v-else-if="!content.loading && !article"
-        icon="🫥"
+        icon="article"
         title="文章不存在"
         description="它可能已被删除，或链接不正确。"
         action-text="返回文章列表"
@@ -134,7 +135,7 @@ const neighbors = computed(() => {
             </div>
             <h1>{{ article.title }}</h1>
             <p class="meta">
-              <span>✍️ {{ article.author }}</span>
+              <span class="meta-item"><AppIcon name="pencil" :size="15" /> {{ article.author }}</span>
               <time :datetime="article.createdAt">{{ formatDate(article.createdAt) }}</time>
               <span>约 {{ article.readingMinutes }} 分钟阅读</span>
               <span>已读 {{ progress }}%</span>
@@ -147,14 +148,14 @@ const neighbors = computed(() => {
               :aria-expanded="tocOpen"
               @click="tocOpen = !tocOpen"
             >
-              ☰ 目录（{{ toc.length }}）
+              <AppIcon name="menu" :size="15" /> 目录（{{ toc.length }}）
             </button>
           </div>
 
           <div class="article-layout">
             <div class="prose-wrap card">
               <div v-if="renderError" class="state-block">
-                <span class="state-icon">⚠️</span>
+                <AppIcon class="state-icon" name="warning" :size="42" :stroke-width="1.4" />
                 <p class="state-title">{{ renderError }}</p>
               </div>
               <!-- Markdown 渲染结果已经过 DOMPurify 消毒 -->
@@ -251,6 +252,11 @@ const neighbors = computed(() => {
   font-size: clamp(1.5rem, 4vw, 2.2rem);
   line-height: 1.35;
   margin-bottom: var(--space-3);
+}
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 .meta {
   display: flex;

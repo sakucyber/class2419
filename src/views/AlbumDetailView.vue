@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 
 import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
+import AppIcon from '@/components/common/AppIcon.vue'
 import LazyImage from '@/components/common/LazyImage.vue'
 import Lightbox from '@/components/media/Lightbox.vue'
 import MediaActions from '@/components/media/MediaActions.vue'
@@ -42,7 +43,7 @@ async function downloadAll() {
 
     <EmptyState
       v-else-if="!content.loading && !album"
-      icon="🫥"
+      icon="image"
       title="相册不存在"
       description="它可能已被删除，或链接不正确。"
       action-text="返回相册列表"
@@ -67,8 +68,8 @@ async function downloadAll() {
           <h1>{{ album.title }}</h1>
           <p class="desc">{{ album.description }}</p>
           <p class="meta">
-            <span>📷 {{ album.photos.length }} 张照片</span>
-            <span>✍️ {{ album.author }}</span>
+            <span class="meta-item"><AppIcon name="camera" :size="15" /> {{ album.photos.length }} 张照片</span>
+            <span class="meta-item"><AppIcon name="pencil" :size="15" /> {{ album.author }}</span>
             <time :datetime="album.createdAt">{{ formatDate(album.createdAt) }}</time>
           </p>
         </div>
@@ -80,7 +81,7 @@ async function downloadAll() {
             :share-title="album.title"
           >
             <button class="action-btn" aria-label="下载全部" @click="downloadAll">
-              <span aria-hidden="true">⬇️</span>
+              <AppIcon name="download" :size="16" />
               <span>全部下载</span>
             </button>
           </MediaActions>
@@ -153,6 +154,11 @@ async function downloadAll() {
 .desc {
   color: var(--text-2);
   max-width: 60ch;
+}
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 .meta {
   display: flex;

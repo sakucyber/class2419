@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 
 import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
+import AppIcon from '@/components/common/AppIcon.vue'
 import LazyImage from '@/components/common/LazyImage.vue'
 import MediaActions from '@/components/media/MediaActions.vue'
 import VideoCard from '@/components/media/VideoCard.vue'
@@ -76,7 +77,7 @@ const related = computed(() =>
 
     <EmptyState
       v-else-if="!content.loading && !video"
-      icon="🫥"
+      icon="video"
       title="视频不存在"
       description="它可能已被删除，或链接不正确。"
       action-text="返回视频列表"
@@ -113,7 +114,7 @@ const related = computed(() =>
             </video>
             <div v-else-if="video.src && mediaError" class="player-fail">
               <EmptyState
-                icon="📼"
+                icon="video"
                 title="视频源暂不可用"
                 description="本地媒体可能已被清理，或当前浏览器禁止访问。"
               />
@@ -148,7 +149,7 @@ const related = computed(() =>
               </a>
             </div>
 
-            <EmptyState v-else icon="📼" title="暂无可播放的视频源" />
+            <EmptyState v-else icon="video" title="暂无可播放的视频源" />
           </div>
 
           <article class="info card">
@@ -158,7 +159,7 @@ const related = computed(() =>
             </div>
             <h1>{{ video.title }}</h1>
             <p class="meta">
-              <span>✍️ {{ video.author }}</span>
+              <span class="meta-item"><AppIcon name="pencil" :size="15" /> {{ video.author }}</span>
               <time :datetime="video.createdAt">{{ formatDate(video.createdAt) }}</time>
               <span v-if="video.duration">⏱ {{ video.duration }}</span>
             </p>
@@ -265,6 +266,11 @@ const related = computed(() =>
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 .meta {
   display: flex;

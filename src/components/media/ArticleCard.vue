@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '@/components/common/AppIcon.vue'
 import LazyImage from '@/components/common/LazyImage.vue'
 import { useInteractionStore } from '@/store/interaction'
 import type { Article } from '@/types'
@@ -25,7 +26,13 @@ const interaction = useInteractionStore()
       </div>
       <h3 class="title">
         {{ article.title }}
-        <span v-if="interaction.isFavorite('article', article.id)" aria-label="已收藏">⭐</span>
+        <AppIcon
+          v-if="interaction.isFavorite('article', article.id)"
+          name="star"
+          :size="15"
+          filled
+          aria-label="已收藏"
+        />
       </h3>
       <p class="excerpt">{{ article.excerpt }}</p>
       <div class="foot">

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, watch } from 'vue'
 
+import AppIcon from '@/components/common/AppIcon.vue'
 import { downloadMedia } from '@/utils/image'
 
 export interface LightboxItem {
@@ -90,8 +91,8 @@ function onTouchEnd(e: TouchEvent) {
       <header class="lb-header">
         <span class="counter">{{ index + 1 }} / {{ items.length }}</span>
         <div class="lb-actions">
-          <button class="lb-btn" aria-label="下载图片" @click="download">⬇️</button>
-          <button class="lb-btn" aria-label="关闭预览" @click="close">✕</button>
+          <button class="lb-btn" aria-label="下载图片" @click="download"><AppIcon name="download" :size="18" /></button>
+          <button class="lb-btn" aria-label="关闭预览" @click="close"><AppIcon name="close" :size="18" /></button>
         </div>
       </header>
 

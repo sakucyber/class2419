@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import AppIcon from '@/components/common/AppIcon.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { useContentStore } from '@/store/content'
 
@@ -49,7 +50,7 @@ const typeLabel: Record<string, string> = {
     <header class="page-head">
       <h1>全站搜索</h1>
       <div class="search-box card">
-        <span aria-hidden="true">🔍</span>
+        <AppIcon name="search" :size="17" />
         <input
           v-model="keyword"
           type="search"
@@ -77,13 +78,13 @@ const typeLabel: Record<string, string> = {
 
     <EmptyState
       v-if="!keyword.trim()"
-      icon="✨"
+      icon="sparkles"
       title="搜点什么吧"
       description="例如：运动会、研学、合唱、林老师…"
     />
     <EmptyState
       v-else-if="!filtered.length"
-      icon="🧭"
+      icon="compass"
       title="没有找到相关内容"
       description="换个关键词，或浏览文章列表。"
       action-text="去逛文章"

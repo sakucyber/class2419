@@ -1,23 +1,33 @@
 <script setup lang="ts">
+import AppIcon from '@/components/common/AppIcon.vue'
+import type { IconName } from '@/components/common/icons'
 import { useSettingsStore } from '@/store/settings'
 
 const settingsStore = useSettingsStore()
 
+const ORDER = ['auto', 'light', 'dark'] as const
+
 function cycle() {
-  const order = ['auto', 'light', 'dark'] as const
-  const idx = order.indexOf(settingsStore.settings.theme)
-  settingsStore.settings.theme = order[(idx + 1) % order.length]
+  const idx = ORDER.indexOf(settingsStore.settings.theme)
+  settingsStore.settings.theme = ORDER[(idx + 1) % ORDER.length]
 }
 
-const label = () =>
-  ({ auto: '主题：跟随系统', light: '主题：亮色', dark: '主题：暗色' })[settingsStore.settings.theme]
+const ICONS: Record<string, IconName> = { auto: 'monitor', light: 'sun', dark: 'moon' }
+const LABELS: Record<string, string> = {
+  auto: '主题：跟随系统',
+  light: '主题：亮色',
+  dark: '主题：暗色',
+}
 </script>
 
 <template>
-  <button class="theme-btn" :aria-label="label()" :title="label()" @click="cycle">
-    <span aria-hidden="true" class="icon">
-      {{ settingsStore.settings.theme === 'dark' ? '🌙' : settingsStore.settings.theme === 'light' ? '☀️' : '🖥️' }}
-    </span>
+  <button
+    class="theme-btn"
+    :aria-label="LABELS[settingsStore.settings.theme]"
+    :title="LABELS[settingsStore.settings.theme]"
+    @click="cycle"
+  >
+    <AppIcon :name="ICONS[settingsStore.settings.theme]" :size="17" :stroke-width="1.9" />
   </button>
 </template>
 
@@ -41,10 +51,6 @@ const label = () =>
 }
 .theme-btn:active {
   transform: scale(0.92);
-}
-.icon {
-  font-size: 1rem;
-  line-height: 1;
 }
 
 @media (max-width: 420px) {

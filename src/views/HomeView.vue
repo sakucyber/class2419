@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
+import AppIcon from '@/components/common/AppIcon.vue'
 import Carousel from '@/components/common/Carousel.vue'
 import CountdownTimer from '@/components/common/CountdownTimer.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -12,7 +13,7 @@ import AlbumCard from '@/components/media/AlbumCard.vue'
 import ArticleCard from '@/components/media/ArticleCard.vue'
 import VideoCard from '@/components/media/VideoCard.vue'
 import { useContentStore } from '@/store/content'
-import { formatRelative } from '@/utils/format'
+import { formatDate, formatRelative } from '@/utils/format'
 
 const content = useContentStore()
 
@@ -91,13 +92,13 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
           </div>
         </article>
 
-        <aside v-reveal="{ type: 'left', delay: 1 }" class="countdown-card card" aria-label="毕业倒计时">
+        <aside v-reveal="{ type: 'left', delay: 1 }" class="countdown-card card" aria-label="中考倒计时">
           <div class="count-head">
-            <span class="count-label">⏳ 距离毕业典礼</span>
-            <span class="count-date-chip">{{ content.classInfo.graduationAt }}</span>
+            <span class="count-label">⏳ 距离中考</span>
+            <span class="count-date-chip">{{ formatDate(content.classInfo.examAt, true) }}</span>
           </div>
-          <CountdownTimer :target="content.classInfo.graduationAt" />
-          <p class="count-note">愿此去繁花似锦，再相逢依旧如故。</p>
+          <CountdownTimer label="中考" :target="content.classInfo.examAt" />
+          <p class="count-note">笔锋所至，皆是心之所向。稳住，2419。</p>
           <RouterLink to="/about" class="count-link">查看班级时间线 →</RouterLink>
         </aside>
       </section>
@@ -109,7 +110,11 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 
       <!-- 公告 -->
       <section v-if="notices.length" v-reveal class="container section">
-        <SectionHeader tag="Notice" title="班级公告" subtitle="来自班委会与老师们的最新消息" />
+        <SectionHeader
+          tag="Release"
+          title="班级空间正式发布"
+          subtitle="这个小站上线啦，相册、视频与文章会持续更新"
+        />
         <ul class="notice-list">
           <li
             v-for="n in notices"
@@ -118,7 +123,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
             :class="`level-${n.level || 'info'}`"
           >
             <div class="notice-head">
-              <span v-if="n.pinned" class="pin" aria-label="置顶">📌</span>
+              <AppIcon v-if="n.pinned" class="pin" name="pin" :size="15" aria-label="置顶" />
               <strong>{{ n.title }}</strong>
               <time :datetime="n.createdAt">{{ formatRelative(n.createdAt) }}</time>
             </div>
@@ -136,11 +141,9 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
         </div>
         <EmptyState
           v-else
-          icon="🖼️"
+          icon="image"
           title="还没有相册"
-          description="快去投稿第一组照片吧！"
-          action-text="去投稿"
-          action-to="/admin"
+          description="照片还在整理中，敬请期待。"
         />
       </section>
 
@@ -152,11 +155,9 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
         </div>
         <EmptyState
           v-else
-          icon="🎬"
+          icon="video"
           title="还没有视频"
-          description="上传一段班级短片试试？"
-          action-text="去投稿"
-          action-to="/admin"
+          description="短片还在剪辑中，敬请期待。"
         />
       </section>
 
@@ -171,11 +172,9 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
         </div>
         <EmptyState
           v-else
-          icon="📝"
+          icon="article"
           title="还没有文章"
-          description="写下属于我们的故事吧。"
-          action-text="去投稿"
-          action-to="/admin"
+          description="故事还在落笔中，敬请期待。"
         />
       </section>
     </template>

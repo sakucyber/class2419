@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import AppIcon from '@/components/common/AppIcon.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
@@ -78,7 +79,7 @@ function resetFilters() {
     <!-- 工具栏 -->
     <div class="toolbar card">
       <div class="search-box">
-        <span aria-hidden="true">🔍</span>
+        <AppIcon name="search" :size="17" />
         <input
           v-model="keyword"
           type="search"
@@ -117,7 +118,7 @@ function resetFilters() {
 
       <EmptyState
         v-else-if="!filtered.length"
-        icon="🔍"
+        icon="search"
         title="没有找到相册"
         description="试试更换分类或关键词。"
       >

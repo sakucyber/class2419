@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
+import AppIcon from '@/components/common/AppIcon.vue'
+
 /** 基于 IntersectionObserver 的懒加载图片，自带骨架与错误态 */
 const props = withDefaults(
   defineProps<{
@@ -84,7 +86,7 @@ onBeforeUnmount(() => observer?.disconnect())
     />
     <div v-if="!loaded && !failed" class="lazy-skeleton skeleton" aria-hidden="true"></div>
     <div v-if="failed" class="lazy-fail" role="img" :aria-label="`${alt || '图片'}加载失败`">
-      <span aria-hidden="true">🖼️</span>
+      <AppIcon name="image" :size="26" :stroke-width="1.4" />
       <small>图片加载失败</small>
     </div>
   </div>

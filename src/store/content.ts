@@ -5,12 +5,11 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-import type { Album, Announcement, Article, UserContentBundle, VideoItem } from '@/types'
+import type { Album, Announcement, Article, Honor, UserContentBundle, VideoItem } from '@/types'
 import { dataSource } from '@/utils/dataSource'
 import { seedAlbums, seedAnnouncements, seedArticles, seedSlides, seedVideos } from '@/utils/seed'
 import classInfoSeed from '@/data/classInfo.json'
 import honorsSeed from '@/data/honors.json'
-import membersSeed from '@/data/members.json'
 import timelineSeed from '@/data/timeline.json'
 
 const EMPTY: UserContentBundle = { albums: [], videos: [], articles: [], announcements: [] }
@@ -23,8 +22,7 @@ export const useContentStore = defineStore('content', () => {
 
   // 静态展示数据
   const classInfo = classInfoSeed
-  const members = membersSeed
-  const honors = honorsSeed
+  const honors = honorsSeed as unknown as Honor[]
   const timeline = timelineSeed
   const slides = seedSlides
 
@@ -234,7 +232,6 @@ export const useContentStore = defineStore('content', () => {
     loading,
     error,
     classInfo,
-    members,
     honors,
     timeline,
     slides,

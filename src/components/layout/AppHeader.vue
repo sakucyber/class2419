@@ -2,6 +2,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
+import AppIcon from '@/components/common/AppIcon.vue'
 import SearchOverlay from '@/components/common/SearchOverlay.vue'
 import ThemeToggle from '@/components/common/ThemeToggle.vue'
 import { mainNav, moreNav } from '@/router'
@@ -19,7 +20,10 @@ let lastFocused: HTMLElement | null = null
 
 const THEME_ORDER = ['auto', 'light', 'dark'] as const
 const themeIcon = () =>
-  ({ auto: '🖥️', light: '☀️', dark: '🌙' })[settings.settings.theme]
+  ({ auto: 'monitor', light: 'sun', dark: 'moon' })[settings.settings.theme] as
+    | 'monitor'
+    | 'sun'
+    | 'moon'
 
 function closeDrawer() {
   ui.closeDrawer()
@@ -110,19 +114,9 @@ onBeforeUnmount(() => {
 
       <div class="header-actions">
         <button class="icon-btn" aria-label="全站搜索" title="搜索" @click="ui.openSearch()">
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" />
-            <path d="M16.5 16.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-          </svg>
+          <AppIcon name="search" :size="18" :stroke-width="2" />
         </button>
         <ThemeToggle />
-        <RouterLink
-          to="/admin"
-          class="btn btn--soft btn--sm admin-btn"
-          :title="auth.isLoggedIn ? '进入管理' : '投稿 / 管理'"
-        >
-          ✏️ 投稿
-        </RouterLink>
         <button
           class="icon-btn menu-toggle"
           aria-label="更多菜单"
@@ -131,12 +125,7 @@ onBeforeUnmount(() => {
           :aria-expanded="ui.drawerOpen"
           @click="ui.toggleDrawer()"
         >
-          <svg v-if="!ui.drawerOpen" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-          </svg>
-          <svg v-else viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-          </svg>
+          <AppIcon :name="ui.drawerOpen ? 'close' : 'menu'" :size="18" :stroke-width="2" />
         </button>
       </div>
     </div>
@@ -167,9 +156,7 @@ onBeforeUnmount(() => {
               </div>
             </div>
             <button class="icon-btn" aria-label="关闭菜单" @click="closeDrawer">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-              </svg>
+              <AppIcon name="close" :size="18" :stroke-width="2" />
             </button>
           </div>
 
@@ -182,7 +169,9 @@ onBeforeUnmount(() => {
             :class="{ active: route.meta.nav === item.path }"
             @click="closeDrawer"
           >
-            <span class="drawer-icon" aria-hidden="true">{{ item.icon }}</span>
+            <span class="drawer-icon" aria-hidden="true">
+              <AppIcon :name="item.icon" :size="18" />
+            </span>
             {{ item.title }}
             <span class="arrow" aria-hidden="true">›</span>
           </RouterLink>
@@ -196,7 +185,9 @@ onBeforeUnmount(() => {
             :class="{ active: route.meta.nav === item.path }"
             @click="closeDrawer"
           >
-            <span class="drawer-icon" aria-hidden="true">{{ item.icon }}</span>
+            <span class="drawer-icon" aria-hidden="true">
+              <AppIcon :name="item.icon" :size="18" />
+            </span>
             {{ item.title }}
             <span class="arrow" aria-hidden="true">›</span>
           </RouterLink>
@@ -204,15 +195,15 @@ onBeforeUnmount(() => {
           <p class="drawer-divider">快捷操作</p>
           <div class="drawer-quick">
             <button type="button" class="quick-btn" @click="openSearch">
-              <span class="q-icon" aria-hidden="true">🔍</span>
+              <AppIcon class="q-icon" name="search" :size="19" />
               全站搜索
             </button>
             <button type="button" class="quick-btn" @click="cycleTheme">
-              <span class="q-icon" aria-hidden="true">{{ themeIcon() }}</span>
+              <AppIcon class="q-icon" :name="themeIcon()" :size="19" />
               切换主题
             </button>
             <button type="button" class="quick-btn" @click="scrollTop">
-              <span class="q-icon" aria-hidden="true">⬆️</span>
+              <AppIcon class="q-icon" name="arrowUp" :size="19" />
               回到顶部
             </button>
           </div>
@@ -371,9 +362,6 @@ onBeforeUnmount(() => {
   transform: scale(0.92);
 }
 
-.admin-btn {
-  border-radius: var(--radius-full);
-}
 .menu-toggle {
   display: grid;
 }
@@ -476,13 +464,14 @@ onBeforeUnmount(() => {
   place-items: center;
   border-radius: 10px;
   background: var(--bg-soft);
-  font-size: 1rem;
+  color: var(--text-2);
   flex: none;
-  transition: background var(--duration-fast) var(--ease);
+  transition: all var(--duration) var(--ease-out-quart);
 }
 .drawer-link:hover .drawer-icon,
 .drawer-link.active .drawer-icon {
-  background: var(--card);
+  background: var(--primary-soft);
+  color: var(--primary);
 }
 .arrow {
   margin-left: auto;
@@ -529,8 +518,11 @@ onBeforeUnmount(() => {
   transform: scale(0.96);
 }
 .q-icon {
-  font-size: 1.15rem;
-  line-height: 1;
+  color: var(--text-2);
+  transition: color var(--duration) var(--ease-out-quart);
+}
+.quick-btn:hover .q-icon {
+  color: var(--primary);
 }
 
 .drawer-foot {
@@ -571,9 +563,6 @@ onBeforeUnmount(() => {
   .icon-btn {
     width: 34px;
     height: 34px;
-  }
-  .admin-btn {
-    display: none;
   }
 }
 
