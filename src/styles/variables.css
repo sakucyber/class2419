@@ -53,27 +53,29 @@
 :root,
 [data-theme='light'] {
   color-scheme: light;
-  --bg: #fbf7ff;
-  --bg-soft: rgba(126, 86, 165, 0.06);
+  /* 底色比卡片明显深一档：原来是 #fbf7ff 配 72% 白卡片，算下来卡片≈#fdfdff，
+     和背景几乎同色，整页发平、没有层次。压深底色 + 提亮卡片才有"浮起来"的观感 */
+  --bg: #f0ecfa;
+  --bg-soft: rgba(126, 86, 165, 0.08);
   /* 表单控件必须用不透明底色：原生下拉/日期弹层会参考控件底色，
      半透明会导致暗色主题下弹层变白底、浅字看不清 */
   --field-bg: #ffffff;
-  --card: rgba(255, 255, 255, 0.72);
-  --card-hover: rgba(255, 255, 255, 0.95);
+  --card: rgba(255, 255, 255, 0.84);
+  --card-hover: #ffffff;
   --text: #241f33;
-  --text-2: #5b5470;
-  --text-3: #8d86a3;
-  --border: rgba(126, 90, 160, 0.14);
-  --border-strong: rgba(126, 90, 160, 0.26);
+  --text-2: #544d6b;
+  --text-3: #7b7391;
+  --border: rgba(122, 86, 158, 0.16);
+  --border-strong: rgba(122, 86, 158, 0.28);
   --glass-blur: blur(18px) saturate(1.6);
-  --shadow-1: 0 2px 10px rgba(90, 60, 130, 0.07), 0 8px 24px rgba(90, 60, 130, 0.06);
-  --shadow-2: 0 6px 18px rgba(90, 60, 130, 0.1), 0 18px 40px rgba(90, 60, 130, 0.1);
-  --shadow-3: 0 12px 28px rgba(90, 60, 130, 0.14), 0 28px 64px rgba(90, 60, 130, 0.14);
-  --skeleton-a: rgba(126, 90, 160, 0.08);
-  --skeleton-b: rgba(126, 90, 160, 0.03);
+  --shadow-1: 0 1px 2px rgba(74, 50, 112, 0.05), 0 4px 12px rgba(74, 50, 112, 0.07);
+  --shadow-2: 0 2px 6px rgba(74, 50, 112, 0.06), 0 14px 32px rgba(74, 50, 112, 0.1);
+  --shadow-3: 0 6px 18px rgba(74, 50, 112, 0.1), 0 26px 56px rgba(74, 50, 112, 0.14);
+  --skeleton-a: rgba(126, 90, 160, 0.1);
+  --skeleton-b: rgba(126, 90, 160, 0.05);
   --overlay: rgba(40, 28, 60, 0.42);
-  --aurora-1: rgba(232, 121, 176, 0.16);
-  --aurora-2: rgba(151, 117, 250, 0.14);
+  --aurora-1: rgba(232, 121, 176, 0.2);
+  --aurora-2: rgba(151, 117, 250, 0.16);
   --success: #16a34a;
   --warning: #d97706;
   --danger: #dc2626;

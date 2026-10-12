@@ -103,7 +103,6 @@ export interface ClassInfo {
   fullName: string
   shortName: string
   grade: string
-  motto: string
   slogan: string
   foundedAt: string
   graduationAt: string

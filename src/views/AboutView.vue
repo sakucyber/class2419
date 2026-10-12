@@ -13,7 +13,6 @@ const content = useContentStore()
       <div class="intro-text">
         <span class="sec-tag">{{ content.classInfo.school }}</span>
         <h1 class="class-name">{{ content.classInfo.fullName }}</h1>
-        <p class="motto grad-text">「{{ content.classInfo.motto }}」</p>
         <p class="desc">{{ content.classInfo.description }}</p>
         <ul class="stats">
           <li v-for="s in content.classInfo.stats" :key="s.label">
@@ -32,10 +31,6 @@ const content = useContentStore()
         <div>
           <dt>班主任</dt>
           <dd>{{ content.classInfo.teacher }}</dd>
-        </div>
-        <div>
-          <dt>班训</dt>
-          <dd>{{ content.classInfo.slogan }}</dd>
         </div>
       </dl>
     </section>
@@ -112,12 +107,6 @@ const content = useContentStore()
   letter-spacing: 1px;
   line-height: 1.25;
   margin: var(--space-3) 0 var(--space-2);
-}
-.motto {
-  width: fit-content;
-  font-size: clamp(1rem, 2vw, 1.15rem);
-  font-weight: 800;
-  letter-spacing: 1px;
 }
 .desc {
   margin-top: var(--space-3);

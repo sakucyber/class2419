@@ -74,7 +74,6 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
               <span class="cn-pre">我们是</span
               ><span class="grad-text">{{ content.classInfo.shortName }}</span>
             </h1>
-            <p class="motto">「{{ content.classInfo.motto }}」</p>
             <p class="slogan">{{ content.classInfo.slogan }}</p>
             <p class="intro">{{ content.classInfo.description }}</p>
             <ul class="stats" aria-label="班级数据">
@@ -297,17 +296,12 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   vertical-align: 0.14em;
   opacity: 0.85;
 }
-.motto {
-  font-size: clamp(0.92rem, 1.8vw, 1.05rem);
-  font-weight: 800;
-  letter-spacing: 1.5px;
-  color: #fff;
-}
+/* 班训已移除，这句标语成为标题下的唯一引导行，字重与透明度相应加强 */
 .slogan {
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 700;
   letter-spacing: 2px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.78);
 }
 .intro {
   margin-top: 6px;
@@ -395,8 +389,10 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   padding: var(--space-6);
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  justify-content: center;
+  gap: var(--space-4);
+  /* 卡片高度由 hero 撑开，用 space-between 让"标签—数字—备注"分布到上下，
+     否则内容居中会在亮色大卡片上留下两大块空白 */
+  justify-content: space-between;
   background: var(--card);
   position: relative;
   overflow: hidden;

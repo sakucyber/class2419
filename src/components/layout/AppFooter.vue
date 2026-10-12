@@ -10,7 +10,7 @@ const year = new Date().getFullYear()
     <div class="container footer-inner">
       <div class="footer-brand">
         <strong>{{ content.classInfo.fullName }}</strong>
-        <p>{{ content.classInfo.motto }} · {{ content.classInfo.slogan }}</p>
+        <p>{{ content.classInfo.slogan }}</p>
       </div>
       <nav class="footer-links" aria-label="页脚导航">
         <RouterLink to="/albums">相册</RouterLink>
