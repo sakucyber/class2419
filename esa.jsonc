@@ -1,13 +1,9 @@
 {
-  // 阿里云 ESA「函数和 Pages」构建配置
-  // 该文件优先于控制台里填的构建设置
   "name": "class2419",
   "installCommand": "npm install",
   "buildCommand": "npm run build",
   "assets": {
     "directory": "./dist",
-    // 关键：本项目是 Vue Router 的单页应用。
-    // 不设 singlePageApplication 的话，直接访问 /about、/albums 这类前端路由会 404
     "notFoundStrategy": "singlePageApplication"
   }
 }
