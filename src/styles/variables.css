@@ -110,6 +110,34 @@
   --info: #60a5fa;
 }
 
+/* ================= 关闭「液态玻璃」（低性能设备） =================
+   backdrop-filter 是持续性的合成开销：每帧都要把下层内容重新模糊一遍，
+   滚动时的代价尤其明显。关闭时做两件事：
+   1) 去掉所有毛玻璃滤镜
+   2) 把原本半透明的表面换成**不透明**底色 —— 只去滤镜不改底色的话，
+      背景会直接透上来，文字对比度反而变差
+   （类名沿用已有的 .no-animations 约定，由 settings store 挂在 <html> 上） */
+.no-glass[data-theme='light'] {
+  --glass-blur: none;
+  /* #f0ecfa 底 + 84% 白 ≈ #fdfcfe，取近似不透明值以保留 hover 的细微差别 */
+  --card: #fdfcfe;
+  --card-hover: #ffffff;
+  --bg-soft: #ebe5f6;
+}
+.no-glass[data-theme='dark'] {
+  --glass-blur: none;
+  /* #08080f 底 + 4.5% 白 ≈ #13131a */
+  --card: #13131a;
+  --card-hover: #1d1d26;
+  --bg-soft: #14141b;
+}
+.no-glass *,
+.no-glass *::before,
+.no-glass *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 /* ---- 强调色：蓝（默认） ---- */
 [data-accent='blue'] {
   --primary: #2563eb;

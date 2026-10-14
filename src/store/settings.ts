@@ -18,6 +18,7 @@ const DEFAULTS: SiteSettings = {
   accent: 'blue',
   fontSize: 'md',
   animations: true,
+  glass: true,
 }
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -47,6 +48,7 @@ export const useSettingsStore = defineStore('settings', () => {
     document.documentElement.dataset.accent = settings.value.accent
     document.documentElement.dataset.fontSize = settings.value.fontSize
     document.documentElement.classList.toggle('no-animations', !settings.value.animations)
+    document.documentElement.classList.toggle('no-glass', !settings.value.glass)
   }
 
   watch(

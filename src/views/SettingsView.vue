@@ -36,7 +36,7 @@ async function doReset() {
   try {
     await content.resetUserData()
     interaction.resetAll()
-    message.value = '已恢复为默认内容，个人投稿与互动数据已清空。'
+    message.value = '已恢复为默认内容，本地收藏与观看进度已清空。'
     confirmReset.value = false
   } catch (e) {
     message.value = e instanceof Error ? e.message : '重置失败'
@@ -110,6 +110,17 @@ async function doReset() {
           @change="settingsStore.settings.animations = ($event.target as HTMLInputElement).checked"
         />
       </label>
+
+      <h3 class="sub-title">视觉特效</h3>
+      <label class="switch-row">
+        <span>液态玻璃（界面上的毛玻璃模糊效果，低性能设备建议关闭）</span>
+        <input
+          type="checkbox"
+          class="switch"
+          :checked="settingsStore.settings.glass"
+          @change="settingsStore.settings.glass = ($event.target as HTMLInputElement).checked"
+        />
+      </label>
     </section>
 
     <!-- 数据 -->
@@ -137,7 +148,7 @@ async function doReset() {
       <ul class="about-list">
         <li><strong>项目：</strong>新屋岭中学2419班班级空间（纯前端静态站点）</li>
         <li><strong>技术栈：</strong>Vue 3 + Vite + TypeScript + Vue Router + Pinia</li>
-        <li><strong>部署：</strong>可直接发布到 GitHub Pages / Netlify / Vercel</li>
+        <li><strong>部署：</strong>纯静态产物，当前托管于 Cloudflare Pages 与阿里云 ESA</li>
         <li><strong>数据来源：</strong>内容以静态 JSON / Markdown 形式随仓库一起发布</li>
       </ul>
     </section>

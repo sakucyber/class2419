@@ -136,4 +136,6 @@ export interface SiteSettings {
   accent: AccentKey
   fontSize: FontSizeKey
   animations: boolean
+  /** 液态玻璃（毛玻璃背景模糊）。低性能设备可关闭以降低合成开销 */
+  glass: boolean
 }
