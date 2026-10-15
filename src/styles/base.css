@@ -470,10 +470,21 @@ button.chip:hover {
     opacity: 1;
     transform: none;
   }
+  /* 装饰性背景（极光光斑 + 上浮粒子）也一并静止：
+     它们默认无限循环，对「减少动态效果」的用户和低端设备都是持续负担。
+     只停动画不隐藏——静止的光斑仍是设计的一部分。 */
+  .ambient .aurora,
+  .ambient .particle {
+    animation: none !important;
+  }
 }
 html.no-animations [data-reveal] {
   opacity: 1;
   transform: none;
+}
+html.no-animations .ambient .aurora,
+html.no-animations .ambient .particle {
+  animation: none !important;
 }
 
 /* 页面渐入 */
