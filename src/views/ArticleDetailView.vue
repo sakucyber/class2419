@@ -96,24 +96,6 @@ const neighbors = computed(() => {
 
 <template>
   <div>
-    <!--
-      阅读进度条：Teleport 到 body。
-      页面切换动画会给视图根节点加 transform，会让 position:fixed 的子元素
-      以该节点为包含块，进度条会错位；放到 body 下才能始终吸附视口顶部。
-    -->
-    <Teleport to="body">
-      <div
-        class="read-progress"
-        role="progressbar"
-        aria-label="阅读进度"
-        :aria-valuenow="progress"
-        aria-valuemin="0"
-        aria-valuemax="100"
-      >
-        <div class="bar" :style="{ width: progress + '%' }"></div>
-      </div>
-    </Teleport>
-
     <div class="container page">
       <ErrorState v-if="content.error" :message="content.error" @retry="content.init()" />
 
@@ -218,22 +200,6 @@ const neighbors = computed(() => {
 </template>
 
 <style scoped>
-.read-progress {
-  position: fixed;
-  top: var(--header-h);
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: transparent;
-  z-index: calc(var(--z-header) + 1);
-}
-.bar {
-  height: 100%;
-  /* 纯色而非渐变 —— 渐变在细长条上会被读成"彩虹条" */
-  background: var(--primary);
-  transition: width 120ms linear;
-}
-
 .page {
   padding-top: var(--space-6);
   max-width: 1100px;
