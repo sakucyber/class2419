@@ -4,6 +4,8 @@ import { ref } from 'vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import type { IconName } from '@/components/common/icons'
 import { useContentStore } from '@/store/content'
+import type { TierPreference } from '@/store/effects'
+import { useEffectsStore } from '@/store/effects'
 import { useInteractionStore } from '@/store/interaction'
 import { useSettingsStore } from '@/store/settings'
 import type { AccentKey, FontSizeKey, ThemeMode } from '@/types'
@@ -11,9 +13,33 @@ import type { AccentKey, FontSizeKey, ThemeMode } from '@/types'
 const settingsStore = useSettingsStore()
 const content = useContentStore()
 const interaction = useInteractionStore()
+const effectsStore = useEffectsStore()
 
 const confirmReset = ref(false)
 const message = ref('')
+
+/** 特效等级选项。auto = 交给设备探测，其余为手动锁定 */
+const tiers: { key: TierPreference; label: string; desc: string }[] = [
+  { key: 'auto', label: '自动', desc: '按设备能力自动选择' },
+  { key: 'L2', label: '高', desc: '3D 徽章 + 全部特效' },
+  { key: 'L1', label: '中', desc: '轻量动效，不含 3D' },
+  { key: 'L0', label: '低', desc: '仅静态，最省电' },
+]
+
+/** aria-live 播报：切换后念一句当前状态，供读屏用户确认 */
+const effectsNotice = ref('')
+
+function chooseTier(key: TierPreference): void {
+  effectsStore.setTier(key)
+  const label = tiers.find((t) => t.key === key)?.label ?? key
+  effectsNotice.value = `特效等级已设为「${label}」`
+}
+
+function toggleThree(event: Event): void {
+  const on = (event.target as HTMLInputElement).checked
+  effectsStore.setThree(on)
+  effectsNotice.value = on ? '已开启 3D 场景' : '已关闭 3D 场景'
+}
 
 const themes: { key: ThemeMode; label: string; icon: IconName }[] = [
   { key: 'light', label: '亮色', icon: 'sun' },
@@ -123,6 +149,71 @@ async function doReset() {
       </label>
     </section>
 
+    <!-- 特效与性能 -->
+    <section class="card block" aria-labelledby="effects-title">
+      <h2 id="effects-title">特效与性能</h2>
+      <p class="block-desc">
+        等级越高画面越丰富，对设备要求也越高。选「自动」会按 CPU、内存、显卡能力自行判断；
+        手动选择后会被记住，优先于自动检测。
+      </p>
+
+      <h3 class="sub-title">特效等级</h3>
+      <div class="option-row" role="radiogroup" aria-label="特效等级">
+        <button
+          v-for="t in tiers"
+          :key="t.key"
+          class="option tier-option"
+          :class="{ active: effectsStore.tierPreference === t.key }"
+          role="radio"
+          :aria-checked="effectsStore.tierPreference === t.key"
+          :disabled="effectsStore.isLegacyBrowser"
+          :title="effectsStore.isLegacyBrowser ? '简化模式下等级被锁定为低' : t.desc"
+          @click="chooseTier(t.key)"
+        >
+          {{ t.label }}
+        </button>
+      </div>
+      <p class="tier-current">
+        当前生效：<strong>{{ effectsStore.effectiveTier }}</strong>
+        <span v-if="effectsStore.isLegacyBrowser">（简化模式强制）</span>
+        <span v-else-if="effectsStore.tierPreference === 'auto'">（自动检测）</span>
+        <span v-else>（手动指定）</span>
+      </p>
+
+      <h3 class="sub-title">3D 场景</h3>
+      <label class="switch-row">
+        <span>首页 3D 徽章（需要「高」等级且设备支持 WebGL）</span>
+        <input
+          type="checkbox"
+          class="switch"
+          :checked="effectsStore.threeEnabled"
+          :disabled="effectsStore.isLegacyBrowser"
+          @change="toggleThree"
+        />
+      </label>
+
+      <p v-if="effectsStore.effectsHint" class="effects-hint">
+        {{ effectsStore.effectsHint }}
+      </p>
+
+      <details class="device-details">
+        <summary>设备检测详情</summary>
+        <ul>
+          <li>综合评分：{{ effectsStore.deviceSummary.score }} / 100</li>
+          <li>建议等级：{{ effectsStore.deviceSummary.tier }}</li>
+          <li>CPU 核心：{{ effectsStore.deviceSummary.cores }}</li>
+          <li>内存：{{ effectsStore.deviceSummary.memory }}</li>
+          <li>WebGL2：{{ effectsStore.deviceSummary.webgl2 ? '支持' : '不支持' }}</li>
+          <li>显卡：{{ effectsStore.deviceSummary.gpu }}</li>
+        </ul>
+        <ul class="device-reasons">
+          <li v-for="(r, i) in effectsStore.deviceSummary.reasons" :key="i">{{ r }}</li>
+        </ul>
+      </details>
+
+      <p class="visually-hidden" aria-live="polite">{{ effectsNotice }}</p>
+    </section>
+
     <!-- 数据 -->
     <section class="card block" aria-labelledby="data-title">
       <h2 id="data-title">数据管理</h2>
@@ -222,8 +313,7 @@ h1 {
 .swatch {
   width: 16px;
   height: 16px;
-  border-radius: var(--radius-full);
-}
+  border-radius: var(--radius-full);}
 
 .switch-row {
   display: flex;
@@ -288,5 +378,63 @@ h1 {
   border-radius: var(--radius-xs);
   padding: 1px 8px;
   font-family: var(--font-mono);
+}
+
+/* ── 特效与性能 ── */
+.tier-option {
+  min-width: 4.2em;
+  justify-content: center;
+}
+.tier-option:disabled,
+.switch:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.tier-option:disabled {
+  pointer-events: none;
+}
+.tier-current {
+  margin: var(--space-3) 0 0;
+  font-size: 0.86rem;
+  color: var(--text-3);
+}
+.tier-current strong {
+  color: var(--primary);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.effects-hint {
+  margin: var(--space-3) 0 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--primary-soft-2);
+  background: var(--primary-soft);
+  color: var(--text-2);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+.device-details {
+  margin-top: var(--space-4);
+  font-size: 0.86rem;
+  color: var(--text-2);
+}
+.device-details summary {
+  cursor: pointer;
+  color: var(--text-3);
+  user-select: none;
+}
+.device-details summary:hover {
+  color: var(--primary);
+}
+.device-details ul {
+  margin: var(--space-3) 0 0;
+  padding-left: 1.1em;
+  display: grid;
+  gap: 4px;
+}
+.device-reasons {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
 }
 </style>

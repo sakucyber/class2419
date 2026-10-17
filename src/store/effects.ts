@@ -15,6 +15,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
 import { useSettingsStore } from '@/store/settings'
+import { detectBrowser } from '@/utils/browser'
 import type { DeviceProfile, EffectTier } from '@/utils/perf'
 import { detectDevice, FpsMonitor, refineWithBattery } from '@/utils/perf'
 import { getJSON, setJSON } from '@/utils/storage'
@@ -71,6 +72,14 @@ export const useEffectsStore = defineStore('effects', () => {
   const device = ref<DeviceProfile>(DEFAULT_PROFILE)
   const probed = ref(false)
 
+  /**
+   * 是否处于「简化模式」（旧内核浏览器）。
+   * 判定来源是 compat.js（已在主包之前跑完），这里只读取结论。
+   * 它的作用是**把等级强制压到 L0** —— compat.js 那边只负责挂 CSS class，
+   * 特效等级这一侧必须在这里同步压制，否则旧浏览器仍会按 L2 加载 3D。
+   */
+  const isLegacyBrowser = ref(detectBrowser().isLegacy)
+
   const tierPreference = ref<TierPreference>(stored.tierPreference ?? 'auto')
   const threeEnabled = ref<boolean>(stored.threeEnabled ?? true)
 
@@ -83,11 +92,13 @@ export const useEffectsStore = defineStore('effects', () => {
   const canUseWebgl = computed(() => canRun3D(device.value.webgl))
 
   /**
-   * 最终生效等级：用户手动选择 > 设备建议，再叠加两条运行时约束：
+   * 最终生效等级：用户手动选择 > 设备建议，再叠加三条运行时约束：
+   * - 简化模式（旧内核浏览器）→ 强制 L0，优先级最高
    * - settings.animations 关闭（用户要求减少动效）→ 强制 L0
    * - 自动降级达到第 4 / 5 步 → 强制 L1 / L0
    */
   const effectiveTier = computed<EffectTier>(() => {
+    if (isLegacyBrowser.value) return 'L0'
     if (!settings.settings.animations) return 'L0'
     if (degradeSteps.value >= 5) return 'L0'
     if (degradeSteps.value >= 4) return 'L1'
@@ -140,6 +151,21 @@ export const useEffectsStore = defineStore('effects', () => {
       webgl2: d.webgl.webgl2,
       reasons: d.reasons,
     }
+  })
+
+  /**
+   * 设置页的一句话状态说明。按"最需要用户知道的原因"取一条：
+   * 简化模式 → 无 WebGL → 关了动效 → 手动开 3D 但设备偏弱 → 正在自动降级。
+   */
+  const effectsHint = computed<string>(() => {
+    if (isLegacyBrowser.value) return '当前浏览器版本较旧，已自动进入简化模式（强制低等级）'
+    if (!canUseWebgl.value) return '当前设备不支持 WebGL，无法启用 3D 场景'
+    if (!settings.settings.animations) return '已关闭「页面动效」，3D 场景与高级特效同步停用'
+    if (threeEnabled.value && device.value.tier !== 'L2') {
+      return '当前设备评分偏低，手动开启 3D 可能影响流畅度'
+    }
+    if (degradeSteps.value > 0) return DEGRADE_LABELS[degradeSteps.value] ?? ''
+    return ''
   })
 
   /** 探测设备（幂等）。首屏同步可得结果，电池信息随后异步补齐 */
@@ -229,6 +255,8 @@ export const useEffectsStore = defineStore('effects', () => {
   return {
     device,
     deviceSummary,
+    effectsHint,
+    isLegacyBrowser,
     tierPreference,
     threeEnabled,
     degradeSteps,
