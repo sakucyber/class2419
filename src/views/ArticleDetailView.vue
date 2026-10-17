@@ -229,7 +229,8 @@ const neighbors = computed(() => {
 }
 .bar {
   height: 100%;
-  background: var(--primary-gradient);
+  /* 纯色而非渐变 —— 渐变在细长条上会被读成"彩虹条" */
+  background: var(--primary);
   transition: width 120ms linear;
 }
 
