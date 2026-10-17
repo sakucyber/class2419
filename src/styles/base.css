@@ -95,20 +95,30 @@ hr {
   color: var(--text);
 }
 
-/* 滚动条（WebKit）：细条 + 渐变滑块 */
+/* 滚动条（WebKit / Firefox）：细条 + 中性色滑块
+   注意：不要用 --primary-gradient —— 渐变滑块在窄条上会被读成「彩色进度条」，
+   抢视觉。这里用低透明度的中性色，hover 时略加深。 */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--primary-gradient);
+  background: var(--border-strong);
   border-radius: var(--radius-full);
   border: 2px solid transparent;
   background-clip: padding-box;
-  opacity: 0.8;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-3);
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+/* Firefox（Chrome 121+ 也认 scrollbar-width） */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
 /* ===== 通用工具类 ===== */
