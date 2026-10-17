@@ -12,64 +12,9 @@
     <meta name="format-detection" content="telephone=no" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>新屋岭中学2419班 · 班级空间</title>
-    <style>
-      /* 旧内核降级页。刻意只用最基础的 CSS：不含 CSS 变量、不含媒体查询 ——
-         触发它的前提就是浏览器不支持这些现代特性。
-         本站基于 Vue 3，而 Vue 3 依赖 Proxy（ES2015）。Proxy 是语言级特性、
-         无法 polyfill，因此 Chrome 49 以下的浏览器（如安卓 5.x 的系统 WebView 39）
-         无论怎么降级构建目标都跑不起来，只能给出可读的提示而不是白屏。 */
-      #legacy-fallback {
-        display: none;
-      }
-      html.legacy-browser #app {
-        display: none;
-      }
-      html.legacy-browser #legacy-fallback {
-        display: block;
-        max-width: 560px;
-        margin: 0 auto;
-        padding: 40px 20px;
-        font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-        font-size: 15px;
-        line-height: 1.8;
-        color: #241f33;
-      }
-      #legacy-fallback h1 {
-        margin: 0 0 18px;
-        font-size: 20px;
-      }
-      #legacy-fallback .lf-warn {
-        margin: 0 0 14px;
-        color: #b45309;
-        font-weight: 700;
-      }
-      #legacy-fallback p {
-        margin: 0 0 10px;
-      }
-      #legacy-fallback .lf-tip {
-        margin-top: 18px;
-        padding-top: 14px;
-        border-top: 1px solid #e5e0ee;
-        color: #5b5470;
-        font-size: 13px;
-      }
-    </style>
   </head>
   <body>
     <div id="app"></div>
-
-    <div id="legacy-fallback">
-      <h1>新屋岭中学2419班 · 班级空间</h1>
-      <p class="lf-warn">当前浏览器版本过旧，无法显示本站内容。</p>
-      <p>
-        本班级空间使用了现代网页技术，需要 <b>Chrome 80+</b>、<b>Edge 80+</b> 或
-        <b>Firefox 78+</b> 等较新的浏览器。
-      </p>
-      <p>建议改用手机自带的浏览器，或在电脑上用新版 Chrome / Edge 打开。</p>
-      <p class="lf-tip">
-        新屋岭初级中学2419班班级空间 —— 记录我们的相册、视频与成长故事。
-      </p>
-    </div>
 
     <noscript>
       <div style="padding: 24px; font-family: system-ui, sans-serif">
@@ -78,17 +23,25 @@
     </noscript>
 
     <!--
-      旧内核兼容性探测。两个独立文件，都放在 public/ 下（构建时原样复制、不降级转译）：
-      1) probe-es2020.js —— 刻意用 ES2020 语法；能解析才会把 window.__modernSyntax 置为 true
-      2) compat.js       —— ES5；综合判定后给 <html> 加 .legacy-browser，由 CSS 切换显示
+      脚本顺序有讲究，别调：
 
-      顺序不能调：兼容脚本要读探针写的标志位。
-      也不要改回内联 <script> 或用 new Function —— 生产构建注入了 CSP `script-src 'self'`，
-      两者都会被拦截（内联脚本被拦、eval 被拦），降级页就再也出不来。
+      1) type="module" 放在最前 —— 这样 public/compat.js 执行时它已经存在于 DOM，
+         判定为「不支持」的浏览器可以直接摘掉标签（module 是 deferred 的，此刻尚未执行，
+         摘掉即阻止执行），并撤掉 modulepreload 避免白下载。
+         顺序反过来的话，compat.js 运行时标签还没被解析出来，就摘不掉了。
+
+      2) probe-es2020.js 必须在 compat.js 之前 —— compat.js 要读它写的
+         window.__modernSyntax 判断语法能力（用「标志位在不在」代替 eval，
+         因为 CSP `script-src 'self'` 会拦截 new Function）。
+
+      3) 两个脚本都放 public/ 下，构建时原样复制、不做降级转译：
+         它们必须保持 ES5，否则老浏览器连升级提示页都跑不出来。
+
+      4) 页面里不再内置降级页 DOM —— 判定为 unsupported 时由 compat.js
+         用 document.body.innerHTML 整体替换，走「不加载主包」的路径。
     -->
+    <script type="module" src="/src/main.ts"></script>
     <script src="/probe-es2020.js"></script>
     <script src="/compat.js"></script>
-
-    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
