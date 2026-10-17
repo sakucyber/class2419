@@ -18,6 +18,13 @@ const props = withDefaults(
 )
 
 const el = ref<HTMLImageElement | null>(null)
+/**
+ * 容器引用。IntersectionObserver 必须观察**容器**而不是 <img>：
+ * <img> 在加载完成前是 v-show="loaded" → display:none，而 display:none 的元素没有盒子，
+ * 观察器永远不会判定它进入视口 → load() 不执行 → loaded 永为 false —— 死锁。
+ * 容器带 aspect-ratio，任何状态下都有盒子，观察它才可靠。
+ */
+const root = ref<HTMLDivElement | null>(null)
 const loaded = ref(false)
 const failed = ref(false)
 let observer: IntersectionObserver | null = null
@@ -59,7 +66,7 @@ onMounted(() => {
     },
     { rootMargin: '200px' },
   )
-  if (el.value) observer.observe(el.value)
+  if (root.value) observer.observe(root.value)
 })
 
 watch(
@@ -75,7 +82,7 @@ onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <template>
-  <div class="lazy-image" :style="{ aspectRatio: aspect, borderRadius: radius }">
+  <div ref="root" class="lazy-image" :style="{ aspectRatio: aspect, borderRadius: radius }">
     <img
       v-show="loaded && !failed"
       ref="el"
