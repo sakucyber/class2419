@@ -9,6 +9,7 @@ import ErrorState from '@/components/common/ErrorState.vue'
 import LazyImage from '@/components/common/LazyImage.vue'
 import SectionHeader from '@/components/common/SectionHeader.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
+import HeroBadge from '@/components/effects/HeroBadge.vue'
 import AlbumCard from '@/components/media/AlbumCard.vue'
 import ArticleCard from '@/components/media/ArticleCard.vue'
 import VideoCard from '@/components/media/VideoCard.vue'
@@ -65,6 +66,8 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
               eager
             />
           </div>
+          <!-- 装饰性 3D/2.5D 徽章：aria-hidden + pointer-events:none，不遮挡右侧文案 -->
+          <HeroBadge />
           <div class="card-content">
             <p class="eyebrow">
               <span class="eyebrow-dot" aria-hidden="true"></span>

@@ -15,8 +15,8 @@ export const SCENE_LOAD_TIMEOUT_MS = 8000
 export interface SceneHandle {
   /** 每帧渲染；由外部 rAF 驱动 */
   render(timeMs: number): void
-  /** 视口尺寸变化 */
-  resize(width: number, height: number): void
+  /** 视口尺寸变化；具体尺寸由场景自行从父容器读取 */
+  resize(): void
   /** 指针位置（-1 ~ 1），用于相机视差 */
   setPointer(x: number, y: number): void
   /** 运行时画质调整：降级状态机通过它降 DPR / 关后处理 */

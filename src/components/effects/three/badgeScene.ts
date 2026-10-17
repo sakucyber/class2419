@@ -2,16 +2,26 @@
  * 3D 班级徽章场景（Three.js）。
  *
  * ⚠️ 只有本目录下的文件允许静态 import three。
- * 它只能经 `utils/webgl.ts` 的动态 import 进入，从而保证 three / GLTFLoader / 后处理
+ * 它只能经 `utils/webgl.ts` 的动态 import 进入，从而保证 three / GLTFLoader
  * 落在**独立的异步 chunk** 里，不阻塞首屏 LCP。
  * 如果哪天在普通组件里直接 `import ... from 'three'`，这条隔离就破了。
+ *
+ * 两个刻意的取舍（都是实测后改的，别轻易改回去）：
+ *
+ * 1) **不用 EffectComposer / UnrealBloomPass。**
+ *    徽章叠在毛玻璃卡片上，画布必须是透明的；而 EffectComposer 的最终输出会丢掉 alpha，
+ *    实测表现为画布变成一块不透明的黑方块 —— 比没有辉光难看得多。
+ *    改用 emissive 材质自发光，配合 IBL 反射做出金属质感，代价低得多
+ *    （Bloom 本来就是这条链路上最贵的一遍）。
+ *    注意：不要给 canvas 加 CSS filter 做辉光 —— 画布每帧都在重绘，CSS 滤镜会跟着逐帧重算。
+ *
+ * 2) **自转改为小幅摆动**，不是连续旋转。
+ *    连续转必然经过"侧对镜头"的角度，那时徽章只剩一条细椭圆，观感很差。
+ *    改成 sin 摆动（约 ±32°）并叠加固定俯仰角，任何时刻都能看清正面的星形。
  */
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 
 import type { CreateSceneOptions, SceneHandle, SceneQuality } from '@/utils/webgl'
 
@@ -20,7 +30,7 @@ interface BadgeParts {
   disposables: Array<THREE.BufferGeometry | THREE.Material | THREE.Texture>
 }
 
-/** 生成徽章几何体：外环 + 主体圆盘 + 中心星形（占位实现，后续可换成 GLB 模型） */
+/** 生成徽章几何体：主体圆盘 + 外环 + 内环 + 挤出星形 + 一圈铆钉 */
 function buildBadge(quality: SceneQuality): BadgeParts {
   const root = new THREE.Group()
   const disposables: BadgeParts['disposables'] = []
@@ -28,18 +38,19 @@ function buildBadge(quality: SceneQuality): BadgeParts {
   const gold = new THREE.MeshStandardMaterial({
     color: 0xe8b84b,
     metalness: 1,
-    roughness: 0.28,
+    roughness: 0.26,
+    emissive: new THREE.Color(0xe8b84b).multiplyScalar(0.16),
   })
   const deep = new THREE.MeshStandardMaterial({
-    color: 0x2a2440,
-    metalness: 0.6,
-    roughness: 0.45,
+    color: 0x241f38,
+    metalness: 0.55,
+    roughness: 0.42,
   })
   const accent = new THREE.MeshStandardMaterial({
     color: 0xe879b0,
-    metalness: 0.85,
+    metalness: 0.7,
     roughness: 0.3,
-    emissive: new THREE.Color(0xe879b0).multiplyScalar(0.18),
+    emissive: new THREE.Color(0xe879b0).multiplyScalar(0.42),
   })
   disposables.push(gold, deep, accent)
 
@@ -51,19 +62,19 @@ function buildBadge(quality: SceneQuality): BadgeParts {
   disposables.push(discGeo)
 
   // 外圈
-  const ringGeo = new THREE.TorusGeometry(1.06, 0.05, 16, Math.round(120 * quality.detail))
+  const ringGeo = new THREE.TorusGeometry(1.06, 0.05, 16, Math.round(128 * quality.detail))
   const ring = new THREE.Mesh(ringGeo, gold)
   root.add(ring)
   disposables.push(ringGeo)
 
-  // 内圈细边
+  // 内圈细边（发光）
   const innerGeo = new THREE.TorusGeometry(0.78, 0.02, 12, Math.round(96 * quality.detail))
   const inner = new THREE.Mesh(innerGeo, accent)
   inner.position.z = 0.09
   root.add(inner)
   disposables.push(innerGeo)
 
-  // 中心星形（用 Shape 挤出，避免依赖字体文件）
+  // 中心星形：用 Shape 挤出，避免依赖字体文件
   const star = new THREE.Shape()
   const outer = 0.42
   const innerR = 0.18
@@ -106,8 +117,7 @@ function buildBadge(quality: SceneQuality): BadgeParts {
 /**
  * 创建场景。
  *
- * 说明：本函数当前只搭骨架（几何体徽章 + 环境光 + 可选 Bloom）。
- * GLTFLoader 已就位但仅在传入 modelUrl 时启用；真实模型放入 public/models/ 即可切换。
+ * GLTFLoader 已就位但仅在传入 modelUrl 时启用；真实模型放进 public/models/ 即可切换。
  */
 export async function createBadgeScene(options: CreateSceneOptions): Promise<SceneHandle> {
   const { canvas, quality, onContextLost } = options
@@ -119,11 +129,13 @@ export async function createBadgeScene(options: CreateSceneOptions): Promise<Sce
     alpha: true,
     powerPreference: 'high-performance',
   })
+  // 透明画布的关键：清屏色 alpha 必须为 0，否则叠在毛玻璃卡片上就是一块黑方块
+  renderer.setClearColor(0x000000, 0)
   // 硬约束：像素比上限 1.5（由调用方按降级状态给出）
   renderer.setPixelRatio(quality.dpr)
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.05
+  renderer.toneMappingExposure = 1.1
 
   const scene = new THREE.Scene()
 
@@ -133,18 +145,20 @@ export async function createBadgeScene(options: CreateSceneOptions): Promise<Sce
   scene.environment = envRT.texture
   pmrem.dispose()
 
-  const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100)
-  camera.position.set(0, 0, 4.2)
+  const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100)
+  camera.position.set(0, 0, 4.3)
 
-  const key = new THREE.DirectionalLight(0xffffff, 2.1)
+  const key = new THREE.DirectionalLight(0xffffff, 2.2)
   key.position.set(2.5, 3, 4)
   scene.add(key)
-  const rim = new THREE.DirectionalLight(0x8ab4ff, 1.4)
+  const rim = new THREE.DirectionalLight(0x8ab4ff, 1.5)
   rim.position.set(-3, -1.5, 2)
   scene.add(rim)
-  scene.add(new THREE.AmbientLight(0xffffff, 0.35))
+  scene.add(new THREE.AmbientLight(0xffffff, 0.32))
 
   const badge = buildBadge(quality)
+  // 固定俯仰角，让徽章始终有立体感，而不是正对镜头的一块圆饼
+  badge.root.rotation.x = -0.16
   scene.add(badge.root)
 
   // 可选 GLB 模型：存在则替换内置几何体
@@ -161,16 +175,9 @@ export async function createBadgeScene(options: CreateSceneOptions): Promise<Sce
     }
   }
 
-  let composer: EffectComposer | null = null
-  let bloom: UnrealBloomPass | null = null
-  if (quality.postprocessing) {
-    composer = new EffectComposer(renderer)
-    composer.addPass(new RenderPass(scene, camera))
-    bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.55, 0.7, 0.85)
-    composer.addPass(bloom)
-  }
+  const target = loadedModel ?? badge.root
 
-  // 指针视差
+  // 指针视差（记录目标值，渲染时阻尼跟随）
   const pointer = { x: 0, y: 0 }
   const smooth = { x: 0, y: 0 }
 
@@ -184,35 +191,36 @@ export async function createBadgeScene(options: CreateSceneOptions): Promise<Sce
     const w = Math.max(1, parent.clientWidth)
     const h = Math.max(1, parent.clientHeight)
     renderer.setSize(w, h, false)
-    composer?.setSize(w, h)
-    bloom?.setSize(w, h)
     camera.aspect = w / h
     camera.updateProjectionMatrix()
   }
   applySize()
 
-  let elapsed = 0
+  let startAt = 0
 
   return {
+    /** 透明画布与后处理不可兼得，这里恒为 false（理由见文件头） */
     get hasPostprocessing(): boolean {
-      return composer !== null
+      return false
     },
 
     render(timeMs: number): void {
-      const dt = elapsed === 0 ? 0.016 : Math.min((timeMs - elapsed) / 1000, 0.05)
-      elapsed = timeMs
+      if (startAt === 0) startAt = timeMs
+      const t = (timeMs - startAt) / 1000
 
-      // 待机自转 + 指针视差（阻尼跟随）
-      const target = loadedModel ?? badge.root
-      target.rotation.y += dt * 0.35
+      // 小幅摆动（约 ±32°），永不侧对镜头
+      target.rotation.y = Math.sin(t * 0.45) * 0.56
+      // 轻微上下浮动，减弱"贴纸感"
+      target.position.y = Math.sin(t * 0.8) * 0.035
+
+      // 相机视差：阻尼跟随指针
       smooth.x += (pointer.x - smooth.x) * 0.06
       smooth.y += (pointer.y - smooth.y) * 0.06
-      camera.position.x = smooth.x * 0.55
-      camera.position.y = smooth.y * 0.35
+      camera.position.x = smooth.x * 0.5
+      camera.position.y = smooth.y * 0.32
       camera.lookAt(0, 0, 0)
 
-      if (composer) composer.render()
-      else renderer.render(scene, camera)
+      renderer.render(scene, camera)
     },
 
     resize(): void {
@@ -243,7 +251,6 @@ export async function createBadgeScene(options: CreateSceneOptions): Promise<Sce
         })
       }
       envRT.dispose()
-      composer?.dispose()
       renderer.dispose()
     },
   }
