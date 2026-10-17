@@ -1,0 +1,200 @@
+/* ==========================================================================
+ * 简化模式（旧内核浏览器）
+ *
+ * 触发方式：public/compat.js 判定 isLegacy 时给 <html> 挂 .is-legacy-browser。
+ * 设计原则：**只降「渲染开销」，不降「信息与可读性」**。
+ *   · 去掉的：backdrop-filter、filter 模糊、animation/keyframes、大半径阴影
+ *   · 保留的：渐变、排版、留白、圆角、卡片层次、彩色强调
+ * 不写第二套 UI —— 全部靠在同一份 HTML 上覆盖样式。
+ *
+ * 覆盖范围与已知局限见文件末尾。
+ * ========================================================================== */
+
+/* ───────────────────── 1. 关掉毛玻璃：改用不透明表面 ─────────────────────
+ * 与「设置 → 液态玻璃」关闭时的取值一致（按「底色 + 原透明度」反算的等价值），
+ * 因此关掉模糊后观感几乎不变，只是不再有每帧的合成开销。 */
+.is-legacy-browser[data-theme='light'] {
+  --glass-blur: none;
+  --card: #fdfcfe;
+  --card-hover: #ffffff;
+  --bg-soft: #ebe5f6;
+  /* 阴影简化为近距离小阴影：大半径模糊阴影在旧设备上也是可观的绘制成本 */
+  --shadow-1: 0 1px 2px rgba(74, 50, 112, 0.06);
+  --shadow-2: 0 2px 8px rgba(74, 50, 112, 0.08);
+  --shadow-3: 0 4px 14px rgba(74, 50, 112, 0.1);
+}
+.is-legacy-browser[data-theme='dark'] {
+  --glass-blur: none;
+  --card: #13131a;
+  --card-hover: #1d1d26;
+  --bg-soft: #14141b;
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 3px 10px rgba(0, 0, 0, 0.4);
+  --shadow-3: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+/* ───────────────────── 2. 全局禁用高开销属性 ───────────────────── */
+.is-legacy-browser,
+.is-legacy-browser *,
+.is-legacy-browser *::before,
+.is-legacy-browser *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  /* 全站 filter 只有极光的 blur(70px)——这里一并去掉。
+     极光光斑本身已改成 radial-gradient，去掉 filter 后依然有柔边。 */
+  filter: none !important;
+  animation: none !important;
+  /* 用 0.01ms 而不是 none：保留 transitionend 事件，避免依赖它的逻辑失效 */
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* 滚动入场动画依赖 IntersectionObserver（Chrome 51+），而简化模式区间包含更老的版本。
+   虽然 v-reveal 指令有 2.5s 兜底，但这里直接置为可见——
+   [data-reveal] 的初始态是 opacity: 0，一旦观察器没跑起来会导致内容不可见。 */
+.is-legacy-browser [data-reveal] {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* ───────────────────── 3. Flex gap 兜底 ─────────────────────
+ * 背景：flex 的 gap 需 Chrome 84 / Safari 14.1，而本项目的简化模式区间正好覆盖
+ * Chrome 49~83。这些设备上 gap 会被**完全忽略**，元素直接贴在一起。
+ *
+ * **关键：这里按 .no-flex-gap 而不是 .is-legacy-browser 作用域。**
+ * 因为"是否支持 flex gap"必须实测（见 compat.js 的 supportsFlexGap）——
+ * 按 UA 版本推断会误伤：Firefox 63~77 支持 flex gap，却因版本低于 78 被判 legacy，
+ * 若给它补 margin 就会变成双倍间距。compat.js 实测后挂 .no-flex-gap，这里才对症下药。
+ *
+ * 做法：对热点容器给「相邻兄弟」补 margin。
+ * 选择器写成 html.no-flex-gap ... 是为了**提权**：组件 scoped 样式带 [data-v-x] 属性，
+ * 权重 (0,2,0)，与 .no-flex-gap .x 打平后按源码顺序取胜 —— 而组件 CSS 在路由 chunk 里
+ * 后加载，会把覆盖压掉（实测 .card-content 的纵向间距就因此只补到 4px 而非 10px）。
+ * 加一个 html 元素选择器把权重抬到 (0,2,1) 即可稳定胜出，无需 !important。
+ *
+ * 覆盖策略：首屏 + 列表页工具栏 + 设置页这几个「一眼能看见」的地方，
+ * 其余容器接受贴合。全部 93 个 flex 容器都补会接近布局重写，收益不抵风险。 */
+
+/* 顶栏：横向 */
+html.no-flex-gap .header-inner > * + * {
+  margin-left: 12px; /* gap: var(--space-3) */
+}
+html.no-flex-gap .header-actions > * + * {
+  margin-left: 6px;
+}
+html.no-flex-gap .brand > * + * {
+  margin-left: 10px;
+}
+
+/* 首页 hero：纵向文本栈（最关键的一处） */
+html.no-flex-gap .card-content > * + * {
+  margin-top: 10px;
+}
+/* 首页 hero 底部按钮、数据条：横向 */
+html.no-flex-gap .hero-actions > * + * {
+  margin-left: 10px;
+}
+html.no-flex-gap .stats > * + * {
+  margin-left: 10px;
+}
+/* 数据芯片内部（值 + 标签，inline-flex 行）。虽然属于"卡片内部"，
+   但它就在首屏 hero 里，缺了间距会读成「51人班级人数」，必须补。 */
+html.no-flex-gap .stat-chip > * + * {
+  margin-left: 8px; /* gap: 8px */
+}
+/* 倒计时四组（行 + flex-wrap）。组本身有 padding，所以贴在一起也不难看，
+   但数值块之间的呼吸感没了，一并补上。 */
+html.no-flex-gap .countdown > * {
+  margin-bottom: 8px; /* 换行后的行间距 */
+}
+html.no-flex-gap .countdown > * + * {
+  margin-left: 8px; /* gap: var(--space-2) */
+}
+
+/* 倒计时卡片：纵向 + 内部横向 */
+html.no-flex-gap .countdown-card > * + * {
+  margin-top: 16px; /* gap: var(--space-4) */
+}
+html.no-flex-gap .count-head > * + *,
+html.no-flex-gap .notice-head > * + * {
+  margin-left: 8px; /* gap: var(--space-2) */
+}
+
+/* 列表页工具栏 / 搜索框 / 筛选标签 */
+html.no-flex-gap .toolbar > * + * {
+  margin-left: 12px; /* gap: var(--space-3) */
+}
+html.no-flex-gap .search-box > * + * {
+  margin-left: 8px;
+}
+html.no-flex-gap .chips > * {
+  margin-bottom: 8px; /* 换行后行间距（gap 同时承担行列间距） */
+}
+html.no-flex-gap .chips > * + * {
+  margin-left: 8px;
+}
+
+/* 页头 */
+html.no-flex-gap .page-head > * + * {
+  margin-left: 16px; /* gap: var(--space-4) */
+}
+
+/* 设置页 */
+html.no-flex-gap .switch-row > * + * {
+  margin-left: 16px;
+}
+html.no-flex-gap .option-row > * + * {
+  margin-left: 8px;
+}
+
+/* 页脚 */
+html.no-flex-gap .footer-inner > * + * {
+  margin-top: 16px; /* 纵向 */
+}
+html.no-flex-gap .footer-links > * + * {
+  margin-left: 8px;
+}
+
+/* 移动端底部导航：纵向（图标在上、文字在下） */
+html.no-flex-gap .bottom-link > * + * {
+  margin-top: 3px;
+}
+
+/* ───────────────────── 4. clamp() 回退 ─────────────────────
+ * clamp() 需 Chrome 79；不支持时整条声明被丢弃，字号会退化成继承值（明显变小）。
+ * 只处理两处最扎眼的，其余（padding、次要标题）退化后仍在可接受范围。 */
+.is-legacy-browser .class-name {
+  font-size: 2.1rem; /* 原 clamp(1.75rem, 4.6vw, 2.6rem) */
+}
+.is-legacy-browser .code {
+  font-size: 5rem; /* 原 clamp(4rem, 15vw, 7rem)，404 页大数字 */
+}
+
+/* ───────────────────── 5. aspect-ratio 回退 ─────────────────────
+ * aspect-ratio 需 Chrome 88。视频外链容器靠它撑高，内部 iframe 是 absolute 定位，
+ * 一旦比例失效高度会塌成 0。给一个保守的下限高度兜底。 */
+.is-legacy-browser .embed-wrap {
+  min-height: 220px;
+}
+
+/* ==========================================================================
+ * 覆盖范围与已知局限（诚实记录，避免以后误以为"简化模式已经完美"）
+ *
+ * 已覆盖：
+ *   · backdrop-filter（21 处）、filter 模糊（16 处）、全部 keyframes 与过渡
+ *   · 毛玻璃表面 → 不透明；三档阴影降级
+ *   · flex gap 热点 20 组（**按 .no-flex-gap 作用域，实测驱动**）：
+ *     顶栏 / hero 文本栈 / hero 按钮 / 数据条 / 倒计时卡片 / 公告标题 / 工具栏 /
+ *     搜索框 / 筛选标签 / 页头 / 设置页开关与选项 / 页脚 / 底部导航
+ *   · clamp 关键字号 2 处、aspect-ratio 视频容器 1 处
+ *
+ * **未覆盖（按"其余贴合"策略接受）**：
+ *   · 其余约 60 个 flex + gap 容器（卡片内部的 .body / .meta-row / .tags 等）
+ *     —— 它们多为通用类名，全局覆盖有误伤风险，且视觉影响小于首屏
+ *   · color-mix()（Chrome 111+）：8 处，不支持时该条声明被丢弃、回退到上一个有效色，
+ *     多数位置有兜底色，暂无失效报告
+ *   · grid 的 gap 不受影响（Chrome 57+ 即支持），无需处理
+ *
+ * 若后续发现某处排版仍显拥挤，优先在「3. Flex gap 兜底」里按同样写法补一行，
+ * 而不是去改组件样式。
+ * ========================================================================== */

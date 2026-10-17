@@ -9,6 +9,8 @@ import { useSettingsStore } from './store/settings'
 import { applyBrowserClasses, detectBrowser } from './utils/browser'
 import './styles/base.css'
 import './styles/variables.css'
+// 放在 variables.css 之后：简化模式要覆盖设计令牌（毛玻璃 / 表面色 / 阴影）
+import './styles/legacy.css'
 
 /*
  * ─────────────────────── 兼容性闸门（必须在挂载前）───────────────────────

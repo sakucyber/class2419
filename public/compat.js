@@ -60,6 +60,38 @@
     }
   }
 
+  /**
+   * 实测 flex 的 gap 是否生效（Chrome 84 / Safari 14.1 / Firefox 63 起才支持）。
+   *
+   * 为什么必须实测而不是按 UA 版本推断：
+   * `CSS.supports('gap', '1px')` 对 grid 的 gap 也返回 true，无法区分 flex；
+   * 而按 UA 推会出错 —— 例如 Firefox 63~77 支持 flex gap，却因版本低于 78 被判为 legacy。
+   * 这类浏览器的 gap 本来正常，若再补 margin 就会变成双倍间距。
+   *
+   * 结论只用于 CSS：不生效时给 <html> 挂 .no-flex-gap，由 legacy.css 补 margin。
+   */
+  function supportsFlexGap() {
+    try {
+      var box = document.createElement('div')
+      box.style.cssText =
+        'display:flex;gap:2px;position:absolute;top:-9999px;left:-9999px;visibility:hidden'
+      var a = document.createElement('div')
+      var b = document.createElement('div')
+      a.style.cssText = 'width:1px;height:1px;flex:0 0 auto'
+      b.style.cssText = 'width:1px;height:1px;flex:0 0 auto'
+      box.appendChild(a)
+      box.appendChild(b)
+      document.body.appendChild(box)
+      var ra = a.getBoundingClientRect()
+      var rb = b.getBoundingClientRect()
+      var ok = rb.left - ra.right >= 1
+      document.body.removeChild(box)
+      return ok
+    } catch (e) {
+      return false
+    }
+  }
+
   /* ─────────────────────────── UA 解析 ─────────────────────────── */
 
   function parseUA() {
@@ -234,5 +266,12 @@
 
   if (isLegacy) {
     html.className = html.className ? html.className + ' is-legacy-browser' : 'is-legacy-browser'
+  }
+
+  // flex gap 与 legacy 是**两件独立的事**：前者要实测，不能从等级推断。
+  // 独立于 isLegacy 单独判定，避免给「有 gap 却被判 legacy」的浏览器（如 Firefox 63~77）
+  // 补出双倍间距。
+  if (!supportsFlexGap()) {
+    html.className = html.className ? html.className + ' no-flex-gap' : 'no-flex-gap'
   }
 })()
