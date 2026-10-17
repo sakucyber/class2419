@@ -139,3 +139,18 @@ export interface SiteSettings {
   /** 液态玻璃（毛玻璃背景模糊）。低性能设备可关闭以降低合成开销 */
   glass: boolean
 }
+
+/**
+ * 「随机回忆」拍立得用的照片视图模型。
+ *
+ * 注意：照片数据本身只有 `{ id, src, caption }`，**没有拍摄日期**；
+ * `date` 取的是所属相册的 `createdAt`，所以界面上写「收录于」而不是「拍摄于」。
+ */
+export interface PolaroidPhoto {
+  id: string
+  src: string
+  caption: string
+  albumTitle: string
+  /** 所属相册的 createdAt（ISO 字符串） */
+  date: string
+}

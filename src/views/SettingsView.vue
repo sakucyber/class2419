@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 
 import AppIcon from '@/components/common/AppIcon.vue'
+import InstallGuide from '@/components/common/InstallGuide.vue'
 import type { IconName } from '@/components/common/icons'
 import { useContentStore } from '@/store/content'
 import type { TierPreference } from '@/store/effects'
@@ -9,6 +10,7 @@ import { useEffectsStore } from '@/store/effects'
 import { useInteractionStore } from '@/store/interaction'
 import { useSettingsStore } from '@/store/settings'
 import type { AccentKey, FontSizeKey, ThemeMode } from '@/types'
+import { canInstall, promptInstall, pwaState } from '@/utils/pwa'
 
 const settingsStore = useSettingsStore()
 const content = useContentStore()
@@ -39,6 +41,30 @@ function toggleThree(event: Event): void {
   const on = (event.target as HTMLInputElement).checked
   effectsStore.setThree(on)
   effectsNotice.value = on ? '已开启 3D 场景' : '已关闭 3D 场景'
+}
+
+/* ── 安装到桌面 ──
+ * 支持才显示（不支持的环境整块隐藏）；已安装则显示状态而不是按钮。
+ * iOS 没有 beforeinstallprompt，会返回 manual-ios → 弹图文指引。 */
+const guideOpen = ref(false)
+const guideVariant = ref<'ios' | 'other'>('ios')
+const installNotice = ref('')
+
+async function onInstall(): Promise<void> {
+  const result = await promptInstall()
+  if (result === 'manual-ios') {
+    guideVariant.value = 'ios'
+    guideOpen.value = true
+    return
+  }
+  if (result === 'manual-other') {
+    guideVariant.value = 'other'
+    guideOpen.value = true
+    return
+  }
+  if (result === 'accepted') installNotice.value = '已提交安装，请按提示确认'
+  else if (result === 'dismissed') installNotice.value = '已取消安装'
+  else if (result === 'installed') installNotice.value = '当前已是安装状态'
 }
 
 const themes: { key: ThemeMode; label: string; icon: IconName }[] = [
@@ -212,6 +238,31 @@ async function doReset() {
       </details>
 
       <p class="visually-hidden" aria-live="polite">{{ effectsNotice }}</p>
+    </section>
+
+    <!-- 安装到桌面（不支持 PWA 的环境整块隐藏） -->
+    <section
+      v-if="pwaState.installed || canInstall()"
+      class="card block"
+      aria-labelledby="install-title"
+    >
+      <h2 id="install-title">安装到桌面</h2>
+      <p class="block-desc">装到桌面后可以全屏打开，离线也能翻相册，像 App 一样顺手。</p>
+
+      <div class="install-row">
+        <span v-if="pwaState.installed" class="install-state">
+          <AppIcon name="check" :size="15" :stroke-width="2.8" />
+          已安装
+        </span>
+        <button v-else class="install-btn" type="button" @click="onInstall">
+          <AppIcon name="plus" :size="15" :stroke-width="2.4" />
+          添加到主屏幕
+        </button>
+      </div>
+
+      <p class="visually-hidden" aria-live="polite">{{ installNotice }}</p>
+
+      <InstallGuide :open="guideOpen" :variant="guideVariant" @close="guideOpen = false" />
     </section>
 
     <!-- 数据 -->
@@ -436,5 +487,43 @@ h1 {
   color: var(--text-3);
   font-family: var(--font-mono);
   font-size: 0.8rem;
+}
+
+/* ── 安装到桌面 ── */
+.install-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.install-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  color: var(--primary-contrast);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--duration) var(--ease);
+}
+.install-btn:hover {
+  background: var(--primary-hover);
+}
+.install-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+.install-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 0.88rem;
 }
 </style>

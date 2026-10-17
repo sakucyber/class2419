@@ -1,3 +1,7 @@
+// ⚠️ 必须是第一行：beforeinstallprompt 整个会话只派发一次且可能早于 load，
+// 晚注册就永久丢失（这个模块靠 import 副作用注册监听）。
+import './utils/pwa'
+
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 

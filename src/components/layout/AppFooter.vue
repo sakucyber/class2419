@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CheckInButton from '@/components/common/CheckInButton.vue'
 import { useContentStore } from '@/store/content'
 
 const content = useContentStore()
@@ -22,6 +23,7 @@ const year = new Date().getFullYear()
       <p class="footer-note">
         © {{ year }} {{ content.classInfo.shortName }} · 纯前端静态站点 · 数据仅保存在本地浏览器
       </p>
+      <CheckInButton />
     </div>
   </footer>
 </template>

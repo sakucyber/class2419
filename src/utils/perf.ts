@@ -118,6 +118,15 @@ function isMobileDevice(pointerFine: boolean): boolean {
   return /Android|iPhone|iPad|iPod|Mobile|HarmonyOS|Windows Phone/i.test(ua)
 }
 
+/**
+ * 无参版本：内部自行判断指针类型。
+ * 供 PWA 等模块复用，避免多处各写一份 UA 正则导致判断不一致。
+ */
+export function isMobile(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
+  return isMobileDevice(window.matchMedia('(pointer: fine)').matches)
+}
+
 /* ------------------------------------------------------------------ */
 /* 评分与分级                                                          */
 /* ------------------------------------------------------------------ */

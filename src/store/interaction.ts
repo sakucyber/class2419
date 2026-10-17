@@ -1,6 +1,6 @@
-/** 互动数据：收藏 / 视频进度 / 阅读位置（localStorage 持久化） */
+/** 互动数据：收藏 / 视频进度 / 阅读位置 / 今日打卡（localStorage 持久化） */
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { getJSON, setJSON } from '@/utils/storage'
 
@@ -8,6 +8,13 @@ export interface VideoProgress {
   time: number
   duration: number
   updatedAt: string
+}
+
+/** 今日打卡：只存最后一次打卡日期与累计天数 */
+export interface CheckinState {
+  /** 本地时区的 YYYY-MM-DD；空字符串表示从未打卡 */
+  lastDate: string
+  total: number
 }
 
 export type Kind = 'album' | 'video' | 'article'
@@ -53,19 +60,50 @@ export const useInteractionStore = defineStore('interaction', () => {
     return articleScroll.value[id] || 0
   }
 
+  /* ─────────────── 今日打卡 ───────────────
+   * 纯本地、无后端：只记最后一次打卡日期与累计天数。
+   * 换设备或清缓存会丢，因此文案上不承诺"永久记录"。 */
+  const checkin = ref<CheckinState>(getJSON('checkin', { lastDate: '', total: 0 }))
+
+  /**
+   * 本地时区的 YYYY-MM-DD。
+   * ⚠️ 不能用 `toISOString().slice(0,10)` —— 那是 UTC，UTC+8 的凌晨会被算成前一天。
+   */
+  function todayKey(): string {
+    const d = new Date()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${d.getFullYear()}-${m}-${day}`
+  }
+
+  const checkedInToday = computed(() => checkin.value.lastDate === todayKey())
+
+  /** 打卡。返回是否真的记录了（已打过则返回 false，天然防重复） */
+  function checkIn(): boolean {
+    if (checkedInToday.value) return false
+    checkin.value = { lastDate: todayKey(), total: checkin.value.total + 1 }
+    setJSON('checkin', checkin.value)
+    return true
+  }
+
   function resetAll() {
     favorites.value = {}
     videoProgress.value = {}
     articleScroll.value = {}
+    checkin.value = { lastDate: '', total: 0 }
     setJSON('favorites', {})
     setJSON('videoProgress', {})
     setJSON('articleScroll', {})
+    setJSON('checkin', { lastDate: '', total: 0 })
   }
 
   return {
     favorites,
     videoProgress,
     articleScroll,
+    checkin,
+    checkedInToday,
+    checkIn,
     isFavorite,
     toggleFavorite,
     setVideoProgress,

@@ -7,6 +7,7 @@ import CountdownTimer from '@/components/common/CountdownTimer.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
 import LazyImage from '@/components/common/LazyImage.vue'
+import PolaroidModal from '@/components/common/PolaroidModal.vue'
 import SectionHeader from '@/components/common/SectionHeader.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import HeroBadge from '@/components/effects/HeroBadge.vue'
@@ -14,6 +15,7 @@ import AlbumCard from '@/components/media/AlbumCard.vue'
 import ArticleCard from '@/components/media/ArticleCard.vue'
 import VideoCard from '@/components/media/VideoCard.vue'
 import { useContentStore } from '@/store/content'
+import type { PolaroidPhoto } from '@/types'
 import { formatDate, formatRelative } from '@/utils/format'
 
 const content = useContentStore()
@@ -22,6 +24,35 @@ const latestAlbums = computed(() => content.publicAlbums.slice(0, 3))
 const latestVideos = computed(() => content.publicVideos.slice(0, 3))
 const latestArticles = computed(() => content.publicArticles.slice(0, 4))
 const notices = computed(() => content.publicAnnouncements.slice(0, 4))
+
+/* ─────────────── 随机回忆（拍立得） ───────────────
+ * 数据源是**已发布相册**的全部照片（当前 37 张），不新增任何数据结构：
+ * 照片本身没有日期，`date` 取所属相册的 createdAt，界面写「收录于」。
+ */
+const allPhotos = computed<PolaroidPhoto[]>(() =>
+  content.publicAlbums.flatMap((album) =>
+    (album.photos ?? []).map((photo) => ({
+      id: photo.id,
+      src: photo.src,
+      caption: photo.caption ?? '',
+      albumTitle: album.title,
+      date: album.createdAt,
+    })),
+  ),
+)
+
+const polaroid = ref<PolaroidPhoto | null>(null)
+let lastPhotoId = ''
+
+function openRandomMemory(): void {
+  const pool = allPhotos.value
+  if (pool.length === 0) return
+  // 只有一张时不做排除，否则会抽不出东西
+  const candidates = pool.length > 1 ? pool.filter((p) => p.id !== lastPhotoId) : pool
+  const picked = candidates[Math.floor(Math.random() * candidates.length)]
+  lastPhotoId = picked.id
+  polaroid.value = picked
+}
 
 /* hero 背景视差：轻微下移 + 渐隐，跟随首屏滚动 */
 const parallax = ref(0)
@@ -90,6 +121,10 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
                 >了解我们 →</RouterLink
               >
               <RouterLink to="/albums" class="btn hero-btn-ghost">逛逛相册</RouterLink>
+              <button type="button" class="btn hero-btn-ghost" @click="openRandomMemory">
+                <AppIcon name="camera" :size="15" :stroke-width="1.9" />
+                随机回忆
+              </button>
             </div>
           </div>
         </article>
@@ -182,6 +217,9 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
         />
       </section>
     </template>
+
+    <!-- 随机回忆拍立得（内部 Teleport 到 body） -->
+    <PolaroidModal :photo="polaroid" @close="polaroid = null" />
   </div>
 </template>
 
