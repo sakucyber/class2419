@@ -93,9 +93,8 @@ onBeforeUnmount(() => {
   stopTimer()
 })
 
-const related = computed(() =>
-  content.publicVideos.filter((v) => v.id !== video.value?.id).slice(0, 3),
-)
+/** 更多视频：列出**全部**其他视频（不再只取 3 个） */
+const related = computed(() => content.publicVideos.filter((v) => v.id !== video.value?.id))
 </script>
 
 <template>
@@ -195,8 +194,13 @@ const related = computed(() =>
           </article>
         </div>
 
-        <aside class="side" aria-label="相关视频">
-          <h2 class="side-title">更多视频</h2>
+        <aside v-if="related.length" class="side" aria-label="更多视频">
+          <div class="side-head">
+            <h2 class="side-title">更多视频</h2>
+            <RouterLink to="/videos" class="side-more">
+              全部 {{ content.publicVideos.length }} 个 →
+            </RouterLink>
+          </div>
           <div class="side-list">
             <VideoCard v-for="v in related" :key="v.id" :video="v" />
           </div>
@@ -240,6 +244,11 @@ const related = computed(() =>
   .side {
     position: sticky;
     top: calc(var(--header-h) + 16px);
+    /* 列出全部视频后会很长，给个上限并内部滚动，避免把整页拉长 */
+    max-height: calc(100vh - var(--header-h) - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 4px;
   }
 }
 
@@ -310,10 +319,27 @@ const related = computed(() =>
   color: var(--text-2);
 }
 
+.side-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
 .side-title {
   font-size: 1rem;
-  margin-bottom: var(--space-3);
+  margin: 0;
   color: var(--text-2);
+}
+.side-more {
+  flex: none;
+  font-size: 0.78rem;
+  color: var(--text-3);
+  text-decoration: none;
+  transition: color var(--duration) var(--ease);
+}
+.side-more:hover {
+  color: var(--primary);
 }
 .side-list {
   display: grid;
