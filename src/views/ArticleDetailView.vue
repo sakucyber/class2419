@@ -20,6 +20,9 @@ const html = ref('')
 const toc = ref<TocItem[]>([])
 const renderError = ref('')
 const progress = ref(0)
+/** 封面加载失败时退回"无封面"的排版，避免顶部出现破损图标 */
+const coverFailed = ref(false)
+const showCover = computed(() => !!article.value?.cover && !coverFailed.value)
 const activeHeading = ref('')
 const tocOpen = ref(false)
 
@@ -113,18 +116,25 @@ const neighbors = computed(() => {
           <!-- 标题与目录浮标放进同一个网格，让它们和正文卡片共用第一列：
                否则标题在 .page 里居中、卡片在带目录的两列网格里左对齐，左边缘会差 80+ px -->
           <div class="article-layout">
-            <header class="article-head">
-              <div class="chips">
-                <span class="chip chip--primary">{{ article.category }}</span>
-                <span v-for="t in article.tags" :key="t" class="chip">#{{ t }}</span>
+            <header class="article-head" :class="{ 'has-cover': showCover }">
+              <div v-if="showCover" class="head-cover" aria-hidden="true">
+                <img :src="article.cover" alt="" decoding="async" @error="coverFailed = true" />
               </div>
-              <h1>{{ article.title }}</h1>
-              <p class="meta">
-                <span class="meta-item"><AppIcon name="pencil" :size="15" /> {{ article.author }}</span>
-                <time :datetime="article.createdAt">{{ formatDate(article.createdAt) }}</time>
-                <span>约 {{ article.readingMinutes }} 分钟阅读</span>
-                <span>已读 {{ progress }}%</span>
-              </p>
+              <div class="head-body">
+                <div class="chips">
+                  <span class="chip chip--primary">{{ article.category }}</span>
+                  <span v-for="t in article.tags" :key="t" class="chip">#{{ t }}</span>
+                </div>
+                <h1>{{ article.title }}</h1>
+                <p class="meta">
+                  <span class="meta-item"
+                    ><AppIcon name="pencil" :size="15" /> {{ article.author }}</span
+                  >
+                  <time :datetime="article.createdAt">{{ formatDate(article.createdAt) }}</time>
+                  <span>约 {{ article.readingMinutes }} 分钟阅读</span>
+                  <span>已读 {{ progress }}%</span>
+                </p>
+              </div>
             </header>
 
             <div v-if="toc.length" class="toc-toggle-wrap">
@@ -214,6 +224,73 @@ const neighbors = computed(() => {
   max-width: 760px;
   margin: 0 auto;
   padding-inline: clamp(20px, 4vw, 40px);
+}
+
+/* ── 沉浸式开头（有封面时）──
+   整块变成满幅视觉带，标题压在底部；无封面时保持上面的纯文字排版。 */
+.head-body {
+  position: relative;
+  z-index: 1;
+}
+.article-head.has-cover {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  padding-inline: 0;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  box-shadow: var(--shadow-2);
+}
+.head-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.head-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* 底部压暗：白色标题压在任意封面上都能读 */
+.article-head.has-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(6, 8, 18, 0.1) 0%,
+    rgba(6, 8, 18, 0.52) 52%,
+    rgba(6, 8, 18, 0.9) 100%
+  );
+}
+.article-head.has-cover .head-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: clamp(230px, 26vw, 320px);
+  /* 横向内边距必须与 .prose-wrap 同值，否则封面带里的标题会比正文多缩进几像素 */
+  padding: clamp(24px, 4vw, 40px) clamp(20px, 4vw, 40px);
+}
+.article-head.has-cover h1 {
+  color: #fff;
+  text-shadow: 0 2px 22px rgba(0, 0, 0, 0.42);
+}
+.article-head.has-cover .meta {
+  color: rgba(255, 255, 255, 0.8);
+}
+.article-head.has-cover .chip {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+.article-head.has-cover .chip--primary {
+  background: #fff;
+  border-color: transparent;
+  color: #23203a;
 }
 .chips {
   display: flex;
