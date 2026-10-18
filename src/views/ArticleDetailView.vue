@@ -110,31 +110,33 @@ const neighbors = computed(() => {
 
       <template v-else-if="article">
         <article class="article">
-          <header class="article-head">
-            <div class="chips">
-              <span class="chip chip--primary">{{ article.category }}</span>
-              <span v-for="t in article.tags" :key="t" class="chip">#{{ t }}</span>
-            </div>
-            <h1>{{ article.title }}</h1>
-            <p class="meta">
-              <span class="meta-item"><AppIcon name="pencil" :size="15" /> {{ article.author }}</span>
-              <time :datetime="article.createdAt">{{ formatDate(article.createdAt) }}</time>
-              <span>约 {{ article.readingMinutes }} 分钟阅读</span>
-              <span>已读 {{ progress }}%</span>
-            </p>
-          </header>
-
-          <div v-if="toc.length" class="toc-toggle-wrap">
-            <button
-              class="btn btn--ghost btn--sm"
-              :aria-expanded="tocOpen"
-              @click="tocOpen = !tocOpen"
-            >
-              <AppIcon name="menu" :size="15" /> 目录（{{ toc.length }}）
-            </button>
-          </div>
-
+          <!-- 标题与目录浮标放进同一个网格，让它们和正文卡片共用第一列：
+               否则标题在 .page 里居中、卡片在带目录的两列网格里左对齐，左边缘会差 80+ px -->
           <div class="article-layout">
+            <header class="article-head">
+              <div class="chips">
+                <span class="chip chip--primary">{{ article.category }}</span>
+                <span v-for="t in article.tags" :key="t" class="chip">#{{ t }}</span>
+              </div>
+              <h1>{{ article.title }}</h1>
+              <p class="meta">
+                <span class="meta-item"><AppIcon name="pencil" :size="15" /> {{ article.author }}</span>
+                <time :datetime="article.createdAt">{{ formatDate(article.createdAt) }}</time>
+                <span>约 {{ article.readingMinutes }} 分钟阅读</span>
+                <span>已读 {{ progress }}%</span>
+              </p>
+            </header>
+
+            <div v-if="toc.length" class="toc-toggle-wrap">
+              <button
+                class="btn btn--ghost btn--sm"
+                :aria-expanded="tocOpen"
+                @click="tocOpen = !tocOpen"
+              >
+                <AppIcon name="menu" :size="15" /> 目录（{{ toc.length }}）
+              </button>
+            </div>
+
             <div class="prose-wrap card">
               <div v-if="renderError" class="state-block">
                 <AppIcon class="state-icon" name="warning" :size="42" :stroke-width="1.4" />
@@ -205,8 +207,13 @@ const neighbors = computed(() => {
   max-width: 1100px;
 }
 .article-head {
-  max-width: 720px;
-  margin: 0 auto var(--space-5);
+  /* width:100% 必须有：网格项一旦有 margin:auto 就会取消 stretch，
+     元素会缩成内容宽度再居中（实测在 900 宽下只剩 396px）。
+     加上它之后头部与 .prose-wrap 完全同一套「760 居中」规则，左边缘必然一致。 */
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding-inline: clamp(20px, 4vw, 40px);
 }
 .chips {
   display: flex;
@@ -233,13 +240,21 @@ const neighbors = computed(() => {
 }
 
 .toc-toggle-wrap {
-  max-width: 720px;
-  margin: 0 auto var(--space-4);
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding-inline: clamp(20px, 4vw, 40px);
 }
 
 .article-layout {
   display: grid;
   gap: var(--space-5);
+}
+/* 标题 / 目录浮标 / 正文卡片都固定在第一列 —— 三者的左边缘由同一个列决定 */
+.article-head,
+.toc-toggle-wrap,
+.prose-wrap {
+  grid-column: 1;
 }
 @media (min-width: 1024px) {
   .article-layout {
@@ -247,9 +262,15 @@ const neighbors = computed(() => {
     align-items: start;
   }
   .toc {
+    grid-column: 2;
+    grid-row: 1 / -1;
     position: sticky;
     top: calc(var(--header-h) + 24px);
     display: block !important;
+  }
+  /* 桌面端右侧已有常驻目录，这个浮标是重复的 */
+  .toc-toggle-wrap {
+    display: none;
   }
 }
 
@@ -258,6 +279,7 @@ const neighbors = computed(() => {
   max-width: 760px;
   margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
 }
 .article-foot {
   margin-top: var(--space-8);
