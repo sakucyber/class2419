@@ -20,10 +20,11 @@ const year = new Date().getFullYear()
         <RouterLink to="/about">关于班级</RouterLink>
         <RouterLink to="/settings">设置</RouterLink>
       </nav>
+      <!-- 打卡是"动作"，放在版权行之前：读者视线按 链接 → 互动 → 法务 的顺序走 -->
+      <CheckInButton />
       <p class="footer-note">
         © {{ year }} {{ content.classInfo.shortName }} · 纯前端静态站点 · 数据仅保存在本地浏览器
       </p>
-      <CheckInButton />
     </div>
   </footer>
 </template>

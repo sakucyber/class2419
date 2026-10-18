@@ -576,13 +576,42 @@ html.no-animations .ambient .particle {
 .prose li + li {
   margin-top: 0.35em;
 }
+/* 引用块：从"左粗边+浅底"的老式写法换成圆角卡片 + 一个大引号。
+   细边配大引号比 4px 实心边更轻盈，也不会和正文的 h2 下划线抢结构感。 */
 .prose blockquote {
-  margin-left: 0;
-  padding: var(--space-3) var(--space-4);
-  border-left: 4px solid var(--primary);
+  position: relative;
+  margin: 1.7em 0;
+  padding: var(--space-4) var(--space-4) var(--space-3) var(--space-4);
+  border: 1px solid var(--primary-soft-2);
+  border-radius: var(--radius-md);
   background: var(--primary-soft);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   color: var(--text-2);
+}
+/* 用 float 而不是绝对定位：引号占位后正文自动绕开，
+   不会压住第一行；比给整块加 padding-left 省横向空间。 */
+.prose blockquote::before {
+  content: '\201C';
+  float: left;
+  margin: 0.1em 0.14em 0 0;
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-size: 2.4rem;
+  line-height: 0.9;
+  color: var(--primary);
+  opacity: 0.32;
+}
+.prose blockquote > *:first-child {
+  margin-top: 0;
+}
+.prose blockquote > *:last-child {
+  margin-bottom: 0;
+}
+
+/* 分隔线：渐变淡出，比一条实线更像编辑物 */
+.prose hr {
+  height: 1px;
+  margin: 2.2em 0;
+  border: 0;
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
 }
 .prose code {
   font-family: var(--font-mono);

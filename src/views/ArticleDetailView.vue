@@ -335,6 +335,23 @@ const neighbors = computed(() => {
 .pager-link.next {
   text-align: right;
 }
+/* 只有上一篇或只有下一篇时占满整行，并改成「标签左 / 标题右」的一行式 ——
+   单纯铺满会让另一侧空出一大块（实测首篇文章就是这种情形） */
+@media (min-width: 640px) {
+  .pager-link:only-of-type {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+}
+.pager-link:hover strong {
+  color: var(--primary);
+}
+.pager-link strong {
+  transition: color var(--duration) var(--ease);
+}
 .pager-label {
   font-size: 0.8rem;
   color: var(--text-3);
