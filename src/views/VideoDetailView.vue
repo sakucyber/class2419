@@ -23,18 +23,145 @@ const mediaError = ref(false)
 const videoEl = ref<HTMLVideoElement | null>(null)
 let saveTimer: ReturnType<typeof setInterval> | null = null
 
-// 解析 idb: 引用
+/* ── 分段请求（Range）兜底 ──
+   这套部署**不支持 HTTP Range**：`Range: bytes=…` 被忽略，返回 200 + 整个文件，
+   也没有 `Accept-Ranges`。后果是浏览器只能线性播放，进度条拖到未缓冲处会被弹回。
+   绕法：把整段下载成 Blob 再交给 <video> —— Blob URL 是内存数据，
+   定位不依赖服务器，可以随便拖。
+   为了不让人干等：先用直连地址立刻能播，后台下完再静默换源（保留位置与播放状态）。 */
+const loading = ref(false)
+const loadPct = ref(0)
+const loadedBytes = ref(0)
+const totalBytes = ref(0)
+let rangeSupport: boolean | null = null
+let abortCtrl: AbortController | null = null
+let blobUrl = ''
+let pendingSeek = 0
+let pendingPlay = false
+/** 正在把源换成 Blob：此时元素被重置会触发 pause，不能把它当成"用户暂停"去存进度 */
+let swapping = false
+
+function fmtMB(n: number): string {
+  return n > 0 ? (n / 1048576).toFixed(1) : '0'
+}
+
+const loadLabel = computed(() =>
+  totalBytes.value > 0
+    ? `${loadPct.value}% · ${fmtMB(loadedBytes.value)}/${fmtMB(totalBytes.value)} MB`
+    : `${loadPct.value}%`,
+)
+
+/** 服务器是否支持分段请求。同一站点结论一致，只探一次。 */
+async function supportsRange(url: string): Promise<boolean> {
+  if (rangeSupport !== null) return rangeSupport
+  const ctrl = new AbortController()
+  try {
+    const res = await fetch(url, { headers: { Range: 'bytes=0-0' }, signal: ctrl.signal })
+    rangeSupport = res.status === 206
+  } catch {
+    // 探测失败保守当作不支持：多花点流量，但保证能拖
+    rangeSupport = false
+  } finally {
+    ctrl.abort() // 不支持 Range 时服务器会回整个文件，拿到响应头立刻掐断
+  }
+  return rangeSupport
+}
+
+function isSameOrigin(url: string): boolean {
+  try {
+    return new URL(url, location.href).origin === location.origin
+  } catch {
+    return false
+  }
+}
+
+function cancelLoad() {
+  abortCtrl?.abort()
+  abortCtrl = null
+  loading.value = false
+}
+
+function releaseBlob() {
+  if (blobUrl) {
+    URL.revokeObjectURL(blobUrl)
+    blobUrl = ''
+  }
+}
+
+/** 换源到 Blob，并把播放位置与播放状态接过去 */
+function swapToBlob(url: string) {
+  const el = videoEl.value
+  pendingSeek = el && Number.isFinite(el.duration) ? el.currentTime : 0
+  pendingPlay = el ? !el.paused && !el.ended : false
+  swapping = true
+  resolvedSrc.value = url
+}
+
+/** 后台把整段下载进内存；成功后换源，换来可拖动的进度条 */
+async function fetchToBlob(url: string) {
+  const ctrl = new AbortController()
+  abortCtrl = ctrl
+  loading.value = true
+  loadPct.value = 0
+  loadedBytes.value = 0
+  totalBytes.value = 0
+  try {
+    const res = await fetch(url, { signal: ctrl.signal })
+    if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
+    const total = Number(res.headers.get('Content-Length') || 0)
+    totalBytes.value = total
+    const reader = res.body.getReader()
+    // 用 ArrayBuffer 而不是 Uint8Array 拼装：TS 里 read() 给的是
+    // Uint8Array<ArrayBufferLike>，赋给 Uint8Array 会因 SharedArrayBuffer 报错。
+    // slice 顺带切成独立的 buffer，不会带着底层多余字节。
+    const chunks: ArrayBuffer[] = []
+    let received = 0
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (value) {
+        chunks.push(
+          value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength) as ArrayBuffer,
+        )
+        received += value.byteLength
+        loadedBytes.value = received
+        if (total > 0) loadPct.value = Math.min(99, Math.round((received / total) * 100))
+      }
+    }
+    const objUrl = URL.createObjectURL(new Blob(chunks, { type: 'video/mp4' }))
+    releaseBlob()
+    blobUrl = objUrl
+    loadPct.value = 100
+    swapToBlob(objUrl)
+  } catch {
+    // 取消或网络失败：保持直连，功能不回退
+    loadPct.value = 0
+  } finally {
+    if (abortCtrl === ctrl) abortCtrl = null
+    loading.value = false
+  }
+}
+
+// 解析 idb: 引用；同源且不支持 Range 时再准备可拖动的 Blob 源
 async function resolve() {
   mediaError.value = false
   resolvedSrc.value = ''
-  if (!video.value?.src) return
+  releaseBlob()
+  cancelLoad()
+  const current = video.value
+  if (!current?.src) return
   try {
-    const url = await resolveMediaUrl(video.value.src)
+    const url = await resolveMediaUrl(current.src)
     if (!url) {
       mediaError.value = true
       return
     }
-    resolvedSrc.value = url
+    resolvedSrc.value = url // 先用直连，立刻能播
+    if (url.startsWith('blob:') || url.startsWith('data:')) return
+    if (!isSameOrigin(url)) return // 跨域外链拿不到 body，不折腾
+    if (await supportsRange(url)) return // 原生支持拖动，不需要这套
+    if (route.params.id !== current.id) return // 探测期间已经切走
+    void fetchToBlob(url)
   } catch {
     mediaError.value = true
   }
@@ -45,9 +172,16 @@ function onLoadedMetadata() {
   const el = videoEl.value
   if (!el || !video.value) return
   const saved = interaction.getVideoProgress(video.value.id)
-  if (saved && saved.time > 1 && saved.time < (el.duration || Infinity) - 2) {
-    el.currentTime = saved.time
-  }
+  const savedTime =
+    saved && saved.time > 1 && saved.time < (el.duration || Infinity) - 2 ? saved.time : 0
+  // 换源到 Blob 时优先回到换源那一刻的位置，其次才是上次记录的进度
+  const target = pendingSeek > 0 ? pendingSeek : savedTime
+  const resumePlaying = pendingPlay
+  pendingSeek = 0
+  pendingPlay = false
+  if (target > 0 && (!el.duration || target < el.duration - 0.3)) el.currentTime = target
+  if (resumePlaying) void el.play().catch(() => {})
+  swapping = false
   // 先清再设：切换视频时 loadedmetadata 会再次触发，不清会攒出一堆计时器
   stopTimer()
   saveTimer = setInterval(saveProgress, 4000)
@@ -74,13 +208,16 @@ watch(
     stopTimer()
     mediaError.value = false
     resolvedSrc.value = ''
+    pendingSeek = 0
+    pendingPlay = false
     void resolve()
   },
 )
 
 function saveProgress() {
   const el = videoEl.value
-  if (!el || !video.value || !el.duration) return
+  // 换源那一瞬元素会被重置、currentTime 归零；此时存盘会把进度抹掉
+  if (swapping || !el || !video.value || !el.duration) return
   interaction.setVideoProgress(video.value.id, el.currentTime, el.duration)
 }
 
@@ -91,6 +228,8 @@ function onPause() {
 onBeforeUnmount(() => {
   saveProgress()
   stopTimer()
+  cancelLoad()
+  releaseBlob()
 })
 
 /** 更多视频：列出**全部**其他视频（不再只取 3 个） */
@@ -176,6 +315,12 @@ const related = computed(() => content.publicVideos.filter((v) => v.id !== video
             </div>
 
             <EmptyState v-else icon="video" title="暂无可播放的视频源" />
+
+            <!-- 服务器不支持 Range：后台整段下载成 Blob，完成后换源让进度条可拖 -->
+            <div v-if="loading" class="drag-hint" role="status">
+              <span>准备可拖动进度条 {{ loadLabel }}</span>
+              <button class="drag-hint-skip" type="button" @click="cancelLoad">取消</button>
+            </div>
           </div>
 
           <article class="info card">
@@ -253,6 +398,7 @@ const related = computed(() => content.publicVideos.filter((v) => v.id !== video
 }
 
 .player {
+  position: relative;
   overflow: hidden;
   padding: 0;
   background: #0b1220;
@@ -262,6 +408,39 @@ const related = computed(() => content.publicVideos.filter((v) => v.id !== video
   aspect-ratio: 16 / 9;
   background: #000;
   display: block;
+}
+/* 后台准备 Blob 源时的角标：压在右上角，不挡底部播放控件 */
+.drag-hint {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 20px);
+  padding: 5px 6px 5px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(8, 12, 24, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+.drag-hint-skip {
+  flex: none;
+  padding: 2px 9px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease);
+}
+.drag-hint-skip:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 .embed-wrap {
   position: relative;
