@@ -375,34 +375,46 @@ h1 {
   color: var(--text-2);
   cursor: pointer;
 }
+/* 开关：40×22 + 16px 旋钮。原来的 46×26 在这页偏大偏重，
+   关态用带描边的浅底 + 灰色旋钮，开态才上主色，视觉重量更轻。 */
 .switch {
   appearance: none;
-  width: 46px;
-  height: 26px;
+  width: 40px;
+  height: 22px;
   border-radius: var(--radius-full);
-  background: var(--border-strong);
+  background: var(--bg-soft);
+  border: 1px solid var(--border-strong);
   position: relative;
   cursor: pointer;
-  transition: background var(--duration-fast) var(--ease);
   flex: none;
+  transition:
+    background var(--duration-fast) var(--ease),
+    border-color var(--duration-fast) var(--ease);
 }
 .switch::after {
   content: '';
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 20px;
-  height: 20px;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
   border-radius: var(--radius-full);
-  background: #fff;
-  transition: transform var(--duration-fast) var(--ease);
-  box-shadow: var(--shadow-1);
+  background: var(--text-3);
+  transition:
+    transform var(--duration-fast) var(--ease-spring),
+    background var(--duration-fast) var(--ease);
 }
 .switch:checked {
   background: var(--primary);
+  border-color: var(--primary);
 }
 .switch:checked::after {
-  transform: translateX(20px);
+  transform: translateX(18px);
+  background: #fff;
+}
+.switch:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
 }
 
 .btn-row {

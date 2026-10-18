@@ -4,12 +4,16 @@
       <stop offset="0" stop-color="#06b6d4"/>
       <stop offset="1" stop-color="#2563eb"/>
     </linearGradient>
+    <linearGradient id="g3026s" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0.45" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.4"/>
+    </linearGradient>
   </defs>
   <rect width="1280" height="720" fill="url(#g3026)"/>
-  <circle cx="77%" cy="39%" r="32" fill="#ffffff" opacity="0.17"/>
-  <circle cx="44%" cy="65%" r="14" fill="#ffffff" opacity="0.19"/>
-  <circle cx="25%" cy="10%" r="16" fill="#ffffff" opacity="0.17"/>
-  <circle cx="76%" cy="51%" r="16" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="4"/>
-  <rect x="67%" y="15%" width="36" height="13" rx="6.5" fill="#ffffff" opacity="0.1" transform="rotate(-30 90% 82%)"/>
-  <circle cx="998.4" cy="93.6" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="1044.1" cy="93.6" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="1089.8" cy="93.6" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="1135.5" cy="93.6" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="1181.3" cy="93.6" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="998.4" cy="139.3" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="1044.1" cy="139.3" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="1089.8" cy="139.3" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="1135.5" cy="139.3" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="1181.3" cy="139.3" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="998.4" cy="185.0" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="1044.1" cy="185.0" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="1089.8" cy="185.0" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="1135.5" cy="185.0" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="1181.3" cy="185.0" r="2.56" fill="#ffffff" opacity="0.25"/>
+  <circle cx="527" cy="315" r="245" fill="none" stroke="#ffffff" stroke-opacity="0.150" stroke-width="3.0"/>
+  <circle cx="527" cy="315" r="418" fill="none" stroke="#ffffff" stroke-opacity="0.115" stroke-width="3.0"/>
+  <circle cx="527" cy="315" r="590" fill="none" stroke="#ffffff" stroke-opacity="0.080" stroke-width="3.0"/>
+  <circle cx="922" cy="202" r="302" fill="#ffffff" opacity="0.08"/>
+  <circle cx="153.6" cy="489.6" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="199.3" cy="489.6" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="245.0" cy="489.6" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="290.7" cy="489.6" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="336.5" cy="489.6" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="153.6" cy="535.3" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="199.3" cy="535.3" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="245.0" cy="535.3" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="290.7" cy="535.3" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="336.5" cy="535.3" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="153.6" cy="581.0" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="199.3" cy="581.0" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="245.0" cy="581.0" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="290.7" cy="581.0" r="2.56" fill="#ffffff" opacity="0.25"/><circle cx="336.5" cy="581.0" r="2.56" fill="#ffffff" opacity="0.25"/>
+  <rect width="1280" height="720" fill="url(#g3026s)"/>
 </svg>

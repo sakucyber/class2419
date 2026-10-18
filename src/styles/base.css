@@ -390,10 +390,18 @@ button.chip:hover {
   text-align: center;
   color: var(--text-3);
 }
+/* 图标做成柔和的圆形徽章：裸图标 + opacity 会显得像"没做完" */
 .state-block .state-icon {
-  font-size: 2.6rem;
-  line-height: 1;
-  opacity: 0.85;
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: var(--radius-full);
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-soft-2);
+  /* 外圈再叠一层更淡的环，徽章才有厚度而不是一个实心圆 */
+  box-shadow: 0 0 0 6px var(--primary-soft);
 }
 .state-block .state-title {
   font-size: 1.05rem;
