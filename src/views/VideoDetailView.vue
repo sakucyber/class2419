@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -48,8 +48,35 @@ function onLoadedMetadata() {
   if (saved && saved.time > 1 && saved.time < (el.duration || Infinity) - 2) {
     el.currentTime = saved.time
   }
+  // 先清再设：切换视频时 loadedmetadata 会再次触发，不清会攒出一堆计时器
+  stopTimer()
   saveTimer = setInterval(saveProgress, 4000)
 }
+
+function stopTimer() {
+  if (saveTimer) {
+    clearInterval(saveTimer)
+    saveTimer = null
+  }
+}
+
+/**
+ * 路由参数变化时必须手动重置。
+ *
+ * Vue Router 对同一路由记录会**复用组件实例**，不会重新执行 setup ——
+ * 所以 `resolve()` 只在首次进入时跑过一次，`resolvedSrc` 一直停在第一个视频上。
+ * 表现就是：从「更多视频」点别的片子，标题/封面变了，**播放器还是原来那个**。
+ */
+watch(
+  () => route.params.id,
+  () => {
+    saveProgress() // 先把上一个视频的进度落盘，再切
+    stopTimer()
+    mediaError.value = false
+    resolvedSrc.value = ''
+    void resolve()
+  },
+)
 
 function saveProgress() {
   const el = videoEl.value
@@ -63,7 +90,7 @@ function onPause() {
 
 onBeforeUnmount(() => {
   saveProgress()
-  if (saveTimer) clearInterval(saveTimer)
+  stopTimer()
 })
 
 const related = computed(() =>
