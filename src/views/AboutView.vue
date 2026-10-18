@@ -93,7 +93,14 @@ const content = useContentStore()
 @media (min-width: 860px) {
   .intro {
     grid-template-columns: 1.6fr 1fr;
-    align-items: start;
+    /* 原本是 start：右侧事实卡只有两项、高度远小于左列，
+       下方会空出一大片。改成 stretch 让右卡补齐列高，内容垂直居中，
+       看起来才像一个完整的侧栏而不是"没填满的卡片"。 */
+    align-items: stretch;
+    gap: var(--space-6);
+  }
+  .facts {
+    align-content: center;
   }
 }
 .intro-text {
@@ -124,7 +131,9 @@ const content = useContentStore()
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 10px 20px;
+  /* 原来 10/20 的padding + 1.35rem 字重，比首页 hero 的数据胶囊大一整档，
+     在这一页显得像两个大按钮；收一档，保持同一套语言 */
+  padding: 9px 16px;
   border-radius: var(--radius-md);
   background: var(--primary-soft);
   border: 1px solid var(--primary-soft-2);
@@ -134,7 +143,7 @@ const content = useContentStore()
   transform: translateY(-3px) scale(1.04);
 }
 .stats strong {
-  font-size: 1.35rem;
+  font-size: 1.18rem;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
   background: var(--primary-gradient);
