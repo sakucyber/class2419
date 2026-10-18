@@ -94,5 +94,69 @@
     "src": "https://mdn.github.io/shared-assets/videos/friday.mp4",
     "duration": "01:00",
     "source": "seed"
+  },
+  {
+    "id": "vid-neko",
+    "title": "人是猫 · 洛天依原创",
+    "description": "洛天依原创曲《人是猫》。原片为 AV1 / 1080p60，已转码为 H.264 1080p，便于全平台播放。",
+    "cover": "/images/videos/renshimao.jpg",
+    "category": "音乐",
+    "tags": [
+      "洛天依",
+      "原创曲"
+    ],
+    "author": "bilibili",
+    "createdAt": "2026-10-18T12:00:00.000Z",
+    "src": "/videos/renshimao.mp4",
+    "duration": "02:12",
+    "source": "seed"
+  },
+  {
+    "id": "vid-water",
+    "title": "我的悲伤是水做的 · 洛天依原创",
+    "description": "洛天依原创曲《我的悲伤是水做的》。原片 480p AV1，已转码为 H.264。",
+    "cover": "/images/videos/wodebeishang.jpg",
+    "category": "音乐",
+    "tags": [
+      "洛天依",
+      "原创曲"
+    ],
+    "author": "bilibili",
+    "createdAt": "2026-10-18T11:30:00.000Z",
+    "src": "/videos/wodebeishang.mp4",
+    "duration": "03:46",
+    "source": "seed"
+  },
+  {
+    "id": "vid-yanzhi",
+    "title": "胭脂 · 重音テト",
+    "description": "重音テト原创曲《胭脂》。原片 480p AV1，已转码为 H.264。",
+    "cover": "/images/videos/yanzhi.jpg",
+    "category": "音乐",
+    "tags": [
+      "重音テト",
+      "原创曲"
+    ],
+    "author": "bilibili",
+    "createdAt": "2026-10-18T11:00:00.000Z",
+    "src": "/videos/yanzhi.mp4",
+    "duration": "02:43",
+    "source": "seed"
+  },
+  {
+    "id": "vid-8k",
+    "title": "8K 演示片 · 你的设备还顶得住吗",
+    "description": "8K 画质演示片。原片为 8192×4320 AV1（225 MB），网页版降为 720p / H.264（约 20 MB）。",
+    "cover": "/images/videos/8k-demo.jpg",
+    "category": "演示",
+    "tags": [
+      "8K",
+      "画质演示"
+    ],
+    "author": "bilibili",
+    "createdAt": "2026-10-18T10:30:00.000Z",
+    "src": "/videos/8k-demo.mp4",
+    "duration": "03:12",
+    "source": "seed"
   }
 ]
