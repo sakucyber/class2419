@@ -40,6 +40,14 @@ const year = new Date().getFullYear()
   color: var(--text-3);
   font-size: 0.85rem;
 }
+
+/* 移动端：页脚在 <main> 之外，拿不到 .main-content 为底部导航预留的那段 padding，
+   必须自己补一份，否则最下面的「今日打卡」会被固定底栏压住（实测压住 37px）。 */
+@media (max-width: 767px) {
+  .site-footer {
+    padding-bottom: calc(var(--space-8) + var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+  }
+}
 .site-footer::before {
   content: '';
   position: absolute;

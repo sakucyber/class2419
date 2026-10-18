@@ -270,8 +270,10 @@ watch(
   top: 50%;
   right: clamp(18px, 4vw, 56px);
   z-index: 1;
-  width: clamp(150px, 17vw, 230px);
-  height: clamp(150px, 17vw, 230px);
+  /* 宽度来源与 HomeView 的 .class-card 共用同一个变量，
+     这样 .intro 的避让距离与徽章实际宽度永远对得上 */
+  width: var(--hero-badge-w, clamp(150px, 17vw, 230px));
+  height: var(--hero-badge-w, clamp(150px, 17vw, 230px));
   transform: translateY(-50%);
   pointer-events: none;
   user-select: none;

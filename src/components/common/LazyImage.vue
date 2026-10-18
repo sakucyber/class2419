@@ -27,6 +27,8 @@ const el = ref<HTMLImageElement | null>(null)
 const root = ref<HTMLDivElement | null>(null)
 const loaded = ref(false)
 const failed = ref(false)
+/** 是否已进入过视口（或 eager 直接放过）。用于 src 变化时决定要不要立刻换图 */
+let entered = false
 let observer: IntersectionObserver | null = null
 
 function load() {
@@ -49,16 +51,19 @@ function load() {
 
 onMounted(() => {
   if (props.eager) {
+    entered = true
     load()
     return
   }
   if (!('IntersectionObserver' in window)) {
+    entered = true
     load()
     return
   }
   observer = new IntersectionObserver(
     (entries) => {
       if (entries.some((e) => e.isIntersecting)) {
+        entered = true
         load()
         observer?.disconnect()
         observer = null
@@ -74,7 +79,8 @@ watch(
   () => {
     loaded.value = false
     failed.value = false
-    if (props.eager) load()
+    // 已经进入过视口（或 eager）就直接换图；否则维持懒加载，等观察器触发
+    if (entered || props.eager) load()
   },
 )
 

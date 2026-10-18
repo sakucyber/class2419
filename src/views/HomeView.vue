@@ -245,6 +245,9 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 .class-card {
   position: relative;
   overflow: hidden;
+  /* 3D 徽章宽度的唯一来源：HeroBadge.vue 与下面 .intro 的避让都读这个变量，
+     避免两处各写一份 clamp 导致对不上 */
+  --hero-badge-w: clamp(150px, 17vw, 230px);
   padding: 0;
   border-radius: var(--radius-xl);
   border: 1px solid var(--border);
@@ -354,6 +357,14 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+/* 徽章可见时给它留出避让间距：实测在 1280 宽下 .intro 的 56ch 右边缘正好
+   压在徽章左边缘上（0px 间隙），省略号会贴着徽章，看着像被盖住。
+   只在 ≥900px（徽章显示区间）生效，且保留上面的 56ch 作为 min() 不受支持时的回退。 */
+@media (min-width: 900px) {
+  .intro {
+    max-width: min(56ch, calc(100% - var(--hero-badge-w) - 12px));
+  }
 }
 .stats {
   display: flex;

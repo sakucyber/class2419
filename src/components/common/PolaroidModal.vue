@@ -86,16 +86,20 @@ onBeforeUnmount(() => {
         aria-labelledby="polaroid-caption"
         @click.self="emit('close')"
       >
-        <div ref="cardRef" class="polaroid-card">
-          <div class="polaroid-frame">
-            <img :src="photo.src" :alt="photo.caption || photo.albumTitle" decoding="async" />
+        <div class="polaroid-shell">
+          <div ref="cardRef" class="polaroid-card">
+            <div class="polaroid-frame">
+              <img :src="photo.src" :alt="photo.caption || photo.albumTitle" decoding="async" />
+            </div>
+            <p id="polaroid-caption" class="polaroid-caption">
+              {{ photo.caption || photo.albumTitle }}
+            </p>
+            <p class="polaroid-meta">
+              {{ photo.albumTitle }} · 收录于 {{ formatDate(photo.date) }}
+            </p>
           </div>
-          <p id="polaroid-caption" class="polaroid-caption">
-            {{ photo.caption || photo.albumTitle }}
-          </p>
-          <p class="polaroid-meta">
-            {{ photo.albumTitle }} · 收录于 {{ formatDate(photo.date) }}
-          </p>
+          <!-- 关闭按钮放在不裁切的壳层上：卡片自身是 overflow:auto（移动端短屏要能滚），
+               按钮定位在卡片外侧 11px，若挂在卡片里会被直接裁掉一半 -->
           <button
             ref="closeBtn"
             class="polaroid-close"
@@ -125,10 +129,17 @@ onBeforeUnmount(() => {
   -webkit-backdrop-filter: blur(6px);
 }
 
-/* 拍立得相纸：刻意用暖白 + 深字，明暗主题下都成立（真实相纸就是这个颜色） */
-.polaroid-card {
+/* 壳层：负责定位与倾斜，不裁切，让关闭按钮可以探出卡片外 */
+.polaroid-shell {
   position: relative;
   width: min(86vw, 340px);
+  /* 无动效环境下的最终倾斜角（有动效时由 keyframes 覆盖，结束值也是它） */
+  transform: rotate(-1.5deg);
+}
+
+/* 拍立得相纸：刻意用暖白 + 深字，明暗主题下都成立（真实相纸就是这个颜色） */
+.polaroid-card {
+  width: 100%;
   max-height: calc(100vh - 48px);
   overflow: auto;
   padding: 14px 14px 0;
@@ -138,8 +149,6 @@ onBeforeUnmount(() => {
   box-shadow:
     0 24px 60px rgba(0, 0, 0, 0.45),
     0 2px 6px rgba(0, 0, 0, 0.2);
-  /* 无动效环境下的最终倾斜角（有动效时由 keyframes 覆盖，结束值也是它） */
-  transform: rotate(-1.5deg);
 }
 
 .polaroid-frame {
@@ -206,8 +215,8 @@ onBeforeUnmount(() => {
   opacity: 0;
 }
 
-/* 「翻出来」的手感：从侧面翻正 + 轻微放大 */
-.polaroid-enter-active .polaroid-card {
+/* 「翻出来」的手感：从侧面翻正 + 轻微放大（作用于壳层，按钮跟着一起翻） */
+.polaroid-enter-active .polaroid-shell {
   animation: polaroid-in 460ms var(--ease-out-expo) both;
 }
 @keyframes polaroid-in {
