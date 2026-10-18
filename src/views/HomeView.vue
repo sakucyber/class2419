@@ -426,6 +426,21 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   color: #fff;
   box-shadow: none;
 }
+/* 窄屏：三个按钮原本挤成「2 + 1」，落单的那个很难看。
+   改成主按钮占满一行、两个次要按钮各占一半，视觉上成为 1 + 2 的稳定结构。 */
+@media (max-width: 520px) {
+  .hero-actions {
+    gap: 8px;
+  }
+  .hero-btn-primary {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+  .hero-actions .hero-btn-ghost {
+    flex: 1 1 calc(50% - 4px);
+    justify-content: center;
+  }
+}
 
 @media (max-width: 720px) {
   .card-content {
@@ -458,6 +473,21 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 }
 .countdown-card :deep(.sep) {
   flex: none;
+  opacity: 0.45;
+}
+/* 宽屏下卡片被 hero 撑到 400+ 高，而内容只有 230 左右 —— 上下会留下两块大空白。
+   靠"把数字放大"来填满，比加装饰元素更克制：数字本来就是这张卡的主角。 */
+@media (min-width: 900px) {
+  .countdown-card :deep(.unit) {
+    padding: var(--space-3) var(--space-3);
+  }
+  .countdown-card :deep(.unit strong) {
+    font-size: clamp(2rem, 2.5vw, 2.7rem);
+    line-height: 1.15;
+  }
+  .countdown-card :deep(.unit span) {
+    margin-top: 2px;
+  }
 }
 .countdown-card::before {
   content: '';

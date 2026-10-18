@@ -1,15 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 600" width="1600" height="600" role="img" aria-label="测试图片 2">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 600" width="1600" height="600" role="img" aria-hidden="true">
   <defs>
-    <pattern id="chk" width="80" height="80" patternUnits="userSpaceOnUse">
-      <rect width="80" height="80" fill="#8f96a3"/>
-      <rect width="40" height="40" fill="#979eab"/>
-      <rect x="40" y="40" width="40" height="40" fill="#979eab"/>
-    </pattern>
+    <linearGradient id="b3013" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#170f26"/>
+      <stop offset="0.52" stop-color="#6d28d9"/>
+      <stop offset="1" stop-color="#e879b0"/>
+    </linearGradient>
+    <linearGradient id="b3013s" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0.3" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.5"/>
+    </linearGradient>
   </defs>
-  <rect width="1600" height="600" fill="url(#chk)"/>
-  <rect x="1" y="1" width="1598" height="598" fill="none" stroke="#aab1bd" stroke-width="2"/>
-  <g font-family="system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">
-    <text x="800" y="300" font-size="60" font-weight="700" fill="#ffffff">测试图片 2</text>
-    <text x="800" y="352" font-size="26" fill="#eef1f6">TEST_IMAGE_2 · 1600 × 600</text>
-  </g>
+  <rect width="1600" height="600" fill="url(#b3013)"/>
+  
+  <circle cx="1248" cy="300" r="372" fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="2"/>
+  <circle cx="1248" cy="300" r="552" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="2"/>
+  <circle cx="66%" cy="29%" r="20%" fill="#e879b0" opacity="0.16"/>
+  <circle cx="79%" cy="36%" r="31%" fill="#ffffff" opacity="0.1"/>
+  <circle cx="1268" cy="58" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1296" cy="58" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1324" cy="58" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1352" cy="58" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1380" cy="58" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1408" cy="58" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1436" cy="58" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1464" cy="58" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1492" cy="58" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1520" cy="58" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1268" cy="86" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1296" cy="86" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1324" cy="86" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1352" cy="86" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1380" cy="86" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1408" cy="86" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1436" cy="86" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1464" cy="86" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1492" cy="86" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1520" cy="86" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1268" cy="114" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1296" cy="114" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1324" cy="114" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1352" cy="114" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1380" cy="114" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1408" cy="114" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1436" cy="114" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1464" cy="114" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1492" cy="114" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1520" cy="114" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1268" cy="142" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1296" cy="142" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1324" cy="142" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1352" cy="142" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1380" cy="142" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1408" cy="142" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1436" cy="142" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1464" cy="142" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1492" cy="142" r="2.2" fill="#ffffff" opacity="0.22"/><circle cx="1520" cy="142" r="2.2" fill="#ffffff" opacity="0.22"/>
+  <rect width="1600" height="600" fill="url(#b3013s)"/>
 </svg>

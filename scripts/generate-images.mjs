@@ -104,10 +104,76 @@ function write(rel, w, h, seed) {
   writeFileSync(file, svg({ w, h, seed }), 'utf8')
 }
 
-// 轮播图 16:6
-;['slide-1', 'slide-2', 'slide-3', 'slide-4'].forEach((name, i) =>
-  write(`carousel/${name}.svg`, 1600, 600, 1000 + i * 7),
-)
+/**
+ * 轮播长幅（16:6）。
+ *
+ * 与相册封面不同，这里有两处专门处理：
+ * 1. 渐变方向是「左下暗 → 右上亮」：Carousel 的标题压在**左下角**，
+ *    亮色放在右上才不会把白色标题冲掉。
+ * 2. 额外叠一层底部压暗渐变兜底，避免换配色后标题再次不可读。
+ */
+function banner({ w, h, dark, mid, bright, seed }) {
+  const rand = rng(seed)
+  const id = `b${seed}`
+
+  // 右上角点阵
+  const gap = 28
+  let dots = ''
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 10; c++) {
+      dots += `<circle cx="${w - 80 - (9 - c) * gap}" cy="${58 + r * gap}" r="2.2" fill="#ffffff" opacity="0.22"/>`
+    }
+  }
+
+  // 两圈大弧线（部分出界），给长条一点结构感
+  const arcs = `
+  <circle cx="${(w * 0.78).toFixed(0)}" cy="${(h * 0.5).toFixed(0)}" r="${(h * 0.62).toFixed(0)}" fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="2"/>
+  <circle cx="${(w * 0.78).toFixed(0)}" cy="${(h * 0.5).toFixed(0)}" r="${(h * 0.92).toFixed(0)}" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="2"/>`
+
+  const glows = [0.16, 0.1]
+    .map((op, i) => {
+      const cx = Math.floor(58 + rand() * 30)
+      const cy = Math.floor(12 + rand() * 30)
+      const r = Math.floor(20 + rand() * 14)
+      return `<circle cx="${cx}%" cy="${cy}%" r="${r}%" fill="${i === 0 ? bright : '#ffffff'}" opacity="${op}"/>`
+    })
+    .join('\n  ')
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-hidden="true">
+  <defs>
+    <linearGradient id="${id}" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="${dark}"/>
+      <stop offset="0.52" stop-color="${mid}"/>
+      <stop offset="1" stop-color="${bright}"/>
+    </linearGradient>
+    <linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0.3" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.5"/>
+    </linearGradient>
+  </defs>
+  <rect width="${w}" height="${h}" fill="url(#${id})"/>
+  ${arcs}
+  ${glows}
+  ${dots}
+  <rect width="${w}" height="${h}" fill="url(#${id}s)"/>
+</svg>
+`
+}
+
+/** 现有数据引用的是 carousel/test-N.svg（不是 slide-N.svg），生成器要与实际引用对齐 */
+const banners = [
+  { dark: '#0a1220', mid: '#1e3a8a', bright: '#22d3ee' },
+  { dark: '#170f26', mid: '#6d28d9', bright: '#e879b0' },
+  { dark: '#071c17', mid: '#0d9488', bright: '#34d399' },
+  { dark: '#1b1020', mid: '#b45309', bright: '#f59e0b' },
+]
+
+// 轮播图 16:6（写 test-N.svg，与 src/data/carousel.json 的引用一致）
+banners.forEach((b, i) => {
+  const file = join(outDir, `carousel/test-${i + 1}.svg`)
+  mkdirSync(dirname(file), { recursive: true })
+  writeFileSync(file, banner({ w: 1600, h: 600, ...b, seed: 3000 + i * 13 }), 'utf8')
+})
 
 // 相册（混合竖版/横版，营造瀑布流效果）
 const albums = [
