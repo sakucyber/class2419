@@ -645,7 +645,28 @@ html.no-animations .ambient .particle {
   text-align: left;
 }
 .prose th {
-  background: var(--bg-soft);
+  /* 原来用 --bg-soft，暗色下和 --bg 几乎同色，表头看不出层次。
+     改用主色浅底 + 主色描边，亮暗两种主题都能一眼分出表头行。 */
+  background: var(--primary-soft);
+  border-color: var(--primary-soft-2);
+  color: var(--text);
+  font-weight: 700;
+}
+/* 斑马纹：暗色下 10% 白的行底，扫读时不容易串行 */
+.prose tbody tr:nth-child(even) td {
+  background: var(--border);
+}
+
+/* 首段首字下沉：给长文一个"从这里开始读"的锚点。
+   用 float 让后续文字自然绕排，行高收紧到 0.92 才有下沉效果。 */
+.prose > p:first-of-type::first-letter {
+  float: left;
+  margin: 0.06em 0.14em 0 0;
+  font-family: var(--font-display);
+  font-size: 2.9em;
+  font-weight: 900;
+  line-height: 0.92;
+  color: var(--primary);
 }
 .prose img {
   border-radius: var(--radius-sm);
