@@ -46,9 +46,12 @@ class2419/
 ├── public/
 │   ├── images/               # 由脚本生成的 SVG 占位图（可替换为真实照片）
 │   ├── _redirects            # SPA 回退规则（Cloudflare Pages 等平台用）
+│   ├── _routes.json          # 让 /videos/* 走 Pages Function（补 Range，见「视频拖动」）
 │   ├── favicon.svg
 │   ├── manifest.webmanifest  # PWA 清单
 │   └── sw.js                 # 极简 Service Worker
+├── functions/                # Cloudflare Pages Functions（只为补上 /videos/* 的 206 分段响应）
+│   └── videos/[[path]].js
 ├── scripts/
 │   └── generate-images.mjs   # 占位图生成脚本
 ├── src/
@@ -132,6 +135,44 @@ npm run generate:images
 
 - 框架预设选「无」，构建命令 `npm run build`，构建输出目录 `dist`，根目录 `/`
 - 环境变量加 `NODE_VERSION = 22`，否则构建环境的 Node 版本可能带不动 Vite 6
+- **必须用 Git 集成或 `wrangler pages deploy dist` 部署**：仓库根目录的 `functions/` 只有这两条路径
+  会随构建一起上传；在控制台拖拽 dist 的「直接上传」不带 Functions，视频进度条会退回不可拖（见下）
+
+#### 视频拖不动进度条（HTTP Range）—— 已修复
+
+根因在平台侧，不是前端的问题：**Cloudflare Pages 的静态资源不处理 `Range` 请求**，
+一律返回 `200` + 整个文件，也不带 `Accept-Ranges`。官方 known issues 的原话是
+"Pages currently returns 200 responses for HTTP range requests"。
+
+浏览器加载 `<video>` 时一定先发 `Range: bytes=0-`，期望拿到 `206 + Content-Range`。
+Pages 回 `200` 之后，`<video>.seekable` 就是空的：进度条只能在线性缓冲范围内拖，
+拖到未缓冲处会被弹回；iOS Safari 更严格，甚至可能完全无法开始播放。
+
+线上验证（修复前）：
+
+```bash
+curl -sI https://<project>.pages.dev/videos/<file>.mp4            # 200，没有 Accept-Ranges
+curl -s -o /dev/null -D - -r 100-199 https://.../videos/<file>.mp4 # 200 + 完整文件，不是 206
+```
+
+修复方式：
+
+- `functions/videos/[[path]].js`：Pages Function 在边缘把静态文件按 `Range` 切片，
+  返回 `206 + Content-Range + Content-Length`（流式切片，不整段读进内存）
+- `public/_routes.json`：把 `/videos/*` 显式 include 进 Functions。
+  Pages 检测到 `functions/` 会自动生成一份路由规则，**必须用我们这份覆盖**，
+  否则 `/videos` 下的静态文件可能被当成普通资源直接放行，根本走不到 Function
+- 前端不需要特殊处理：`<video>` 继续用直链，浏览器自己按段取
+
+注意：
+
+- **不要**给视频配 `Cache Everything` / 自定义缓存：缓存命中会绕过 Functions，Range 又失效
+- Pages 单文件上限 25 MiB；更大的视频建议放 Cloudflare R2 / Stream（它们原生支持 Range）
+- 部署到 **Cloudflare Workers 静态资源**（`wrangler.jsonc`）时同样没有 Range 支持，
+  需要 `assets.run_worker_first: ["/videos/*"]` + 复用这套切片逻辑，否则进度条一样拖不动
+- `src/views/VideoDetailView.vue` 里保留了一套兜底：探测到 `206` 才认为可拖，
+  否则后台整段下载成 Blob 换源。它只在不支持 Range 的托管上触发（例如拖拽上传的 Pages），
+  正常部署走不到这条路径，保留是为了「功能不回退」
 
 ### GitHub Pages
 
@@ -190,6 +231,7 @@ export const dataSource: DataSource = new ApiDataSource('/api') // 替换导出�
 
 - 路由级代码分割（页面独立 chunk）+ vendor 手动分包（vue / router+pinia / markdown）
 - 图片 IntersectionObserver 懒加载 + 骨架占位；视频 `poster` + `preload="metadata"`
+- 视频按 HTTP Range 边下边播（Pages 由 `functions/videos` 补 `206`，见「视频拖不动进度条」）
 - 搜索 / 输入防抖、滚动节流（阅读进度）
 - CSS 变量主题（无运行时 CSS-in-JS）；动画尊重 `prefers-reduced-motion`
 - **低性能设备降级**：设置中可关闭「液态玻璃」，会移除全部 `backdrop-filter` 并把半透明表面换成不透明底色

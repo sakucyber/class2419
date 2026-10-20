@@ -15,7 +15,7 @@
  * 于是出现「旧判断逻辑 + 新 HTML」的错配 —— 例如旧版把降级内容写到已被删掉的容器里，
  * 两边都不匹配就是白屏。入口逻辑宁可慢一点读网络，也不能用旧缓存。
  */
-const CACHE = 'cls2419-v3'
+const CACHE = 'cls2419-v4'
 
 /** 入口级脚本：网络优先，仅离线时回退缓存 */
 const ENTRY_SCRIPTS = ['/compat.js', '/probe-es2020.js']
@@ -40,6 +40,21 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url)
   // 仅处理同源请求
   if (url.origin !== self.location.origin) return
+
+  /* 媒体请求（<video>/<audio>）与任何带 Range 的请求：完全不拦截，直接交给网络。
+   *
+   * 原因：视频/音频依赖 206 分段响应来定位，而 Cache API 只能缓存整份 200。
+   * 如果让这里的缓存逻辑经手一遍，带 Range 的请求可能拿到缓存里的 200 整份响应，
+   * 浏览器会认定「不可分段」→ 进度条拖不动（Cloudflare Pages 的 Range 修复
+   * 见 functions/videos/[[path]].js）。另外这类文件动辄十几 MB，也不该进缓存。 */
+  if (
+    req.destination === 'video' ||
+    req.destination === 'audio' ||
+    req.headers.has('range') ||
+    /\.(mp4|m4v|webm|mov|mp3|m4a|ogg)$/i.test(url.pathname)
+  ) {
+    return
+  }
 
   // 导航请求：网络优先，离线回退首页
   if (req.mode === 'navigate') {
