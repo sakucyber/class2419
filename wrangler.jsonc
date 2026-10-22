@@ -1,9 +1,10 @@
 {
   "name": "class2419",
   "compatibility_date": "2026-10-13",
-  // ⚠️ 这是「Workers 静态资源」部署用的配置，functions/ 目录只对 Cloudflare Pages 生效。
-  // Workers 静态资源同样不处理 Range（视频进度条拖不动）；若要用这条路径部署，
-  // 需要 assets.run_worker_first + 复用 functions/videos/[[path]].js 的切片逻辑，详见 README。
+  // ⚠️ 这是「Workers 静态资源」部署用的配置。
+  // Workers 静态资源同样不处理 Range（视频进度条拖不动），行为与 Cloudflare Pages 一致：
+  // 站点会走 VideoDetailView 里的客户端 Blob 兜底（整段预载后换源），不需要 Worker。
+  // 若以后想要原生 206 / 边下边拖，把视频迁到 R2 / Stream 等支持 Range 的存储，详见 README。
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application",

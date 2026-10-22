@@ -43,10 +43,12 @@ self.addEventListener('fetch', (event) => {
 
   /* 媒体请求（<video>/<audio>）与任何带 Range 的请求：完全不拦截，直接交给网络。
    *
-   * 原因：视频/音频依赖 206 分段响应来定位，而 Cache API 只能缓存整份 200。
-   * 如果让这里的缓存逻辑经手一遍，带 Range 的请求可能拿到缓存里的 200 整份响应，
-   * 浏览器会认定「不可分段」→ 进度条拖不动（Cloudflare Pages 的 Range 修复
-   * 见 functions/videos/[[path]].js）。另外这类文件动辄十几 MB，也不该进缓存。 */
+   * 原因一：Cache API 只能缓存整份 200。一旦让缓存逻辑经手带 Range 的请求，
+   * 浏览器可能拿到整份 200，从而认为「不可分段」→ 进度条拖不动。
+   * 原因二：视频动辄十几 MB，也不该进 Cache Storage；没被缓存的请求还能走浏览器
+   * 自己的磁盘缓存。
+   * 另外，VideoDetailView 在不支持 Range 的托管上会整段 fetch 成 Blob——那条请求
+   * 同样不该被 Service Worker 接住。 */
   if (
     req.destination === 'video' ||
     req.destination === 'audio' ||
