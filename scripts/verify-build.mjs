@@ -36,7 +36,9 @@ read('robots.txt')
 if (index && !index.includes('<div id="app">')) failures.push('index.html 缺少 #app 挂载点')
 
 const cacheMatch = sw.match(/const CACHE = CACHE_PREFIX \+ '([0-9a-f]{10})'/)
-const precacheMatch = sw.match(/const PRECACHE = \[([\s\S]*?)\]\n/)
+// 行尾要容忍 CRLF：Windows 上 git 检出的是 \r\n，注入后的清单以 "]\r\n" 结尾，
+// 写死 \n 会永远匹配不到，于是明明注入了 113 条也报「清单为空」
+const precacheMatch = sw.match(/const PRECACHE = \[([\s\S]*?)\]\r?\n/)
 const precacheEntries = precacheMatch
   ? [...precacheMatch[1].matchAll(/"([^"]+)"/g)].map((m) => m[1])
   : []
