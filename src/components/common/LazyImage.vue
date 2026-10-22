@@ -89,14 +89,7 @@ onBeforeUnmount(() => observer?.disconnect())
 
 <template>
   <div ref="root" class="lazy-image" :style="{ aspectRatio: aspect, borderRadius: radius }">
-    <img
-      v-show="loaded && !failed"
-      ref="el"
-      class="img"
-      :alt="alt"
-      :aria-label="alt"
-      decoding="async"
-    />
+    <img v-show="loaded && !failed" ref="el" class="img" :alt="alt" decoding="async" />
     <div v-if="!loaded && !failed" class="lazy-skeleton skeleton" aria-hidden="true"></div>
     <div v-if="failed" class="lazy-fail" role="img" :aria-label="`${alt || '图片'}加载失败`">
       <AppIcon name="image" :size="26" :stroke-width="1.4" />

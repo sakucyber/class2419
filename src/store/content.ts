@@ -91,9 +91,11 @@ export const useContentStore = defineStore('content', () => {
   }))
 
   // ---- 详情查询 ----
-  const getAlbum = (id: string) => albums.value.find((a) => a.id === id)
-  const getVideo = (id: string) => videos.value.find((v) => v.id === id)
-  const getArticle = (id: string) => articles.value.find((a) => a.id === id)
+  // 注意过滤 draft：列表/搜索/首页都排除了草稿，但详情页以前能通过直链打开草稿内容。
+  // 草稿只能通过导入备份产生（后台已下线），所以这里直接当作"不存在"。
+  const getAlbum = (id: string) => albums.value.find((a) => a.id === id && !a.draft)
+  const getVideo = (id: string) => videos.value.find((v) => v.id === id && !v.draft)
+  const getArticle = (id: string) => articles.value.find((a) => a.id === id && !a.draft)
 
   // ---- CRUD（写入数据源后刷新用户内容） ----
   async function reloadUser() {

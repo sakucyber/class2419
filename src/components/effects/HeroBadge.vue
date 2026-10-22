@@ -186,7 +186,8 @@ watch(
   },
 )
 
-// 运行时降级（DPR / 后处理 / 细节）直接下发，不必重建场景
+// 运行时降级只下调 DPR（几何细节 / 后处理在创建时就已确定，改它们需要重建场景，
+// 对徽章这种小场景不值得；DPR 本来就是开销最大的一项）
 watch(
   () => effects.quality,
   (quality) => scene?.setQuality(quality),
@@ -227,15 +228,16 @@ watch(
           </radialGradient>
         </defs>
         <circle cx="100" cy="100" r="94" fill="url(#hb-disc)" />
+        <circle cx="100" cy="100" r="94" fill="none" stroke="url(#hb-ring)" stroke-width="4.5" />
         <circle
           cx="100"
           cy="100"
-          r="94"
+          r="79"
           fill="none"
-          stroke="url(#hb-ring)"
-          stroke-width="4.5"
+          stroke="#e879b0"
+          stroke-width="1.2"
+          opacity="0.7"
         />
-        <circle cx="100" cy="100" r="79" fill="none" stroke="#e879b0" stroke-width="1.2" opacity="0.7" />
         <path
           d="M100 44 L112.4 79.6 L150 79.6 L119.8 101.6 L131.4 137.4 L100 115.4 L68.6 137.4 L80.2 101.6 L50 79.6 L87.6 79.6 Z"
           fill="url(#hb-star)"

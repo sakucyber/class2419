@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
-import type { AccentKey, SiteSettings } from '@/types'
+import type { AccentKey, SiteSettings, ThemeMode } from '@/types'
 import { getJSON, setJSON } from '@/utils/storage'
 
 /** 各强调色对应的浏览器 UI 着色（用于 theme-color） */
@@ -38,7 +38,7 @@ export const useSettingsStore = defineStore('settings', () => {
     if (meta) {
       meta.setAttribute(
         'content',
-        resolved === 'dark' ? '#08080f' : ACCENT_HEX[settings.value.accent] ?? '#2563eb',
+        resolved === 'dark' ? '#08080f' : (ACCENT_HEX[settings.value.accent] ?? '#2563eb'),
       )
     }
   }
@@ -76,5 +76,12 @@ export const useSettingsStore = defineStore('settings', () => {
     applyAll()
   }
 
-  return { settings, applyAll, initThemeWatcher, reset }
+  /** 亮 / 暗 / 跟随系统 三态轮换（头部按钮与设置页共用，避免两处各写一份） */
+  const THEME_ORDER: ThemeMode[] = ['auto', 'light', 'dark']
+  function cycleTheme() {
+    const idx = THEME_ORDER.indexOf(settings.value.theme)
+    settings.value.theme = THEME_ORDER[(idx + 1) % THEME_ORDER.length]
+  }
+
+  return { settings, applyAll, initThemeWatcher, reset, cycleTheme }
 })

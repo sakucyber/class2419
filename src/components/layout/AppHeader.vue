@@ -1,37 +1,34 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import AppIcon from '@/components/common/AppIcon.vue'
 import SearchOverlay from '@/components/common/SearchOverlay.vue'
 import ThemeToggle from '@/components/common/ThemeToggle.vue'
 import { mainNav, moreNav } from '@/router'
-import { useAuthStore } from '@/store/auth'
 import { useSettingsStore } from '@/store/settings'
 import { useUiStore } from '@/store/ui'
+import { useFocusTrap } from '@/utils/overlay'
 
 const route = useRoute()
-const auth = useAuthStore()
 const settings = useSettingsStore()
 const ui = useUiStore()
 
 const drawerEl = ref<HTMLElement | null>(null)
-let lastFocused: HTMLElement | null = null
 
-const THEME_ORDER = ['auto', 'light', 'dark'] as const
+/* 抽屉打开时焦点进抽屉、Tab 在抽屉内循环、Esc 关闭、关闭后焦点还原 */
+useFocusTrap(drawerEl, () => ui.drawerOpen, { onEscape: () => ui.closeDrawer() })
+
 const themeIcon = () =>
   ({ auto: 'monitor', light: 'sun', dark: 'moon' })[settings.settings.theme] as
-    | 'monitor'
-    | 'sun'
-    | 'moon'
+    'monitor' | 'sun' | 'moon'
 
 function closeDrawer() {
   ui.closeDrawer()
 }
 
 function cycleTheme() {
-  const idx = THEME_ORDER.indexOf(settings.settings.theme)
-  settings.settings.theme = THEME_ORDER[(idx + 1) % THEME_ORDER.length]
+  settings.cycleTheme()
 }
 
 function scrollTop() {
@@ -43,26 +40,6 @@ function openSearch() {
   closeDrawer()
   ui.openSearch()
 }
-
-/* Escape 关闭：挂在 window 上，抽屉打开时即使焦点在链接上也能生效 */
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape' && ui.drawerOpen) closeDrawer()
-}
-
-/* 抽屉展开时锁定滚动、移入焦点；关闭时把焦点还给触发按钮 */
-watch(
-  () => ui.drawerOpen,
-  async (open) => {
-    if (open) {
-      lastFocused = (document.activeElement as HTMLElement) ?? null
-      await nextTick()
-      drawerEl.value?.focus()
-    } else {
-      lastFocused?.focus?.()
-      lastFocused = null
-    }
-  },
-)
 
 /* 路由变化时自动收起抽屉 */
 watch(
@@ -80,11 +57,9 @@ function onScroll() {
 }
 
 onMounted(() => {
-  window.addEventListener('keydown', onKeydown)
   window.addEventListener('scroll', onScroll, { passive: true })
 })
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('scroll', onScroll)
 })
 </script>
@@ -151,8 +126,8 @@ onBeforeUnmount(() => {
             <div class="drawer-profile">
               <span class="drawer-avatar" aria-hidden="true">2419</span>
               <div class="drawer-profile-text">
-                <strong>{{ auth.isLoggedIn ? auth.username : '新屋岭中学2419班' }}</strong>
-                <small>{{ auth.isLoggedIn ? '已登录管理员' : '聚是一团火，散是满天星' }}</small>
+                <strong>新屋岭中学2419班</strong>
+                <small>聚是一团火，散是满天星</small>
               </div>
             </div>
             <button class="icon-btn" aria-label="关闭菜单" @click="closeDrawer">

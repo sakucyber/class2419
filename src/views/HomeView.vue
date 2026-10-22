@@ -16,7 +16,11 @@ import ArticleCard from '@/components/media/ArticleCard.vue'
 import VideoCard from '@/components/media/VideoCard.vue'
 import { useContentStore } from '@/store/content'
 import type { PolaroidPhoto } from '@/types'
+import { withBase } from '@/utils/base'
 import { formatDate, formatRelative } from '@/utils/format'
+
+/** 首页 hero 背景（运行时字符串，需要按部署 base 加前缀） */
+const heroBg = withBase('/images/misc/class-card-bg.svg')
 
 const content = useContentStore()
 
@@ -54,14 +58,24 @@ function openRandomMemory(): void {
   polaroid.value = picked
 }
 
-/* hero 背景视差：轻微下移 + 渐隐，跟随首屏滚动 */
+/* hero 背景视差：轻微下移 + 渐隐，跟随首屏滚动。
+ * 用 rAF 合并同一帧内的多次 scroll 事件：这个值每像素都在变，直接写 ref 会把
+ * 滚动事件变成「每帧一次组件重渲染」，低端机上就是肉眼可见的掉帧。 */
 const parallax = ref(0)
+let parallaxRaf = 0
 function onScroll() {
-  const y = window.scrollY
-  parallax.value = y < window.innerHeight ? y : window.innerHeight
+  if (parallaxRaf) return
+  parallaxRaf = requestAnimationFrame(() => {
+    parallaxRaf = 0
+    const y = window.scrollY
+    parallax.value = y < window.innerHeight ? y : window.innerHeight
+  })
 }
 onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
-onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', onScroll)
+  if (parallaxRaf) cancelAnimationFrame(parallaxRaf)
+})
 </script>
 
 <template>
@@ -89,13 +103,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
             class="card-bg"
             :style="{ transform: `scale(1.12) translateY(${parallax * 0.22}px)` }"
           >
-            <LazyImage
-              src="/images/misc/class-card-bg.svg"
-              alt=""
-              aspect="16 / 9"
-              radius="0"
-              eager
-            />
+            <LazyImage :src="heroBg" alt="" aspect="16 / 9" radius="0" eager />
           </div>
           <!-- 装饰性 3D/2.5D 徽章：aria-hidden + pointer-events:none，不遮挡右侧文案 -->
           <HeroBadge />
@@ -129,7 +137,11 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
           </div>
         </article>
 
-        <aside v-reveal="{ type: 'left', delay: 1 }" class="countdown-card card" aria-label="中考倒计时">
+        <aside
+          v-reveal="{ type: 'left', delay: 1 }"
+          class="countdown-card card"
+          aria-label="中考倒计时"
+        >
           <div class="count-head">
             <span class="count-label">
               <AppIcon name="hourglass" :size="15" />

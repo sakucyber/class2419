@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import AppIcon from '@/components/common/AppIcon.vue'
 import { useContentStore } from '@/store/content'
-import { debounce } from '@/utils/format'
+import { useFocusTrap } from '@/utils/overlay'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
@@ -13,32 +13,20 @@ const router = useRouter()
 const content = useContentStore()
 
 const keyword = ref('')
-const inputEl = ref<HTMLInputElement | null>(null)
+const overlayEl = ref<HTMLElement | null>(null)
 const results = computed(() => content.search(keyword.value))
 
 const close = () => emit('update:open', false)
 
-const runSearch = debounce(() => {
-  /* keyword 是响应式的，结果由 computed 实时计算；防抖用于未来接后端时的请求 */
-}, 250)
-
-watch(keyword, () => runSearch())
-
 watch(
   () => props.open,
-  async (open) => {
-    if (open) {
-      await nextTick()
-      inputEl.value?.focus()
-    } else {
-      keyword.value = ''
-    }
+  (open) => {
+    if (!open) keyword.value = ''
   },
 )
 
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') close()
-}
+/* 打开时焦点进入输入框、Tab 在浮层内循环、Esc 关闭、关闭后焦点还原 */
+useFocusTrap(overlayEl, () => props.open, { onEscape: close })
 
 function go(hit: { to: string }) {
   close()
@@ -63,18 +51,17 @@ const typeLabel: Record<string, string> = {
   <Teleport to="body">
     <div
       v-if="open"
+      ref="overlayEl"
       class="search-overlay"
       role="dialog"
       aria-modal="true"
       aria-label="全站搜索"
-      @keydown="onKeydown"
     >
       <div class="search-mask" @click="close"></div>
       <div class="search-panel">
         <form class="search-bar" role="search" @submit.prevent="submit">
           <AppIcon class="search-icon" name="search" :size="18" :stroke-width="2" />
           <input
-            ref="inputEl"
             v-model="keyword"
             type="search"
             class="search-input"

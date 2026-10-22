@@ -204,11 +204,6 @@ h1 {
     grid-template-columns: repeat(4, 1fr);
   }
 }
-@media (min-width: 1600px) {
-  .grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
 .load-more {
   display: flex;
   justify-content: center;

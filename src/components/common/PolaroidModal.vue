@@ -14,6 +14,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import type { PolaroidPhoto } from '@/types'
 import { formatDate } from '@/utils/format'
+import { lockBodyScroll, unlockBodyScroll } from '@/utils/overlay'
 
 const props = defineProps<{ photo: PolaroidPhoto | null }>()
 const emit = defineEmits<{ close: [] }>()
@@ -26,10 +27,10 @@ let scrollLocked = false
 
 function lockScroll(lock: boolean): void {
   if (lock && !scrollLocked) {
-    document.body.style.overflow = 'hidden'
+    lockBodyScroll()
     scrollLocked = true
   } else if (!lock && scrollLocked) {
-    document.body.style.overflow = ''
+    unlockBodyScroll()
     scrollLocked = false
   }
 }
@@ -43,9 +44,7 @@ function onKeydown(event: KeyboardEvent): void {
   // 简易焦点圈定：Tab 在卡片内的可聚焦元素之间循环
   if (event.key !== 'Tab' || !cardRef.value) return
   const focusables = Array.from(
-    cardRef.value.querySelectorAll<HTMLElement>(
-      'button, [href], [tabindex]:not([tabindex="-1"])',
-    ),
+    cardRef.value.querySelectorAll<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])'),
   ).filter((el) => !el.hasAttribute('disabled'))
   if (focusables.length === 0) return
   const first = focusables[0]

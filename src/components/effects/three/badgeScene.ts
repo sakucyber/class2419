@@ -140,10 +140,22 @@ export async function createBadgeScene(options: CreateSceneOptions): Promise<Sce
   const scene = new THREE.Scene()
 
   // 用 RoomEnvironment 生成 IBL，免去外置 HDR 文件（CSP 下也不引入外部资源）
+  const room = new RoomEnvironment()
   const pmrem = new THREE.PMREMGenerator(renderer)
-  const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04)
+  const envRT = pmrem.fromScene(room, 0.04)
   scene.environment = envRT.texture
   pmrem.dispose()
+
+  /** 递归释放一个对象树里的几何体与材质（RoomEnvironment 内部也有自己的资源） */
+  function disposeObjectTree(root: THREE.Object3D): void {
+    root.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh)) return
+      obj.geometry.dispose()
+      const material = obj.material
+      if (Array.isArray(material)) material.forEach((item) => item.dispose())
+      else material.dispose()
+    })
+  }
 
   const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100)
   camera.position.set(0, 0, 4.3)
@@ -240,18 +252,13 @@ export async function createBadgeScene(options: CreateSceneOptions): Promise<Sce
     dispose(): void {
       canvas.removeEventListener('webglcontextlost', handleContextLost)
       for (const item of badge.disposables) item.dispose()
-      if (loadedModel) {
-        loadedModel.traverse((obj) => {
-          if (obj instanceof THREE.Mesh) {
-            obj.geometry.dispose()
-            const mat = obj.material
-            if (Array.isArray(mat)) mat.forEach((m) => m.dispose())
-            else mat.dispose()
-          }
-        })
-      }
+      if (loadedModel) disposeObjectTree(loadedModel)
+      // RoomEnvironment 内部也建了几何体/材质，不释放的话反复开关 3D 会积累 GPU 资源
+      disposeObjectTree(room)
       envRT.dispose()
       renderer.dispose()
+      // 主动归还 WebGL 上下文（浏览器对同时存在的上下文数量有上限）
+      renderer.forceContextLoss()
     },
   }
 }

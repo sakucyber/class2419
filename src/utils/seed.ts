@@ -1,23 +1,16 @@
 /**
  * 种子数据加载：静态 JSON + Markdown 文章（frontmatter 解析）。
  * 首次运行即有完整内容可看；用户数据由 dataSource 叠加。
+ *
+ * 注意：JSON 里的媒体地址是**运行时字符串**，不会经过 Vite 的 base 改写；
+ * 统一在这里过一遍 `withBase()`，否则子路径部署（GitHub Pages）会 404。
  */
 import albumsSeed from '@/data/albums.json'
 import announcementsSeed from '@/data/announcements.json'
 import carouselSeed from '@/data/carousel.json'
-import classInfoSeed from '@/data/classInfo.json'
-import honorsSeed from '@/data/honors.json'
-import timelineSeed from '@/data/timeline.json'
 import videosSeed from '@/data/videos.json'
-import type {
-  Album,
-  Announcement,
-  Article,
-  Honor,
-  Slide,
-  TimelineNode,
-  VideoItem,
-} from '@/types'
+import type { Album, Announcement, Article, Slide, VideoItem } from '@/types'
+import { withBase } from '@/utils/base'
 import { estimateReadingMinutes } from '@/utils/format'
 
 const mdModules = import.meta.glob('../data/articles/*.md', {
@@ -63,7 +56,7 @@ const seedArticles: Article[] = Object.values(mdModules)
       id: meta.id || 'art-unknown',
       title: meta.title || '未命名文章',
       excerpt: meta.excerpt || content.slice(0, 120),
-      cover: meta.cover || '/images/misc/class-card-bg.svg',
+      cover: withBase(meta.cover || '/images/misc/class-card-bg.svg'),
       category: meta.category || '随笔',
       tags,
       author: meta.author || '匿名',
@@ -76,11 +69,23 @@ const seedArticles: Article[] = Object.values(mdModules)
   })
   .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
 
-export const seedAlbums = albumsSeed as unknown as Album[]
-export const seedVideos = videosSeed as unknown as VideoItem[]
+export const seedAlbums: Album[] = (albumsSeed as unknown as Album[]).map((album) => ({
+  ...album,
+  cover: withBase(album.cover),
+  photos: (album.photos ?? []).map((photo) => ({ ...photo, src: withBase(photo.src) })),
+}))
+
+export const seedVideos: VideoItem[] = (videosSeed as unknown as VideoItem[]).map((video) => ({
+  ...video,
+  cover: withBase(video.cover),
+  src: video.src ? withBase(video.src) : undefined,
+}))
+
 export const seedAnnouncements = announcementsSeed as unknown as Announcement[]
-export const seedSlides = carouselSeed as unknown as Slide[]
-export const seedClassInfo = classInfoSeed
-export const seedHonors = honorsSeed as unknown as Honor[]
-export const seedTimeline = timelineSeed as unknown as TimelineNode[]
+
+export const seedSlides: Slide[] = (carouselSeed as unknown as Slide[]).map((slide) => ({
+  ...slide,
+  image: withBase(slide.image),
+}))
+
 export { seedArticles }

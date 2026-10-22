@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
@@ -18,14 +19,17 @@ import { defineConfig, type Plugin } from 'vite'
  * 阿里云 ESA 不依赖此文件，它读 esa.jsonc 的 assets.notFoundStrategy。
  */
 function spaFallbackPlugin(): Plugin {
+  let outDir = ''
   return {
     name: 'spa-fallback-404',
     apply: 'build',
+    configResolved(config) {
+      outDir = path.resolve(config.root, config.build.outDir)
+    },
     closeBundle() {
       if (process.env.VITE_SPA_404 !== '1') return
-      const dist = fileURLToPath(new URL('./dist', import.meta.url))
-      const index = path.join(dist, 'index.html')
-      if (fs.existsSync(index)) fs.copyFileSync(index, path.join(dist, '404.html'))
+      const index = path.join(outDir, 'index.html')
+      if (fs.existsSync(index)) fs.copyFileSync(index, path.join(outDir, '404.html'))
     },
   }
 }
@@ -38,10 +42,10 @@ function cspPlugin(): Plugin {
     "object-src 'none'",
     "script-src 'self'",
     "style-src 'self' 'unsafe-inline'",
-    'img-src \'self\' data: blob: https:',
-    'media-src \'self\' data: blob: https:',
-    'font-src \'self\' data:',
-    'connect-src \'self\' ws: wss: https:',
+    "img-src 'self' data: blob: https:",
+    "media-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' ws: wss: https:",
     'frame-src https://player.bilibili.com https://www.youtube.com https://www.youtube-nocookie.com',
   ].join('; ')
   return {
@@ -59,11 +63,95 @@ function cspPlugin(): Plugin {
   }
 }
 
+/**
+ * 给 Service Worker 注入预缓存清单 & 构建哈希。
+ *
+ * 为什么必须在构建期做：SW 要缓存 index.html 和所有带哈希的构建产物，清单只能在
+ * 构建完成后才知道；public/sw.js 里留了两个占位（__SW_BUILD_ID__ / PRECACHE = []），
+ * 这里在 closeBundle 阶段替换成真实值。
+ *
+ * 缓存名带构建哈希的原因：每次部署换新 cache，activate 时清旧 cache —— 用户不会
+ * 拿到「旧 HTML + 新 JS」的错配（这也是原来那版 SW 注释里踩过的坑）。
+ */
+function pwaPrecachePlugin(): Plugin {
+  let outDir = ''
+  return {
+    name: 'pwa-precache',
+    apply: 'build',
+    configResolved(config) {
+      outDir = path.resolve(config.root, config.build.outDir)
+    },
+    closeBundle() {
+      const dist = outDir
+      const swPath = path.join(dist, 'sw.js')
+      const indexPath = path.join(dist, 'index.html')
+      if (!fs.existsSync(swPath) || !fs.existsSync(indexPath)) {
+        throw new Error('[pwa-precache] 找不到 dist/sw.js 或 dist/index.html，无法注入预缓存清单')
+      }
+
+      const base = process.env.VITE_BASE || '/'
+      const b = base.endsWith('/') ? base : base + '/'
+      const urls = new Set<string>()
+
+      // 1) index.html 里引用的入口资源（Vite 已经把 base 写进去了）
+      const indexHtml = fs.readFileSync(indexPath, 'utf8')
+      for (const match of indexHtml.matchAll(/(?:src|href)="([^"]+)"/g)) {
+        const href = match[1]
+        if (href.startsWith('/') && !href.startsWith('//')) urls.add(href)
+      }
+
+      // 2) 构建产物与图片（递归目录）
+      const walk = (dir: string, relPrefix: string): void => {
+        const abs = path.join(dist, dir)
+        if (!fs.existsSync(abs)) return
+        for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
+          if (entry.isDirectory()) walk(path.join(dir, entry.name), relPrefix + entry.name + '/')
+          else urls.add(b + relPrefix + entry.name)
+        }
+      }
+      walk('assets', 'assets/')
+      walk('images', 'images/')
+
+      // 3) 固定文件
+      urls.add(b + 'index.html')
+      for (const file of [
+        'compat.js',
+        'probe-es2020.js',
+        'manifest.webmanifest',
+        'favicon.svg',
+        'icon-192.png',
+        'icon-512.png',
+        'robots.txt',
+      ]) {
+        if (fs.existsSync(path.join(dist, file))) urls.add(b + file)
+      }
+
+      // 视频不进预缓存（十几 MB × N，且运行时本来就是 bypass）
+      const list = [...urls]
+        .filter((url) => !/\.(mp4|m4v|webm|mov)$/i.test(url))
+        .filter((url) => !url.endsWith('/sw.js'))
+        .sort()
+
+      const buildId = createHash('sha1').update(list.join('\n')).digest('hex').slice(0, 10)
+      let sw = fs.readFileSync(swPath, 'utf8')
+      const before = sw
+      sw = sw.replace(
+        "const CACHE = CACHE_PREFIX + '__SW_BUILD_ID__'",
+        `const CACHE = CACHE_PREFIX + '${buildId}'`,
+      )
+      sw = sw.replace('const PRECACHE = []', `const PRECACHE = ${JSON.stringify(list, null, 2)}`)
+      if (sw === before) throw new Error('[pwa-precache] sw.js 里找不到注入占位符')
+      fs.writeFileSync(swPath, sw, 'utf8')
+      console.warn(`[pwa-precache] 预缓存 ${list.length} 个资源 · cache 后缀 ${buildId}`)
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   // 部署到 GitHub Pages 子路径时设置环境变量 VITE_BASE=/仓库名/
   base: process.env.VITE_BASE || '/',
-  plugins: [vue(), cspPlugin(), spaFallbackPlugin()],
+  plugins: [vue(), cspPlugin(), spaFallbackPlugin(), pwaPrecachePlugin()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

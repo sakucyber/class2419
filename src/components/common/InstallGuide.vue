@@ -8,27 +8,25 @@
  *
  * 示意图是**内联 SVG**：不引外部图片（CSP 下也不产生额外请求）。
  */
-import { onBeforeUnmount, onMounted, watch } from 'vue'
+import { onBeforeUnmount, ref, watch } from 'vue'
 
 import AppIcon from '@/components/common/AppIcon.vue'
+import { lockBodyScroll, unlockBodyScroll, useFocusTrap } from '@/utils/overlay'
 
 const props = defineProps<{ open: boolean; variant: 'ios' | 'other' }>()
 const emit = defineEmits<{ close: [] }>()
 
+const cardEl = ref<HTMLElement | null>(null)
 let scrollLocked = false
 
 function lockScroll(lock: boolean): void {
   if (lock && !scrollLocked) {
-    document.body.style.overflow = 'hidden'
+    lockBodyScroll()
     scrollLocked = true
   } else if (!lock && scrollLocked) {
-    document.body.style.overflow = ''
+    unlockBodyScroll()
     scrollLocked = false
   }
-}
-
-function onKeydown(event: KeyboardEvent): void {
-  if (props.open && event.key === 'Escape') emit('close')
 }
 
 watch(
@@ -36,11 +34,10 @@ watch(
   (open) => lockScroll(open),
 )
 
-onMounted(() => document.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', onKeydown)
-  lockScroll(false)
-})
+/* 焦点进入弹层、Tab 圈定、Esc 关闭、关闭后还原焦点 */
+useFocusTrap(cardEl, () => props.open, { onEscape: () => emit('close') })
+
+onBeforeUnmount(() => lockScroll(false))
 </script>
 
 <template>
@@ -54,7 +51,7 @@ onBeforeUnmount(() => {
         aria-labelledby="guide-title"
         @click.self="emit('close')"
       >
-        <div class="guide-card">
+        <div ref="cardEl" class="guide-card">
           <h2 id="guide-title" class="guide-title">添加到主屏幕</h2>
 
           <!-- 示意：Safari 底部工具栏，分享按钮高亮 -->
@@ -65,15 +62,7 @@ onBeforeUnmount(() => {
             role="img"
             aria-label="示意图：Safari 底部工具栏中间的分享按钮"
           >
-            <rect
-              x="8"
-              y="60"
-              width="264"
-              height="48"
-              rx="13"
-              fill="currentColor"
-              opacity="0.07"
-            />
+            <rect x="8" y="60" width="264" height="48" rx="13" fill="currentColor" opacity="0.07" />
             <rect x="32" y="76" width="17" height="15" rx="3" fill="currentColor" opacity="0.32" />
             <rect x="68" y="76" width="17" height="15" rx="3" fill="currentColor" opacity="0.32" />
             <rect x="196" y="76" width="17" height="15" rx="3" fill="currentColor" opacity="0.32" />
@@ -99,7 +88,15 @@ onBeforeUnmount(() => {
               stroke-linecap="round"
               opacity="0.55"
             />
-            <path d="m135.6 39.6 4.4-4.6 4.4 4.6" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.55" />
+            <path
+              d="m135.6 39.6 4.4-4.6 4.4 4.6"
+              fill="none"
+              stroke="var(--primary)"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              opacity="0.55"
+            />
             <text
               x="140"
               y="26"

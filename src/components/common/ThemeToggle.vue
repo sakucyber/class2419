@@ -5,11 +5,8 @@ import { useSettingsStore } from '@/store/settings'
 
 const settingsStore = useSettingsStore()
 
-const ORDER = ['auto', 'light', 'dark'] as const
-
 function cycle() {
-  const idx = ORDER.indexOf(settingsStore.settings.theme)
-  settingsStore.settings.theme = ORDER[(idx + 1) % ORDER.length]
+  settingsStore.cycleTheme()
 }
 
 const ICONS: Record<string, IconName> = { auto: 'monitor', light: 'sun', dark: 'moon' }

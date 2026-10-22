@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 import AppIcon from '@/components/common/AppIcon.vue'
 import { downloadMedia } from '@/utils/image'
+import { lockBodyScroll, unlockBodyScroll, useFocusTrap } from '@/utils/overlay'
 
 export interface LightboxItem {
   src: string
@@ -30,9 +31,11 @@ function prev() {
   emit('update:index', (props.index - 1 + props.items.length) % props.items.length)
 }
 
+const dialogEl = ref<HTMLElement | null>(null)
+let scrollLocked = false
+
 function onKeydown(e: KeyboardEvent) {
   if (!props.open) return
-  if (e.key === 'Escape') close()
   if (e.key === 'ArrowRight') next()
   if (e.key === 'ArrowLeft') prev()
 }
@@ -40,19 +43,24 @@ function onKeydown(e: KeyboardEvent) {
 watch(
   () => props.open,
   (open) => {
-    if (open) {
-      document.body.style.overflow = 'hidden'
-      window.addEventListener('keydown', onKeydown)
-    } else {
-      document.body.style.overflow = ''
-      window.removeEventListener('keydown', onKeydown)
+    if (open && !scrollLocked) {
+      lockBodyScroll()
+      scrollLocked = true
+    } else if (!open && scrollLocked) {
+      unlockBodyScroll()
+      scrollLocked = false
     }
+    if (open) window.addEventListener('keydown', onKeydown)
+    else window.removeEventListener('keydown', onKeydown)
   },
   { immediate: true },
 )
 
+/* 打开时焦点移进弹层、Tab 在弹层内循环、关闭后还原；Esc 关闭也交给它统一处理 */
+useFocusTrap(dialogEl, () => props.open, { onEscape: close })
+
 onBeforeUnmount(() => {
-  document.body.style.overflow = ''
+  if (scrollLocked) unlockBodyScroll()
   window.removeEventListener('keydown', onKeydown)
 })
 
@@ -80,6 +88,7 @@ function onTouchEnd(e: TouchEvent) {
   <Teleport to="body">
     <div
       v-if="open && current"
+      ref="dialogEl"
       class="lightbox"
       role="dialog"
       aria-modal="true"
@@ -91,8 +100,12 @@ function onTouchEnd(e: TouchEvent) {
       <header class="lb-header">
         <span class="counter">{{ index + 1 }} / {{ items.length }}</span>
         <div class="lb-actions">
-          <button class="lb-btn" aria-label="下载图片" @click="download"><AppIcon name="download" :size="18" /></button>
-          <button class="lb-btn" aria-label="关闭预览" @click="close"><AppIcon name="close" :size="18" /></button>
+          <button class="lb-btn" aria-label="下载图片" @click="download">
+            <AppIcon name="download" :size="18" />
+          </button>
+          <button class="lb-btn" aria-label="关闭预览" @click="close">
+            <AppIcon name="close" :size="18" />
+          </button>
         </div>
       </header>
 

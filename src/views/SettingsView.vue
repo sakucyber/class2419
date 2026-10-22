@@ -19,6 +19,7 @@ const effectsStore = useEffectsStore()
 
 const confirmReset = ref(false)
 const message = ref('')
+const importInput = ref<HTMLInputElement | null>(null)
 
 /** 特效等级选项。auto = 交给设备探测，其余为手动锁定 */
 const tiers: { key: TierPreference; label: string; desc: string }[] = [
@@ -92,6 +93,60 @@ async function doReset() {
     confirmReset.value = false
   } catch (e) {
     message.value = e instanceof Error ? e.message : '重置失败'
+  }
+}
+
+/* ── 备份导出 / 导入 ──
+ * 数据只存在这个浏览器里，清缓存 = 全丢，所以必须给用户一个带走它的方式。
+ * 导出内容 = 本地内容（相册/视频/文章/公告）+ 互动数据（收藏/视频进度/阅读位置/打卡）。
+ * 导入是**合并**：同 id 覆盖，不删除现有内容；旧版（v1）备份没有 interaction 字段也能导入。 */
+function backupFileName(): string {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `class2419-backup-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`
+}
+
+async function exportBackup(): Promise<void> {
+  try {
+    const exported = await content.exportAll()
+    const payload = {
+      ...exported,
+      version: 2,
+      interaction: interaction.exportState(),
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = backupFileName()
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    message.value = '备份已导出：包含本地内容、收藏、观看进度与阅读位置。'
+  } catch (e) {
+    message.value = e instanceof Error ? e.message : '导出失败'
+  }
+}
+
+function pickBackup(): void {
+  importInput.value?.click()
+}
+
+async function onBackupFile(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = '' // 允许连续导入同一个文件
+  if (!file) return
+  try {
+    const payload = JSON.parse(await file.text()) as Record<string, unknown>
+    const data = (payload.data ?? payload) as Record<string, unknown>
+    const count = (key: string) => (Array.isArray(data[key]) ? (data[key] as unknown[]).length : 0)
+    await content.importAll(payload)
+    if (payload.interaction) interaction.importState(payload.interaction)
+    message.value = `导入完成：相册 ${count('albums')}、视频 ${count('videos')}、文章 ${count('articles')}、公告 ${count('announcements')}；收藏/进度等互动数据已合并。`
+  } catch (e) {
+    message.value = e instanceof Error ? e.message : '导入失败：文件不是有效的备份 JSON'
   }
 }
 </script>
@@ -247,7 +302,10 @@ async function doReset() {
       aria-labelledby="install-title"
     >
       <h2 id="install-title">安装到桌面</h2>
-      <p class="block-desc">装到桌面后可以全屏打开，离线也能翻相册，像 App 一样顺手。</p>
+      <p class="block-desc">
+        装到桌面后可以全屏打开，像 App 一样顺手；打开过一次后，页面和相册图片会缓存到本地，
+        断网也能翻（视频体积大，不缓存，仍需联网）。
+      </p>
 
       <div class="install-row">
         <span v-if="pwaState.installed" class="install-state">
@@ -269,10 +327,19 @@ async function doReset() {
     <section class="card block" aria-labelledby="data-title">
       <h2 id="data-title">数据管理</h2>
       <p class="block-desc">
-        本站在浏览器本地（localStorage / IndexedDB）保存你的收藏与观看进度。
-        清除浏览器数据会导致这些内容丢失，重要稿件请先「导出备份」。
+        本站在浏览器本地（localStorage / IndexedDB）保存你的收藏、观看进度与阅读位置。
+        清除浏览器数据会导致这些内容全部丢失，建议定期「导出备份」（一个 JSON 文件）。
+        导入会与现有数据合并，同 id 覆盖；旧版备份也兼容。
       </p>
       <div class="btn-row">
+        <button class="btn btn--soft" @click="exportBackup">
+          <AppIcon name="download" :size="16" />
+          导出备份
+        </button>
+        <button class="btn btn--soft" @click="pickBackup">
+          <AppIcon name="upload" :size="16" />
+          导入备份
+        </button>
         <button class="btn btn--danger" :disabled="confirmReset" @click="confirmReset = true">
           重置全部本地数据
         </button>
@@ -281,6 +348,14 @@ async function doReset() {
           <button class="btn btn--ghost" @click="confirmReset = false">取消</button>
         </template>
       </div>
+      <input
+        ref="importInput"
+        class="visually-hidden"
+        type="file"
+        accept="application/json,.json"
+        aria-label="选择备份文件"
+        @change="onBackupFile"
+      />
       <p v-if="message" class="message" role="status">{{ message }}</p>
     </section>
 
@@ -364,7 +439,8 @@ h1 {
 .swatch {
   width: 16px;
   height: 16px;
-  border-radius: var(--radius-full);}
+  border-radius: var(--radius-full);
+}
 
 .switch-row {
   display: flex;

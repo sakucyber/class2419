@@ -64,7 +64,9 @@
   --card-hover: #ffffff;
   --text: #241f33;
   --text-2: #544d6b;
-  --text-3: #7b7391;
+  /* 原 #7b7391 在页面底色 #f0ecfa 上只有 3.84:1（WCAG AA 要求 4.5）。
+     压深到 #6f6784 后：页面底 4.58、卡片上 5.20，仍是"弱化文字"的观感。 */
+  --text-3: #6f6784;
   --border: rgba(122, 86, 158, 0.16);
   --border-strong: rgba(122, 86, 158, 0.28);
   --glass-blur: blur(18px) saturate(1.6);

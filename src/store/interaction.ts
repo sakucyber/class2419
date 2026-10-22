@@ -17,6 +17,14 @@ export interface CheckinState {
   total: number
 }
 
+/** 备份文件里的互动数据（收藏 / 视频进度 / 阅读位置 / 打卡） */
+export interface InteractionSnapshot {
+  favorites: Record<string, boolean>
+  videoProgress: Record<string, VideoProgress>
+  articleScroll: Record<string, number>
+  checkin: CheckinState
+}
+
 export type Kind = 'album' | 'video' | 'article'
 
 export const useInteractionStore = defineStore('interaction', () => {
@@ -86,6 +94,70 @@ export const useInteractionStore = defineStore('interaction', () => {
     return true
   }
 
+  /** 备份用：导出全部互动数据 */
+  function exportState(): InteractionSnapshot {
+    return {
+      favorites: { ...favorites.value },
+      videoProgress: { ...videoProgress.value },
+      articleScroll: { ...articleScroll.value },
+      checkin: { ...checkin.value },
+    }
+  }
+
+  /** 备份用：导入互动数据（防御性解析，非法项丢弃；旧备份没有这一段则跳过） */
+  function importState(input: unknown): void {
+    if (!input || typeof input !== 'object') return
+    const raw = input as Record<string, unknown>
+
+    const fav: Record<string, boolean> = {}
+    if (raw.favorites && typeof raw.favorites === 'object') {
+      for (const [key, value] of Object.entries(raw.favorites as Record<string, unknown>)) {
+        if (value === true && /^(album|video|article):/.test(key)) fav[key] = true
+      }
+    }
+
+    const progress: Record<string, VideoProgress> = {}
+    if (raw.videoProgress && typeof raw.videoProgress === 'object') {
+      for (const [key, value] of Object.entries(raw.videoProgress as Record<string, unknown>)) {
+        if (!value || typeof value !== 'object') continue
+        const item = value as Record<string, unknown>
+        const time = Number(item.time)
+        const duration = Number(item.duration)
+        if (!Number.isFinite(time) || !Number.isFinite(duration) || duration <= 0) continue
+        progress[key] = {
+          time: Math.min(Math.max(time, 0), duration),
+          duration,
+          updatedAt: typeof item.updatedAt === 'string' ? item.updatedAt : new Date().toISOString(),
+        }
+      }
+    }
+
+    const scroll: Record<string, number> = {}
+    if (raw.articleScroll && typeof raw.articleScroll === 'object') {
+      for (const [key, value] of Object.entries(raw.articleScroll as Record<string, unknown>)) {
+        const y = Number(value)
+        if (Number.isFinite(y) && y >= 0) scroll[key] = Math.round(y)
+      }
+    }
+
+    const rawCheckin = (raw.checkin ?? {}) as Record<string, unknown>
+    const lastDate =
+      typeof rawCheckin.lastDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawCheckin.lastDate)
+        ? rawCheckin.lastDate
+        : ''
+    const total = Number(rawCheckin.total)
+    const totalSafe = Number.isFinite(total) && total >= 0 ? Math.floor(total) : 0
+
+    favorites.value = fav
+    videoProgress.value = progress
+    articleScroll.value = scroll
+    checkin.value = { lastDate, total: totalSafe }
+    setJSON('favorites', favorites.value)
+    setJSON('videoProgress', videoProgress.value)
+    setJSON('articleScroll', articleScroll.value)
+    setJSON('checkin', checkin.value)
+  }
+
   function resetAll() {
     favorites.value = {}
     videoProgress.value = {}
@@ -111,5 +183,7 @@ export const useInteractionStore = defineStore('interaction', () => {
     setArticleScroll,
     getArticleScroll,
     resetAll,
+    exportState,
+    importState,
   }
 })

@@ -1,6 +1,8 @@
 /**
- * 极简 IndexedDB 封装：用于存储用户上传的视频等大体积 Blob。
- * 媒体引用约定：src 以 `idb:` 开头时，值为存储键，需异步解析为 objectURL。
+ * 极简 IndexedDB 封装：兼容历史上传的本地视频 Blob（`idb:` 引用）。
+ *
+ * 现在没有上传入口（管理后台已下线），但用户浏览器里可能还留着旧数据，
+ * 详情页仍会把 `idb:xxx` 解析成 objectURL；导出/重置时也需要遍历这个库。
  */
 
 const DB_NAME = 'cls2419-media'
@@ -21,16 +23,6 @@ function openDB(): Promise<IDBDatabase> {
     req.onerror = () => reject(req.error)
   })
   return dbPromise
-}
-
-export async function putBlob(key: string, blob: Blob): Promise<void> {
-  const db = await openDB()
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite')
-    tx.objectStore(STORE).put(blob, key)
-    tx.oncomplete = () => resolve()
-    tx.onerror = () => reject(tx.error)
-  })
 }
 
 export async function getBlob(key: string): Promise<Blob | undefined> {

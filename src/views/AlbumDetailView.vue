@@ -68,17 +68,15 @@ async function downloadAll() {
           <h1>{{ album.title }}</h1>
           <p class="desc">{{ album.description }}</p>
           <p class="meta">
-            <span class="meta-item"><AppIcon name="camera" :size="15" /> {{ album.photos.length }} 张照片</span>
+            <span class="meta-item"
+              ><AppIcon name="camera" :size="15" /> {{ album.photos.length }} 张照片</span
+            >
             <span class="meta-item"><AppIcon name="pencil" :size="15" /> {{ album.author }}</span>
             <time :datetime="album.createdAt">{{ formatDate(album.createdAt) }}</time>
           </p>
         </div>
         <div class="head-actions">
-          <MediaActions
-            :id="album.id"
-            kind="album"
-            :share-title="album.title"
-          >
+          <MediaActions :id="album.id" kind="album" :share-title="album.title">
             <button class="action-btn" aria-label="下载全部" @click="downloadAll">
               <AppIcon name="download" :size="16" />
               <span>全部下载</span>
@@ -181,11 +179,6 @@ async function downloadAll() {
 @media (min-width: 960px) {
   .photo-grid {
     grid-template-columns: repeat(4, 1fr);
-  }
-}
-@media (min-width: 1600px) {
-  .photo-grid {
-    grid-template-columns: repeat(5, 1fr);
   }
 }
 @media (min-width: 1600px) {

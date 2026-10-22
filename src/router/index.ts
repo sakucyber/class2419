@@ -33,7 +33,34 @@ export const bottomNav: NavItem[] = [
 ]
 
 /** 抽屉「更多」分组 */
-export const moreNav: NavItem[] = [{ path: '/settings', title: '设置', icon: 'gear' }]
+export const moreNav: NavItem[] = [
+  { path: '/favorites', title: '我的收藏', icon: 'star' },
+  { path: '/settings', title: '设置', icon: 'gear' },
+]
+
+/**
+ * 等待锚点目标出现后再滚动。
+ *
+ * 文章正文是**异步渲染**的（marked 渲染 + nextTick 之后才有 heading），
+ * 路由完成时 document.querySelector('#标题') 往往还不存在；原来的同步 scrollBehavior
+ * 会静默回到顶部，导致「分享某小节链接」这类深链失效。
+ */
+async function scrollToHash(hash: string): Promise<{ el: Element; top: number } | { top: number }> {
+  const raw = hash.startsWith('#') ? hash.slice(1) : hash
+  let id = raw
+  try {
+    id = decodeURIComponent(raw)
+  } catch {
+    /* 保留原样 */
+  }
+  const deadline = Date.now() + 1500
+  while (Date.now() < deadline) {
+    const el = document.getElementById(id)
+    if (el) return { el, top: 88 }
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  }
+  return { top: 0 }
+}
 
 const SITE_NAME = '新屋岭中学2419班'
 
@@ -93,6 +120,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '搜索' },
   },
   {
+    path: '/favorites',
+    name: 'favorites',
+    component: () => import('@/views/FavoritesView.vue'),
+    meta: { title: '我的收藏' },
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('@/views/SettingsView.vue'),
@@ -111,7 +144,7 @@ const router = createRouter({
   routes,
   scrollBehavior(to, _from, saved) {
     if (saved) return saved
-    if (to.hash) return { el: to.hash, top: 72 }
+    if (to.hash) return scrollToHash(to.hash)
     return { top: 0 }
   },
 })

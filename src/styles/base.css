@@ -227,11 +227,14 @@ html {
 }
 .btn--soft {
   background: var(--primary-soft);
-  color: var(--primary);
+  /* 用正文色而不是 --primary：强调色是粉/橙时，（主色 × 12% 浅底）的对比度
+     只有 2.4~3.7，达不到 AA；浅底 + 深字则四种强调色都稳过 4.5。
+     强调色已经由背景色表达，不需要文字再染一次。 */
+  color: var(--text);
 }
 .btn--soft:hover {
   background: var(--primary-soft-2);
-  color: var(--primary-hover);
+  color: var(--text);
 }
 .btn--danger {
   background: var(--danger);

@@ -1,28 +1,43 @@
-/* 极简 Service Worker：静态资源缓存 + 离线兜底（PWA 可选支持）
+/* Service Worker：应用壳预缓存 + 离线可用 + 静态资源缓存
  *
- * 缓存策略按资源类型区分，避免「换掉的资源一直不更新」：
- * - 入口脚本          /compat.js、/probe-es2020.js —— **网络优先**（见下方说明）
- * - /assets/**      构建产物，文件名带内容哈希（index-CCYV0Syo.css），内容变了文件名就变
- *                   → 缓存优先，可以认为是不可变的
- * - 其余同源资源     文件名不带哈希（如 /images/carousel/test-1.svg），
- *                   用 stale-while-revalidate：先返缓存保证快，后台同时拉新并写回缓存，
- *                   下次访问即最新。否则一旦图片更新，老访客会永远看到旧图。
- * - 导航请求        网络优先，失败时回退 index.html（离线也能打开）
+ * ── 为什么需要「预缓存」而不是只做运行时缓存 ──
+ * 浏览器的离线兜底只在**导航请求失败**时发生，而 SPA 的导航响应是 index.html。
+ * 如果从不把 index.html 写进缓存，断网后 caches.match(INDEX) 永远落空 —— 装到桌面
+ * 也只会看到白屏。所以 install 阶段由构建脚本注入一份 PRECACHE 清单，
+ * 把 index.html、入口脚本、全部构建产物（js/css）和图片一次性写进缓存。
  *
- * 为什么入口脚本必须网络优先：
- * 它们是「页面能不能正常渲染」的前置判断逻辑，和 index.html 的结构强耦合。
- * 若沿用 stale-while-revalidate（先返缓存），脚本更新后的**第一次访问**仍会执行旧版，
- * 于是出现「旧判断逻辑 + 新 HTML」的错配 —— 例如旧版把降级内容写到已被删掉的容器里，
- * 两边都不匹配就是白屏。入口逻辑宁可慢一点读网络，也不能用旧缓存。
+ * 清单由 vite.config.ts 的 pwaPrecachePlugin 在构建时生成（含 base 前缀），
+ * 缓存名带构建哈希：每次部署自动换新缓存，activate 时清掉旧的。
+ * 视频（/videos/**）**不进预缓存**：动辄十几 MB，且走媒体 bypass。
+ *
+ * 运行时策略：
+ * - 入口脚本 compat.js / probe-es2020.js：网络优先，离线回退缓存
+ * - /assets/**（文件名带构建哈希）：缓存优先
+ * - 其他同源资源（图片、图标…）：stale-while-revalidate（已预缓存的直接命中）
+ * - 导航：网络优先，失败时回退缓存的 index.html
+ * - 媒体请求 / 带 Range 的请求：完全绕过（Cache API 只能存整份 200，
+ *   经手一遍反而会让浏览器认为「不可分段」）
  */
-const CACHE = 'cls2419-v4'
+const CACHE_PREFIX = 'cls2419-'
+// 构建时由 pwaPrecachePlugin 替换成构建哈希；开发/未注入时用 dev 占位
+const CACHE = CACHE_PREFIX + '__SW_BUILD_ID__'
+// PRECACHE_INJECT
+const PRECACHE = []
 
-/** 入口级脚本：网络优先，仅离线时回退缓存 */
-const ENTRY_SCRIPTS = ['/compat.js', '/probe-es2020.js']
+/** 部署 base（'/' 或 '/仓库名/'）。SW 自身 URL 就带 base，从它推出来最可靠。 */
+const BASE = new URL('./', self.location).pathname
+const INDEX = BASE + 'index.html'
+const ENTRY_SCRIPTS = [BASE + 'compat.js', BASE + 'probe-es2020.js']
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting()
-  event.waitUntil(caches.open(CACHE))
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE)
+      // 逐个 add：任何一个资源 404/网络抖动都不应该让整个 SW 安装失败
+      await Promise.all(PRECACHE.map((url) => cache.add(url).catch(() => undefined)))
+      self.skipWaiting()
+    })(),
+  )
 })
 
 self.addEventListener('activate', (event) => {
@@ -53,15 +68,18 @@ self.addEventListener('fetch', (event) => {
     req.destination === 'video' ||
     req.destination === 'audio' ||
     req.headers.has('range') ||
-    /\.(mp4|m4v|webm|mov|mp3|m4a|ogg)$/i.test(url.pathname)
+    /\.(mp4|m4v|webm|mov|mp3|m4a|ogg|m3u8|m4s|ts)$/i.test(url.pathname)
   ) {
     return
   }
 
-  // 导航请求：网络优先，离线回退首页
+  // 导航请求：网络优先，离线回退缓存的 index.html（PWA 离线打开的关键）
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req).catch(() => caches.match('/index.html').then((r) => r || Response.error())),
+      fetch(req).catch(async () => {
+        const cached = await caches.match(INDEX)
+        return cached || Response.error()
+      }),
     )
     return
   }
@@ -83,7 +101,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // 带内容哈希的构建产物：缓存优先
-  if (url.pathname.startsWith('/assets/')) {
+  if (url.pathname.startsWith(BASE + 'assets/')) {
     event.respondWith(
       caches.match(req).then((cached) => {
         if (cached) return cached

@@ -23,11 +23,6 @@ function ensureHook() {
   })
 }
 
-/** 清洗用户输入，用于文章标题、摘要等纯文本场景 */
-export function sanitizeText(input: string): string {
-  return DOMPurify.sanitize(input, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
-}
-
 /** 渲染 Markdown 为安全 HTML */
 export async function renderMarkdown(md: string): Promise<string> {
   ensureHook()
@@ -44,25 +39,7 @@ export interface TocItem {
   level: number
 }
 
-/** 从渲染后的 HTML 中提取目录（h2/h3） */
-export function extractToc(html: string): TocItem[] {
-  const doc = new DOMParser().parseFromString(html, 'text/html')
-  const items: TocItem[] = []
-  const used = new Map<string, number>()
-  doc.querySelectorAll('h2, h3').forEach((el) => {
-    const text = (el.textContent || '').trim()
-    if (!text) return
-    let id = slugify(text)
-    const count = used.get(id) || 0
-    used.set(id, count + 1)
-    if (count > 0) id = `${id}-${count}`
-    el.setAttribute('id', id)
-    items.push({ id, text, level: el.tagName === 'H2' ? 2 : 3 })
-  })
-  return items
-}
-
-/** 用带 id 的目录结果回写 HTML（DOMParser 产物是副本） */
+/** 给标题补上锚点 id，并同步提取目录（DOMParser 产物是副本） */
 export function attachHeadingIds(html: string): { html: string; toc: TocItem[] } {
   const doc = new DOMParser().parseFromString(html, 'text/html')
   const items: TocItem[] = []
