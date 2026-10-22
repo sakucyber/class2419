@@ -5,7 +5,17 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'node_modules/**', 'public/**'] },
+  {
+    ignores: [
+      'dist/**',
+      'dist-sub/**',
+      'node_modules/**',
+      'public/**',
+      // wrangler pages dev 会在本地生成临时 worker 产物，不属于源码
+      '.wrangler/**',
+      '.tmp-fn/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...pluginVue.configs['flat/recommended'],

@@ -10,6 +10,10 @@
  * 缓存名带构建哈希：每次部署自动换新缓存，activate 时清掉旧的。
  * 视频（/videos/**）**不进预缓存**：动辄十几 MB，且走媒体 bypass。
  *
+ * ⚠️ 所有写入缓存的响应都要经过 cacheFresh() 归一化（去掉 Content-Encoding /
+ * Content-Length 后用解码 body 重建），否则带 br/gzip 的 HTML 缓存后离线导航会
+ * 直接 ERR_FAILED —— 这是生产环境实测踩到的坑。
+ *
  * 运行时策略：
  * - 入口脚本 compat.js / probe-es2020.js：网络优先，离线回退缓存
  * - /assets/**（文件名带构建哈希）：缓存优先
@@ -18,7 +22,7 @@
  * - 媒体请求 / 带 Range 的请求：完全绕过（Cache API 只能存整份 200，
  *   经手一遍反而会让浏览器认为「不可分段」）
  */
-const CACHE_PREFIX = 'cls2419-'
+const CACHE_PREFIX = 'cls2419-v2-'
 // 构建时由 pwaPrecachePlugin 替换成构建哈希；开发/未注入时用 dev 占位
 const CACHE = CACHE_PREFIX + '__SW_BUILD_ID__'
 // PRECACHE_INJECT
@@ -29,12 +33,48 @@ const BASE = new URL('./', self.location).pathname
 const INDEX = BASE + 'index.html'
 const ENTRY_SCRIPTS = [BASE + 'compat.js', BASE + 'probe-es2020.js']
 
+/**
+ * 写缓存前先「规范化」响应。
+ *
+ * 关键坑（生产实测）：CDN/Pages 返回的 HTML、JS、CSS 通常带
+ * `Content-Encoding: br`（或 gzip），而 Cache API 存的是**解码后的 body**。
+ * 把这份缓存响应原样再交还给浏览器时，头部与实际 body 对不上 ——
+ * `fetch()` 还能读，但**导航请求**会直接 `net::ERR_FAILED`（离线打开白屏）。
+ *
+ * 处理：删掉编码/长度相关头，用解码后的 blob 重新构造 Response 再 put。
+ */
+async function cacheFresh(cache, key, response) {
+  if (!response || !response.ok) return
+  const headers = new Headers(response.headers)
+  headers.delete('content-encoding')
+  headers.delete('content-length')
+  headers.delete('transfer-encoding')
+  const body = await response.blob()
+  await cache.put(
+    key,
+    new Response(body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    }),
+  )
+}
+
+/** 预缓存单个 URL：绕过 HTTP 缓存，按 cacheFresh 的规则写入 */
+async function precacheOne(cache, url) {
+  try {
+    const res = await fetch(url, { cache: 'reload' })
+    await cacheFresh(cache, url, res)
+  } catch {
+    /* 单个资源失败不影响整体安装 */
+  }
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE)
-      // 逐个 add：任何一个资源 404/网络抖动都不应该让整个 SW 安装失败
-      await Promise.all(PRECACHE.map((url) => cache.add(url).catch(() => undefined)))
+      await Promise.all(PRECACHE.map((url) => precacheOne(cache, url)))
       self.skipWaiting()
     })(),
   )
@@ -91,7 +131,10 @@ self.addEventListener('fetch', (event) => {
         .then((res) => {
           if (res.ok) {
             const clone = res.clone()
-            caches.open(CACHE).then((cache) => cache.put(req, clone))
+            caches
+              .open(CACHE)
+              .then((cache) => cacheFresh(cache, req, clone))
+              .catch(() => undefined)
           }
           return res
         })
@@ -108,7 +151,10 @@ self.addEventListener('fetch', (event) => {
         return fetch(req).then((res) => {
           if (res.ok) {
             const clone = res.clone()
-            caches.open(CACHE).then((cache) => cache.put(req, clone))
+            caches
+              .open(CACHE)
+              .then((cache) => cacheFresh(cache, req, clone))
+              .catch(() => undefined)
           }
           return res
         })
@@ -123,7 +169,7 @@ self.addEventListener('fetch', (event) => {
       cache.match(req).then((cached) => {
         const network = fetch(req)
           .then((res) => {
-            if (res.ok) cache.put(req, res.clone())
+            if (res.ok) cacheFresh(cache, req, res.clone()).catch(() => undefined)
             return res
           })
           .catch(() => cached || Response.error())
