@@ -33,6 +33,19 @@
   --bottom-nav-h: 60px;
   --container-w: 1200px;
 
+  /* ---- 字号阶梯 ----
+     之前各页各写一份 clamp()/rem，同一层级会出现 1rem 与 1.05rem 两种字号
+     （卡片标题）、0.85 与 0.86rem 两种描述字号。统一成一套，改一处全局生效。
+     正文基准仍由 body 的 1rem 承载，这里只定义"次级"与"标题"级。 */
+  --fs-2xs: 0.72rem; /* 角标、计数、微标签 */
+  --fs-xs: 0.78rem; /* 时间、辅助信息、卡片 meta */
+  --fs-sm: 0.86rem; /* 说明文字、卡片描述、副标题 */
+  --fs-md: 0.95rem; /* 紧凑正文、按钮 */
+  --fs-lg: 1.05rem; /* 卡片标题、小标题 */
+  --fs-xl: 1.25rem; /* 区块标题 */
+  --fs-2xl: clamp(1.4rem, 2.4vw, 1.8rem); /* 页面标题 */
+  --fs-3xl: clamp(1.75rem, 3.2vw, 2.35rem); /* 内容大标题（文章 / 关于） */
+
   --duration-fast: 150ms;
   --duration: 250ms;
   --duration-slow: 420ms;
@@ -42,6 +55,14 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* ---- 交互状态 ----
+     统一"悬停抬升 / 按下回弹 / 焦点环"三个动作，避免每个组件各写一套位移值。
+     hover 只在真正的指针设备上生效：触摸屏点完会一直保留 hover，
+     卡片停在浮起状态看起来像卡住了。 */
+  --hover-lift: translateY(-6px) scale(1.012);
+  --press: translateY(0) scale(0.988);
+  --ring: 0 0 0 3px var(--primary-soft-2);
 
   --z-header: 100;
   --z-drawer: 110;
@@ -65,14 +86,17 @@
   --text: #241f33;
   --text-2: #544d6b;
   /* 原 #7b7391 在页面底色 #f0ecfa 上只有 3.84:1（WCAG AA 要求 4.5）。
-     压深到 #6f6784 后：页面底 4.58、卡片上 5.20，仍是"弱化文字"的观感。 */
-  --text-3: #6f6784;
+     压深到 #6b6382 后：页面底 4.85、卡片上更高，仍是「弱化文字」的观感。
+     （两版并行修复过同一个问题：此处取更深的一档，留出余量） */
+  --text-3: #6b6382;
   --border: rgba(122, 86, 158, 0.16);
   --border-strong: rgba(122, 86, 158, 0.28);
   --glass-blur: blur(18px) saturate(1.6);
   --shadow-1: 0 1px 2px rgba(74, 50, 112, 0.05), 0 4px 12px rgba(74, 50, 112, 0.07);
   --shadow-2: 0 2px 6px rgba(74, 50, 112, 0.06), 0 14px 32px rgba(74, 50, 112, 0.1);
   --shadow-3: 0 6px 18px rgba(74, 50, 112, 0.1), 0 26px 56px rgba(74, 50, 112, 0.14);
+  /* 卡片顶部 1px 内高光：玻璃质感的关键细节，没有它卡片就是一块纯色矩形 */
+  --sheen: inset 0 1px 0 rgba(255, 255, 255, 0.9);
   --skeleton-a: rgba(126, 90, 160, 0.1);
   --skeleton-b: rgba(126, 90, 160, 0.05);
   --overlay: rgba(40, 28, 60, 0.42);
@@ -94,13 +118,15 @@
   --card-hover: rgba(255, 255, 255, 0.085);
   --text: #f2eef8;
   --text-2: #b3aec4;
-  --text-3: #7c7590;
+  /* 原 #7c7590 在 #08080f 上刚好 4.50:1，处于临界；提亮到 ≈5.2:1 更稳 */
+  --text-3: #8b84a0;
   --border: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.18);
   --glass-blur: blur(20px) saturate(1.7);
   --shadow-1: 0 2px 10px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
   --shadow-2: 0 6px 18px rgba(0, 0, 0, 0.35), 0 18px 44px rgba(0, 0, 0, 0.35);
   --shadow-3: 0 12px 30px rgba(0, 0, 0, 0.45), 0 30px 70px rgba(0, 0, 0, 0.45);
+  --sheen: inset 0 1px 0 rgba(255, 255, 255, 0.07);
   --skeleton-a: rgba(255, 255, 255, 0.06);
   --skeleton-b: rgba(255, 255, 255, 0.02);
   --overlay: rgba(2, 4, 12, 0.68);

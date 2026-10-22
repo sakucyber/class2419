@@ -46,9 +46,6 @@ const interaction = useInteractionStore()
 .cover {
   position: relative;
 }
-.cover :deep(.lazy-image:hover .img) {
-  transform: scale(1.05);
-}
 .count-badge {
   position: absolute;
   display: inline-flex;
@@ -83,15 +80,15 @@ const interaction = useInteractionStore()
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 .title {
-  font-size: 1.05rem;
+  font-size: var(--fs-lg);
 }
 .desc {
   color: var(--text-2);
-  font-size: 0.86rem;
+  font-size: var(--fs-sm);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -102,10 +99,10 @@ const interaction = useInteractionStore()
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.8rem;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   margin-top: auto;
   padding-top: var(--space-2);
-  border-top: 1px dashed var(--border);
+  border-top: 1px solid var(--border);
 }
 </style>

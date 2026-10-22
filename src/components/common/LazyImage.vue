@@ -89,7 +89,15 @@ onBeforeUnmount(() => observer?.disconnect())
 
 <template>
   <div ref="root" class="lazy-image" :style="{ aspectRatio: aspect, borderRadius: radius }">
-    <img v-show="loaded && !failed" ref="el" class="img" :alt="alt" decoding="async" />
+    <!-- aria-label 会覆盖 alt 的可读内容，这里只留 alt -->
+    <img
+      v-show="loaded && !failed"
+      ref="el"
+      class="img"
+      :class="{ 'is-loaded': loaded && !failed }"
+      :alt="alt"
+      decoding="async"
+    />
     <div v-if="!loaded && !failed" class="lazy-skeleton skeleton" aria-hidden="true"></div>
     <div v-if="failed" class="lazy-fail" role="img" :aria-label="`${alt || '图片'}加载失败`">
       <AppIcon name="image" :size="26" :stroke-width="1.4" />
@@ -114,10 +122,25 @@ onBeforeUnmount(() => observer?.disconnect())
     transform var(--duration-slow) var(--ease),
     opacity var(--duration) var(--ease);
 }
+/* 加载完成时淡入。只动 opacity、不加 fill-mode：
+   一旦给 transform 设了 forwards，卡片封面的 hover 缩放就再也压不上去了。 */
+.img.is-loaded {
+  animation: img-fade var(--duration) var(--ease);
+}
+@keyframes img-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 .lazy-skeleton,
 .lazy-fail {
   position: absolute;
   inset: 0;
+  /* 占位/失败态跟随容器圆角，否则圆角封面里会出现一块方角灰底 */
+  border-radius: inherit;
 }
 .lazy-fail {
   display: flex;

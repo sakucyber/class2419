@@ -391,7 +391,8 @@ h1 {
 
 .block {
   padding: clamp(18px, 3vw, 28px);
-  margin-bottom: var(--space-4);
+  /* 16px 在 30px 大圆角旁边显得挤，和页面其它区块的呼吸感对不上 */
+  margin-bottom: var(--space-5);
 }
 .block h2 {
   font-size: 1.15rem;

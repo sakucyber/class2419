@@ -95,15 +95,15 @@ defineProps<{ video: VideoItem }>()
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 .title {
-  font-size: 1rem;
+  font-size: var(--fs-lg);
 }
 .desc {
   color: var(--text-2);
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;

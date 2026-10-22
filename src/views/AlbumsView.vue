@@ -193,6 +193,11 @@ h1 {
   flex-wrap: wrap;
   gap: var(--space-2);
 }
+/* 换行到独立一行时（≤768px）贴右：否则它会孤零零停在左边，
+   右边空出 200 多像素，看起来像排版没做完 */
+.sort-box {
+  margin-left: auto;
+}
 .sort-box .select {
   width: auto;
   min-width: 120px;

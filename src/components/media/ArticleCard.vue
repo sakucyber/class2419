@@ -73,7 +73,7 @@ const interaction = useInteractionStore()
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   flex-wrap: wrap;
 }
@@ -81,7 +81,7 @@ const interaction = useInteractionStore()
   margin-left: auto;
 }
 .title {
-  font-size: 1.05rem;
+  font-size: var(--fs-lg);
   line-height: 1.45;
   display: flex;
   gap: 6px;
@@ -89,7 +89,7 @@ const interaction = useInteractionStore()
 }
 .excerpt {
   color: var(--text-2);
-  font-size: 0.88rem;
+  font-size: var(--fs-sm);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -103,8 +103,8 @@ const interaction = useInteractionStore()
   gap: var(--space-2);
   margin-top: auto;
   padding-top: var(--space-2);
-  border-top: 1px dashed var(--border);
-  font-size: 0.78rem;
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 .tags {
