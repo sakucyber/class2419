@@ -28,7 +28,11 @@ let saveTimer: ReturnType<typeof setInterval> | null = null
    也没有 `Accept-Ranges`。后果是浏览器只能线性播放，进度条拖到未缓冲处会被弹回。
    绕法：把整段下载成 Blob 再交给 <video> —— Blob URL 是内存数据，
    定位不依赖服务器，可以随便拖。
-   为了不让人干等：先用直连地址立刻能播，后台下完再静默换源（保留位置与播放状态）。 */
+
+   取舍：早先的做法是「直连秒开 + 后台换源」，同一支视频要下载两遍
+   （流式播放一遍、Blob 再一遍，12–20 MB × 2）。现在改成一次到底：
+   确认没有 Range 就先整段取回内存再交给播放器，过程显示进度，
+   等不及可以点「边下边看」退回直连流式（能看，但不能拖）。 */
 const loading = ref(false)
 const loadPct = ref(0)
 const loadedBytes = ref(0)
@@ -36,10 +40,11 @@ const totalBytes = ref(0)
 let rangeSupport: boolean | null = null
 let abortCtrl: AbortController | null = null
 let blobUrl = ''
-let pendingSeek = 0
-let pendingPlay = false
-/** 正在把源换成 Blob：此时元素被重置会触发 pause，不能把它当成"用户暂停"去存进度 */
-let swapping = false
+let rawUrl = ''
+
+/** 整段预载的保护阈值：超过这个体积、或设备内存偏小，就不折腾，退回直连流式 */
+const MAX_BLOB_BYTES = 30 * 1048576
+const MIN_DEVICE_MEMORY = 4
 
 function fmtMB(n: number): string {
   return n > 0 ? (n / 1048576).toFixed(1) : '0'
@@ -51,20 +56,33 @@ const loadLabel = computed(() =>
     : `${loadPct.value}%`,
 )
 
-/** 服务器是否支持分段请求。同一站点结论一致，只探一次。 */
-async function supportsRange(url: string): Promise<boolean> {
-  if (rangeSupport !== null) return rangeSupport
+type Probe = { ranged: boolean | null; size: number }
+
+/**
+ * 探测是否支持分段请求，并顺带拿到文件大小（服务器忽略 Range 时回的是完整文件，
+ * Content-Length 就是真实大小）。结论整站一致，所以只探一次。
+ *
+ * 网络异常时返回 `ranged: null`（未知）而**不写入缓存**：
+ * 否则一次临时断网就会让整个会话都按「不支持」处理，白白预载每支视频。
+ */
+async function probeSource(url: string): Promise<Probe> {
+  if (rangeSupport !== null) return { ranged: rangeSupport, size: totalBytes.value }
   const ctrl = new AbortController()
   try {
     const res = await fetch(url, { headers: { Range: 'bytes=0-0' }, signal: ctrl.signal })
     rangeSupport = res.status === 206
+    return { ranged: rangeSupport, size: Number(res.headers.get('Content-Length') || 0) }
   } catch {
-    // 探测失败保守当作不支持：多花点流量，但保证能拖
-    rangeSupport = false
+    return { ranged: null, size: 0 }
   } finally {
     ctrl.abort() // 不支持 Range 时服务器会回整个文件，拿到响应头立刻掐断
   }
-  return rangeSupport
+}
+
+/** 设备内存偏小（iOS Safari 不解这个字段，按「不偏小」处理） */
+function lowMemoryDevice(): boolean {
+  const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory
+  return typeof mem === 'number' && mem < MIN_DEVICE_MEMORY
 }
 
 function isSameOrigin(url: string): boolean {
@@ -88,17 +106,14 @@ function releaseBlob() {
   }
 }
 
-/** 换源到 Blob，并把播放位置与播放状态接过去 */
-function swapToBlob(url: string) {
-  const el = videoEl.value
-  pendingSeek = el && Number.isFinite(el.duration) ? el.currentTime : 0
-  pendingPlay = el ? !el.paused && !el.ended : false
-  swapping = true
-  resolvedSrc.value = url
+/** 不等了：放弃整段预载，改用直连地址边下边看（能看，但进度条拖不动） */
+function skipBlob() {
+  cancelLoad()
+  if (rawUrl) resolvedSrc.value = rawUrl
 }
 
-/** 后台把整段下载进内存；成功后换源，换来可拖动的进度条 */
-async function fetchToBlob(url: string) {
+/** 整段下载进内存；成功设成 Blob 源，返回是否成功 */
+async function fetchToBlob(url: string, videoId: string): Promise<boolean> {
   const ctrl = new AbortController()
   abortCtrl = ctrl
   loading.value = true
@@ -129,23 +144,32 @@ async function fetchToBlob(url: string) {
       }
     }
     const objUrl = URL.createObjectURL(new Blob(chunks, { type: 'video/mp4' }))
+    // 下载期间可能已经切到别的视频：这份数据不能塞给新页面
+    if (route.params.id !== videoId) {
+      URL.revokeObjectURL(objUrl)
+      return false
+    }
     releaseBlob()
     blobUrl = objUrl
     loadPct.value = 100
-    swapToBlob(objUrl)
+    resolvedSrc.value = objUrl
+    return true
   } catch {
-    // 取消或网络失败：保持直连，功能不回退
     loadPct.value = 0
+    return false
   } finally {
-    if (abortCtrl === ctrl) abortCtrl = null
-    loading.value = false
+    if (abortCtrl === ctrl) {
+      abortCtrl = null
+      loading.value = false
+    }
   }
 }
 
-// 解析 idb: 引用；同源且不支持 Range 时再准备可拖动的 Blob 源
+// 解析 idb: 引用；同源且确认不支持 Range 时，先整段取回再播（换可拖动的进度条）
 async function resolve() {
   mediaError.value = false
   resolvedSrc.value = ''
+  rawUrl = ''
   releaseBlob()
   cancelLoad()
   const current = video.value
@@ -156,12 +180,28 @@ async function resolve() {
       mediaError.value = true
       return
     }
-    resolvedSrc.value = url // 先用直连，立刻能播
-    if (url.startsWith('blob:') || url.startsWith('data:')) return
-    if (!isSameOrigin(url)) return // 跨域外链拿不到 body，不折腾
-    if (await supportsRange(url)) return // 原生支持拖动，不需要这套
+    rawUrl = url
+    // 已经是本地对象，或跨域外链（拿不到 body），直接播
+    if (url.startsWith('blob:') || url.startsWith('data:') || !isSameOrigin(url)) {
+      resolvedSrc.value = url
+      return
+    }
+
+    const probe = await probeSource(url)
     if (route.params.id !== current.id) return // 探测期间已经切走
-    void fetchToBlob(url)
+    // 支持 Range（原生可拖）或探测失败（未知）：都用直连，不预载
+    if (probe.ranged !== false) {
+      resolvedSrc.value = url
+      return
+    }
+    // 体积过大 / 内存偏小：退回直连流式，宁可拖不动也不要把页面撑爆
+    if (probe.size > MAX_BLOB_BYTES || lowMemoryDevice()) {
+      resolvedSrc.value = url
+      return
+    }
+    const ok = await fetchToBlob(url, current.id)
+    // 失败 / 被「边下边看」取消：退回直连。切走了就什么都不做，别覆盖新页面
+    if (!ok && route.params.id === current.id) resolvedSrc.value = url
   } catch {
     mediaError.value = true
   }
@@ -172,16 +212,9 @@ function onLoadedMetadata() {
   const el = videoEl.value
   if (!el || !video.value) return
   const saved = interaction.getVideoProgress(video.value.id)
-  const savedTime =
-    saved && saved.time > 1 && saved.time < (el.duration || Infinity) - 2 ? saved.time : 0
-  // 换源到 Blob 时优先回到换源那一刻的位置，其次才是上次记录的进度
-  const target = pendingSeek > 0 ? pendingSeek : savedTime
-  const resumePlaying = pendingPlay
-  pendingSeek = 0
-  pendingPlay = false
-  if (target > 0 && (!el.duration || target < el.duration - 0.3)) el.currentTime = target
-  if (resumePlaying) void el.play().catch(() => {})
-  swapping = false
+  if (saved && saved.time > 1 && saved.time < (el.duration || Infinity) - 2) {
+    el.currentTime = saved.time
+  }
   // 先清再设：切换视频时 loadedmetadata 会再次触发，不清会攒出一堆计时器
   stopTimer()
   saveTimer = setInterval(saveProgress, 4000)
@@ -208,16 +241,13 @@ watch(
     stopTimer()
     mediaError.value = false
     resolvedSrc.value = ''
-    pendingSeek = 0
-    pendingPlay = false
     void resolve()
   },
 )
 
 function saveProgress() {
   const el = videoEl.value
-  // 换源那一瞬元素会被重置、currentTime 归零；此时存盘会把进度抹掉
-  if (swapping || !el || !video.value || !el.duration) return
+  if (!el || !video.value || !el.duration) return
   interaction.setVideoProgress(video.value.id, el.currentTime, el.duration)
 }
 
@@ -270,7 +300,7 @@ const related = computed(() => content.publicVideos.filter((v) => v.id !== video
               controls
               playsinline
               preload="metadata"
-              :src="resolvedSrc"
+              :src="resolvedSrc || undefined"
               @loadedmetadata="onLoadedMetadata"
               @pause="onPause"
               @ended="saveProgress"
@@ -318,8 +348,8 @@ const related = computed(() => content.publicVideos.filter((v) => v.id !== video
 
             <!-- 服务器不支持 Range：后台整段下载成 Blob，完成后换源让进度条可拖 -->
             <div v-if="loading" class="drag-hint" role="status">
-              <span>准备可拖动进度条 {{ loadLabel }}</span>
-              <button class="drag-hint-skip" type="button" @click="cancelLoad">取消</button>
+              <span>整段加载 {{ loadLabel }}</span>
+              <button class="drag-hint-skip" type="button" @click="skipBlob">边下边看</button>
             </div>
           </div>
 

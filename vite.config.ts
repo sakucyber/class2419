@@ -132,7 +132,21 @@ function pwaPrecachePlugin(): Plugin {
         .filter((url) => !url.endsWith('/sw.js'))
         .sort()
 
-      const buildId = createHash('sha1').update(list.join('\n')).digest('hex').slice(0, 10)
+      // buildId 必须反映**文件内容**，不能只哈希 URL 列表。
+      // `/assets/*` 的文件名本身带内容哈希，改代码会换名；但 `public/images/**`
+      // 这类文件名是固定的 —— 只替换同名图片时 URL 列表一模一样，SW 会认为
+      // 自己没有更新，缓存名不轮换，用户最长一周（HTTP 缓存）看到旧图。
+      // 对每个文件取内容哈希再汇总，换图就会换缓存名（install 时用 cache:'reload' 重取）。
+      const stripBase = (url: string) => url.replace(b, '').replace(/^\/+/, '')
+      const digest = createHash('sha1')
+      for (const url of list) {
+        digest.update(url)
+        digest.update('\0')
+        const file = path.join(dist, stripBase(url))
+        if (fs.existsSync(file)) digest.update(fs.readFileSync(file))
+        digest.update('\0')
+      }
+      const buildId = digest.digest('hex').slice(0, 10)
       let sw = fs.readFileSync(swPath, 'utf8')
       const before = sw
       sw = sw.replace(

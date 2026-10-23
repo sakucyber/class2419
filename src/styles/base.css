@@ -196,8 +196,10 @@ html {
 
 /* 卡片可聚焦时给一圈柔和的光环，比默认 outline 更贴合玻璃质感 */
 .card:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-2), var(--sheen), var(--ring);
+  /* 保留 outline：只靠 box-shadow 的焦点指示太脆，任何组件覆盖了阴影就彻底看不见了 */
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  box-shadow: var(--shadow-2), var(--sheen);
 }
 
 /* 卡片封面悬停微缩放：三种卡片统一（之前只有相册卡有，

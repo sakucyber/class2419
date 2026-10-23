@@ -136,11 +136,11 @@ const popularTags = computed(() => {
   margin-bottom: var(--space-5);
 }
 h1 {
-  font-size: clamp(1.4rem, 3vw, 1.8rem);
+  font-size: var(--fs-2xl);
 }
 .subtitle {
   color: var(--text-3);
-  font-size: 0.88rem;
+  font-size: var(--fs-sm);
   margin-top: 4px;
 }
 .toolbar {

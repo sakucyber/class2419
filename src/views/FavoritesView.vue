@@ -126,12 +126,12 @@ function remove(kind: Kind, id: string): void {
   margin-bottom: var(--space-5);
 }
 h1 {
-  font-size: clamp(1.4rem, 3vw, 1.8rem);
+  font-size: var(--fs-2xl);
 }
 .subtitle {
   margin-top: 6px;
   color: var(--text-3);
-  font-size: 0.88rem;
+  font-size: var(--fs-sm);
 }
 .group {
   margin-bottom: var(--space-8);

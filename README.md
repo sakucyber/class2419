@@ -189,6 +189,16 @@ npm run build && npx serve dist
 
 需自行配置 SPA 回退（可用仓库内 `public/_redirects`：`/* /index.html 200`）。
 
+## 🔁 替换素材的约定
+
+站点的图片/视频文件名**不带内容哈希**，所以缓存这关要格外注意：
+
+- `public/_headers` 里 `/images/*`、`/videos/*` 是 **7 天缓存**。
+- Service Worker 的缓存名（`buildId`）现在包含**文件内容哈希**，替换同名图片后会换缓存名并在 install 时用 `cache: 'reload'` 重取，能更新；但**首次访问、直接打开图片链接、或禁用了 SW 的浏览器**仍可能读到 HTTP 缓存里的旧文件。
+- **因此替换素材时建议换文件名**：`cryx-1.svg` → `cryx-2026-10.svg`，并同步改 `src/data/*.json` 里的路径。一次改动，永远不用再担心缓存。
+- 视频尤其注意：单支 12–20 MB，旧文件会在缓存里躺一周。演示/验收前若要换片，直接换文件名最省事。
+- `public/_headers` 只在 **Cloudflare Pages / Netlify** 这类支持 `_headers` 的平台生效；部署到阿里云 ESA 时，安全头与缓存策略需要在控制台另行配置（ESA 也不会读 `wrangler.jsonc`）。
+
 ## 🔐 安全与隐私说明（必读）
 
 - **无后端**：所有数据仅保存在**访问者自己的浏览器**（localStorage / IndexedDB），换设备或清除浏览器数据即丢失。

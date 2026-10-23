@@ -54,18 +54,65 @@ if (precacheEntries.some((url) => /\.(mp4|m4v|webm|mov)$/i.test(url))) {
   failures.push('sw.js 预缓存清单里混进了视频（不应缓存大文件）')
 }
 
+/**
+ * URL → dist 里的实际文件。
+ *
+ * 清单里的 URL 可能带部署 base（`/class2419/images/x.svg`），也可能就是根路径。
+ * 从前往后逐段剥，第一个能命中真实文件的相对路径就是它 —— 比依赖 VITE_BASE 稳，
+ * 因为自检脚本不保证和构建时用同一个环境变量。
+ */
+const resolveDistFile = (url) => {
+  const rel = decodeURIComponent(url).replace(/^\/+/, '')
+  const segs = rel.split('/')
+  for (let i = 0; i < segs.length; i++) {
+    const candidate = path.join(dist, ...segs.slice(i))
+    try {
+      if (fs.statSync(candidate).isFile()) return candidate
+    } catch {
+      /* 不存在就试下一个前缀 */
+    }
+  }
+  return null
+}
+
+// SW 的 install 是逐条 fetch 且单条失败会静默跳过，所以「条数够」不等于「都缓存成功」
+const missing = []
+let precacheBytes = 0
+for (const url of precacheEntries) {
+  const file = resolveDistFile(url)
+  if (!file) {
+    missing.push(url)
+    continue
+  }
+  precacheBytes += fs.statSync(file).size
+}
+if (missing.length) {
+  const sample = missing.slice(0, 5).join(', ')
+  failures.push(
+    `预缓存清单里有 ${missing.length} 个 URL 在 dist 中不存在：${sample}${missing.length > 5 ? ' …' : ''}`,
+  )
+}
+const precacheMB = precacheBytes / 1048576
+if (precacheMB > 20) {
+  failures.push(`预缓存体积 ${precacheMB.toFixed(1)} MB 超过上限 20 MB（移动端流量过重）`)
+}
+
 if (!/"start_url": "\."/.test(manifest) || !/"scope": "\."/.test(manifest)) {
   failures.push('manifest 的 start_url / scope 不是相对路径（子路径部署会错）')
 }
 
 const report = [
   `dist 文件：${fs.existsSync(path.join(dist, 'index.html')) ? 'ok' : 'missing'}`,
-  `预缓存条目：${precacheEntries.length}`,
+  `预缓存条目：${precacheEntries.length}（缺失 ${missing.length}）`,
+  `预缓存体积：${precacheMB.toFixed(1)} MB`,
   `缓存后缀：${cacheMatch ? cacheMatch[1] : '未注入'}`,
 ]
 
 if (failures.length) {
   console.error('构建自检失败：\n- ' + failures.join('\n- '))
   process.exit(1)
+}
+if (precacheMB > 10) {
+  console.warn(`⚠️ 预缓存已达 ${precacheMB.toFixed(1)} MB，超过 10 MB 后首访会明显吃流量`)
 }
 console.warn(report.join('\n'))

@@ -116,7 +116,7 @@ const typeLabel: Record<string, string> = {
   margin-bottom: var(--space-6);
 }
 h1 {
-  font-size: clamp(1.4rem, 3vw, 1.8rem);
+  font-size: var(--fs-2xl);
   margin-bottom: var(--space-4);
 }
 .search-box {
