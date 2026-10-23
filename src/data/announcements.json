@@ -1,10 +1,18 @@
 [
   {
+    "id": "a4",
+    "title": "访问地址：请先保存永久链接",
+    "content": "Cloudflare 永久链接（请优先保存）：https://class2419.pages.dev/　阿里云 CDN 加速链接（备用，可能失效）：https://class2419.zh.kg/　访问说明：请先保存 Cloudflare 永久链接。若无法访问，可尝试切换网络（如 WiFi 与移动数据互换），或改用阿里云 CDN 加速链接。阿里云 CDN 链接可能会失效，因此请务必先保存 Cloudflare 永久链接。",
+    "createdAt": "2026-10-23T11:20:00.000Z",
+    "pinned": true,
+    "level": "info"
+  },
+  {
     "id": "a3",
     "title": "班级空间正式发布",
     "content": "2419班的班级空间正式发布啦！这里收录着我们的相册、视频和文章，会随同学们的记录持续更新。内容以静态文件形式随站点一起发布，打开就能看，无需登录。欢迎把链接分享给家长和同学～",
     "createdAt": "2026-10-11T10:00:00.000Z",
-    "pinned": true,
+    "pinned": false,
     "level": "info"
   }
 ]

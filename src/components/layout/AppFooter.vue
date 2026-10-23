@@ -22,6 +22,30 @@ const year = new Date().getFullYear()
       </nav>
       <!-- 打卡是"动作"，放在版权行之前：读者视线按 链接 → 互动 → 法务 的顺序走 -->
       <CheckInButton />
+      <!-- 访问地址：永久链接在前、备用链接弱化；两条都是真链接，手机上可直接点 -->
+      <div class="footer-access">
+        <a
+          class="footer-access-main"
+          href="https://class2419.pages.dev/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          class2419.pages.dev
+        </a>
+        <span class="footer-access-sep" aria-hidden="true">·</span>
+        <a
+          class="footer-access-backup"
+          href="https://class2419.zh.kg/"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="阿里云 CDN 加速链接，可能失效"
+        >
+          备用 class2419.zh.kg
+        </a>
+      </div>
+      <p class="footer-hint">
+        打不开时先切换网络（WiFi ↔ 移动数据）；备用地址可能失效，请优先保存永久地址。
+      </p>
       <p class="footer-note">
         © {{ year }} {{ content.classInfo.shortName }} · 纯前端静态站点 · 数据仅保存在本地浏览器
       </p>
@@ -95,5 +119,37 @@ const year = new Date().getFullYear()
   border-color: var(--primary-soft-2);
   background: var(--primary-soft);
   transform: translateY(-2px);
+}
+
+/* 访问地址：主链接用主色，备用链接降到次级，一眼看出优先级 */
+.footer-access {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+.footer-access a {
+  font-weight: 600;
+  word-break: break-all;
+}
+.footer-access-main {
+  color: var(--primary);
+}
+.footer-access-backup {
+  color: var(--text-3);
+}
+.footer-access-backup:hover {
+  color: var(--text-2);
+}
+.footer-access-sep {
+  color: var(--border-strong);
+}
+.footer-hint {
+  max-width: 60ch;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--text-3);
 }
 </style>

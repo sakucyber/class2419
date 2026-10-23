@@ -32,6 +32,23 @@ const content = useContentStore()
           <dt>班主任</dt>
           <dd>{{ content.classInfo.teacher }}</dd>
         </div>
+        <div>
+          <dt>访问地址</dt>
+          <dd class="fact-access">
+            <a href="https://class2419.pages.dev/" target="_blank" rel="noopener noreferrer">
+              class2419.pages.dev
+            </a>
+            <a
+              class="fact-access-backup"
+              href="https://class2419.zh.kg/"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="阿里云 CDN 加速链接，可能失效"
+            >
+              备用 · class2419.zh.kg
+            </a>
+          </dd>
+        </div>
       </dl>
     </section>
 
@@ -186,6 +203,25 @@ const content = useContentStore()
   font-size: 1rem;
   font-weight: 700;
   color: var(--text);
+}
+/* 访问地址：主链接与备用链接竖排，备用的弱化一档，避免抢戏 */
+.fact-access {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fact-access a {
+  font-size: 0.92rem;
+  font-weight: 700;
+  word-break: break-all;
+}
+.fact-access .fact-access-backup {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-3);
+}
+.fact-access .fact-access-backup:hover {
+  color: var(--text-2);
 }
 
 .honor-grid {

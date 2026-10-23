@@ -162,9 +162,9 @@ onBeforeUnmount(() => {
       <!-- 公告 -->
       <section v-if="notices.length" v-reveal class="container section">
         <SectionHeader
-          tag="Release"
-          title="班级空间正式发布"
-          subtitle="这个小站上线啦，相册、视频与文章会持续更新"
+          tag="Notice"
+          title="班级公告"
+          subtitle="访问地址说明与站点更新，都在这里"
         />
         <ul class="notice-list">
           <li

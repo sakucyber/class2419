@@ -12,3 +12,8 @@ dist
 !.vscode/extensions.json
 .idea
 install.log
+
+# PPT 产物与 slidep 工作目录（体积大且站点构建用不到）
+班级空间介绍/
+.slidep/
+.cache/
