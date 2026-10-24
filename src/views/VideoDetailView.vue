@@ -46,6 +46,19 @@ const canSeek = ref(false)
 const bufferedPct = ref(0)
 /** 探测时拿到的文件体积：用来在「要不要预载」这一步就把代价说清楚 */
 const sourceBytes = ref(0)
+
+/* 「边下边看」把整段缓冲完之后，数据其实已经在本机了，但因为响应是 200、
+   没有 Content-Range，`seekable` 仍然是空区间 ——
+   「已缓冲 100%」却还是拖不动，这是条死路。到这一步就自动转成 Blob，
+   把已经付出的流量变成一个真正可拖动的进度条。 */
+const upgrading = ref(false)
+const upgradePct = ref(0)
+let upgradeTried = false
+/** 换源瞬间要把播放位置与播放状态接过去 */
+let pendingResumeAt = 0
+let pendingResumePlay = false
+/** 换源时元素被重置会触发 pause，此刻 currentTime 已归零，不能存盘 */
+let swapping = false
 let abortCtrl: AbortController | null = null
 let blobUrl = ''
 let rawUrl = ''
@@ -66,7 +79,12 @@ const loadLabel = computed(() =>
 
 /** 只有在「确实拖不动」时才提示；一旦浏览器报告可定位，就闭嘴 */
 const showStreamHint = computed(
-  () => !loading.value && !seekFlash.value && streamReason.value !== null && !canSeek.value,
+  () =>
+    !loading.value &&
+    !upgrading.value &&
+    !seekFlash.value &&
+    streamReason.value !== null &&
+    !canSeek.value,
 )
 
 const STREAM_TEXT = {
@@ -88,6 +106,16 @@ const streamLabel = computed(() => {
 /** 按钮上直接写要花多少流量，比「加载整段」含糊其辞有用 */
 const loadCostLabel = computed(() =>
   sourceBytes.value > 0 ? `加载 ${fmtMB(sourceBytes.value)} MB` : '加载整段',
+)
+
+/**
+ * 进入「边下边看」后必须把 preload 放开到 auto。
+ * `preload="metadata"` 会让浏览器把缓冲卡在 ~35% 就不再往后取，
+ * 于是「整段缓冲完毕」这件事永远不发生，自动升级成可拖动也就永远等不到。
+ * 省流量 / 弱网 / 体积保护三种情况仍然只取元数据 —— 那正是它们存在的意义。
+ */
+const videoPreload = computed(() =>
+  streamReason.value === 'user' || streamReason.value === 'auto' ? 'auto' : 'metadata',
 )
 
 /* 从「拖不动」变成「拖得动」的那一下值得说一声，否则用户不会主动去试 */
@@ -181,7 +209,7 @@ function skipBlob() {
 
 /** 后悔了：从「边下边看」回到整段预载（失败就保持原样，不打断观看） */
 async function retryPreload() {
-  if (!rawUrl || loading.value) return
+  if (!rawUrl || loading.value || upgrading.value) return
   const id = String(route.params.id)
   streamReason.value = null
   const ok = await fetchToBlob(rawUrl, id)
@@ -196,14 +224,82 @@ async function retryPreload() {
 function syncPlaybackState() {
   const el = videoEl.value
   if (!el || !Number.isFinite(el.duration) || el.duration <= 0) return
+  const duration = el.duration
   const lastSeekable = el.seekable.length ? el.seekable.end(el.seekable.length - 1) : 0
-  const nextCanSeek = lastSeekable >= el.duration - 1
+  const nextCanSeek = lastSeekable >= duration - 1
   // 之前拖不动、现在拖得动了：提示一下，不然用户不会主动去试
   if (nextCanSeek && !canSeek.value && streamReason.value !== null) flashSeekable()
   canSeek.value = nextCanSeek
-  if (el.buffered.length) {
-    const lastBuffered = el.buffered.end(el.buffered.length - 1)
-    bufferedPct.value = Math.min(100, Math.max(0, Math.round((lastBuffered / el.duration) * 100)))
+
+  if (!el.buffered.length) return
+  const lastBuffered = el.buffered.end(el.buffered.length - 1)
+  // 用 floor：99.6% 就显示 99%，别提前显示 100% 让人以为已经好了
+  bufferedPct.value = Math.min(100, Math.max(0, Math.floor((lastBuffered / duration) * 100)))
+
+  // 整段都进 buffer 了，但 seekable 还是空的 —— 数据已经在本机，
+  // 只是浏览器不认为能定位。这时候自动升级成 Blob，别让用户卡在「100% 却拖不动」。
+  const fullyBuffered = el.buffered.start(0) <= 0.5 && lastBuffered >= duration - 0.5
+  const upgradeable = streamReason.value === 'user' || streamReason.value === 'auto'
+  if (fullyBuffered && !nextCanSeek && upgradeable && !upgrading.value && !upgradeTried) {
+    void upgradeFromBuffer()
+  }
+}
+
+/**
+ * 「边下边看」走到底之后，把整段重新取回成 Blob，换成可拖动的进度条。
+ *
+ * 为什么必须再 fetch 一次：媒体元素里的 buffer 拿不出字节，没有别的途径。
+ * 但这一步通常命中 HTTP 缓存（`/videos/*` 有 7 天强缓存），实际多半不花流量；
+ * 万一没命中，也只是把刚看完的东西再取一遍，且只做一次。
+ *
+ * 省流量 / 弱网 / 体积保护这三种情况**不自动升级**：前者是用户明确表态不要下载，
+ * 后两者本来就是为了不撑爆内存。它们仍保留「加载 xx MB」按钮，由用户自己决定。
+ */
+async function upgradeFromBuffer() {
+  if (!rawUrl || loading.value || upgrading.value || upgradeTried) return
+  upgradeTried = true
+  const id = String(route.params.id)
+
+  const ctrl = new AbortController()
+  abortCtrl = ctrl
+  upgrading.value = true
+  upgradePct.value = 0
+  try {
+    const res = await fetch(rawUrl, { signal: ctrl.signal })
+    if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
+    const total = Number(res.headers.get('Content-Length') || 0)
+    const reader = res.body.getReader()
+    const chunks: ArrayBuffer[] = []
+    let received = 0
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (value) {
+        chunks.push(
+          value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength) as ArrayBuffer,
+        )
+        received += value.byteLength
+        if (total > 0) upgradePct.value = Math.min(99, Math.round((received / total) * 100))
+      }
+    }
+    if (route.params.id !== id) return
+    const objUrl = URL.createObjectURL(new Blob(chunks, { type: 'video/mp4' }))
+    releaseBlob()
+    blobUrl = objUrl
+    // 位置必须在**换源这一刻**取：下载期间旧元素还在继续播，
+    // 用启动时的位置会往回跳一截（16 倍速下实测倒退 14 秒）
+    const el = videoEl.value
+    pendingResumeAt = el && Number.isFinite(el.currentTime) ? el.currentTime : 0
+    pendingResumePlay = el ? !el.paused && !el.ended : false
+    swapping = true // 换源窗口内不存进度
+    resolvedSrc.value = objUrl
+  } catch {
+    // 失败就保持流式播放，不打扰用户（按钮还在，可以手动来一次）
+    pendingResumeAt = 0
+    pendingResumePlay = false
+  } finally {
+    if (abortCtrl === ctrl) abortCtrl = null
+    upgrading.value = false
   }
 }
 
@@ -269,6 +365,10 @@ async function resolve() {
   canSeek.value = false
   bufferedPct.value = 0
   sourceBytes.value = 0
+  upgrading.value = false
+  upgradeTried = false
+  pendingResumeAt = 0
+  pendingResumePlay = false
   releaseBlob()
   cancelLoad()
   const current = video.value
@@ -330,10 +430,19 @@ resolve()
 function onLoadedMetadata() {
   const el = videoEl.value
   if (!el || !video.value) return
-  const saved = interaction.getVideoProgress(video.value.id)
-  if (saved && saved.time > 1 && saved.time < (el.duration || Infinity) - 2) {
-    el.currentTime = saved.time
+  if (pendingResumeAt > 0) {
+    // 刚从流式换成 Blob：回到原来的位置，别把用户丢回开头
+    el.currentTime = Math.min(pendingResumeAt, Math.max(0, (el.duration || pendingResumeAt) - 0.3))
+    if (pendingResumePlay) void el.play().catch(() => {})
+    pendingResumeAt = 0
+    pendingResumePlay = false
+  } else {
+    const saved = interaction.getVideoProgress(video.value.id)
+    if (saved && saved.time > 1 && saved.time < (el.duration || Infinity) - 2) {
+      el.currentTime = saved.time
+    }
   }
+  swapping = false
   syncPlaybackState()
   // 先清再设：切换视频时 loadedmetadata 会再次触发，不清会攒出一堆计时器
   stopTimer()
@@ -365,13 +474,18 @@ watch(
     canSeek.value = false
     bufferedPct.value = 0
     sourceBytes.value = 0
+    upgrading.value = false
+    upgradeTried = false
+    pendingResumeAt = 0
+    pendingResumePlay = false
     void resolve()
   },
 )
 
 function saveProgress() {
   const el = videoEl.value
-  if (!el || !video.value || !el.duration) return
+  // 换源那一瞬元素被重置、currentTime 归零，此刻存盘会把进度抹成 0
+  if (swapping || !el || !video.value || !el.duration) return
   interaction.setVideoProgress(video.value.id, el.currentTime, el.duration)
 }
 
@@ -424,7 +538,7 @@ const related = computed(() => content.publicVideos.filter((v) => v.id !== video
               :poster="video.cover"
               controls
               playsinline
-              preload="metadata"
+              :preload="videoPreload"
               :src="resolvedSrc || undefined"
               @loadedmetadata="onLoadedMetadata"
               @durationchange="syncPlaybackState"
@@ -479,6 +593,11 @@ const related = computed(() => content.publicVideos.filter((v) => v.id !== video
               <span class="drag-dot" aria-hidden="true"></span>
               <span>整段加载 {{ loadLabel }}</span>
               <button class="drag-hint-skip" type="button" @click="skipBlob">边下边看</button>
+            </div>
+            <!-- 已整段缓冲、正在转成 Blob：不显示这句的话，用户会以为「100% 了怎么还拖不动」 -->
+            <div v-else-if="upgrading" class="drag-hint" role="status">
+              <span class="drag-dot" aria-hidden="true"></span>
+              <span>已缓存整段 · 切换为可拖动 {{ upgradePct }}%</span>
             </div>
             <div v-else-if="showStreamHint" class="drag-hint" role="status">
               <span class="drag-dot drag-dot--idle" aria-hidden="true"></span>
