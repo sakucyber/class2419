@@ -101,10 +101,37 @@ if (!/"start_url": "\."/.test(manifest) || !/"scope": "\."/.test(manifest)) {
   failures.push('manifest 的 start_url / scope 不是相对路径（子路径部署会错）')
 }
 
+// 8. 数据里引用的图片必须真的在 dist 里
+//
+// 为什么要单独查：`public/_redirects` 的 `/*  /index.html  200` 会把**缺失的图片也接住**，
+// 返回 200 + HTML（实测 /images/does-not-exist.svg 就是 200 text/html）。
+// 于是换素材、改名写错时，浏览器只是"图裂"，控制台不会有 404，不主动查根本发现不了。
+const dataDir = path.resolve('src/data')
+const refs = new Set()
+if (fs.existsSync(dataDir)) {
+  for (const name of fs.readdirSync(dataDir)) {
+    if (!/\.(json|md)$/.test(name)) continue
+    const file = path.join(dataDir, name)
+    if (!fs.statSync(file).isFile()) continue
+    const text = fs.readFileSync(file, 'utf8')
+    for (const m of text.matchAll(/["'(]([^"'()\s]*\/images\/[^"'()\s]+)/g)) refs.add(m[1])
+  }
+}
+const missingRefs = [...refs]
+  .map((u) => u.slice(u.indexOf('/images/')))
+  .filter((u) => !fs.existsSync(path.join(dist, u)))
+if (missingRefs.length) {
+  failures.push(
+    `数据里引用的图片在 dist 中不存在：${missingRefs.slice(0, 5).join(', ')}` +
+      (missingRefs.length > 5 ? ` 等 ${missingRefs.length} 个` : ''),
+  )
+}
+
 const report = [
   `dist 文件：${fs.existsSync(path.join(dist, 'index.html')) ? 'ok' : 'missing'}`,
   `预缓存条目：${precacheEntries.length}（缺失 ${missing.length}）`,
   `预缓存体积：${precacheMB.toFixed(1)} MB`,
+  `数据图片引用：${refs.size} 个（缺失 ${missingRefs.length}）`,
   `缓存后缀：${cacheMatch ? cacheMatch[1] : '未注入'}`,
 ]
 
