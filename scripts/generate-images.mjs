@@ -164,70 +164,91 @@ function write(rel, w, h, seed, opts = {}) {
 /**
  * 轮播长幅（16:6）。
  *
- * 与相册封面不同，这里有两处专门处理：
- * 1. 渐变方向是「左下暗 → 右上亮」：Carousel 的标题压在**左下角**，
- *    亮色放在右上才不会把白色标题冲掉。
- * 2. 额外叠一层底部压暗渐变兜底，避免换配色后标题再次不可读。
+ * 早先这里是「左下暗 → 右上亮」的整块斜向渐变。在 1600px 宽的容器里，
+ * .viewport 被 max-height 压到 400px 上下（约 4:1），object-fit: cover 会把
+ * 上下各裁一截，剩下的几乎全是那片亮色 —— 看上去像图片没加载出来。
+ *
+ * 所以改成一张**有构图**的底图，而不是一片色块：
+ * 1. 底色压到近黑，强调色只作为右侧一团柔光，不再大面积铺色；
+ * 2. 右侧一组同心弧 +「2419」巨大幽灵字，给长条一个视觉重心；
+ * 3. 左下角留空 —— Carousel 的标题就压在那儿；
+ * 4. **构图收在 y=110..490**：宽屏会被上下裁切，安全区之外不放任何要紧的东西。
  */
-function banner({ w, h, dark, mid, bright, seed }) {
+function banner({ w, h, dark, bright, seed }) {
   const rand = rng(seed)
   const id = `b${seed}`
+  const cx = w * 0.78
+  const cy = h * 0.5
 
-  // 右上角点阵
-  const gap = 28
+  // 同心弧：三圈粗细/透明度递减，右半部分自然出界
+  const arcs = [0.42, 0.64, 0.88]
+    .map(
+      (k, i) =>
+        `<circle cx="${cx.toFixed(0)}" cy="${cy.toFixed(0)}" r="${(h * k).toFixed(0)}" fill="none" stroke="${bright}" stroke-opacity="${[0.16, 0.1, 0.055][i]}" stroke-width="1.5"/>`,
+    )
+    .join('\n  ')
+
+  // 左侧细点阵，向右淡出（用整片透明度渐变做衰减太重，直接按列降透明度）
   let dots = ''
-  for (let r = 0; r < 4; r++) {
-    for (let c = 0; c < 10; c++) {
-      dots += `<circle cx="${w - 80 - (9 - c) * gap}" cy="${58 + r * gap}" r="2.2" fill="#ffffff" opacity="0.22"/>`
+  const gap = 30
+  for (let r = 0; r < 12; r++) {
+    for (let c = 0; c < 14; c++) {
+      const op = (0.16 * (1 - c / 14)).toFixed(3)
+      dots += `<circle cx="${90 + c * gap}" cy="${(h * 0.16 + r * gap).toFixed(0)}" r="1.8" fill="#ffffff" opacity="${op}"/>`
     }
   }
 
-  // 两圈大弧线（部分出界），给长条一点结构感
-  const arcs = `
-  <circle cx="${(w * 0.78).toFixed(0)}" cy="${(h * 0.5).toFixed(0)}" r="${(h * 0.62).toFixed(0)}" fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="2"/>
-  <circle cx="${(w * 0.78).toFixed(0)}" cy="${(h * 0.5).toFixed(0)}" r="${(h * 0.92).toFixed(0)}" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="2"/>`
-
-  const glows = [0.16, 0.1]
-    .map((op, i) => {
-      const cx = Math.floor(58 + rand() * 30)
-      const cy = Math.floor(12 + rand() * 30)
-      const r = Math.floor(20 + rand() * 14)
-      return `<circle cx="${cx}%" cy="${cy}%" r="${r}%" fill="${i === 0 ? bright : '#ffffff'}" opacity="${op}"/>`
-    })
-    .join('\n  ')
+  // 斜向高光条：一条极淡的光带，避免整块底看起来是纯色
+  const bandX = w * 0.42 + rand() * 40
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-hidden="true">
   <defs>
-    <linearGradient id="${id}" x1="0" y1="1" x2="1" y2="0">
+    <linearGradient id="${id}" x1="0" y1="0" x2="0.35" y2="1">
       <stop offset="0" stop-color="${dark}"/>
-      <stop offset="0.52" stop-color="${mid}"/>
-      <stop offset="1" stop-color="${bright}"/>
+      <stop offset="0.55" stop-color="#0a0f19"/>
+      <stop offset="1" stop-color="#05070c"/>
+    </linearGradient>
+    <radialGradient id="${id}g" cx="78%" cy="48%" r="58%">
+      <stop offset="0" stop-color="${bright}" stop-opacity="0.3"/>
+      <stop offset="0.55" stop-color="${bright}" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="${bright}" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="${id}b" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0.3" stop-color="#000000" stop-opacity="0"/>
-      <stop offset="1" stop-color="#000000" stop-opacity="0.5"/>
+      <stop offset="0.35" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.62"/>
     </linearGradient>
   </defs>
   <rect width="${w}" height="${h}" fill="url(#${id})"/>
+  <rect width="${w}" height="${h}" fill="url(#${id}g)"/>
+  <rect x="${bandX.toFixed(0)}" y="${-h * 0.2}" width="${(w * 0.09).toFixed(0)}" height="${(h * 1.4).toFixed(0)}" fill="url(#${id}b)" transform="rotate(16 ${bandX.toFixed(0)} ${cy.toFixed(0)})"/>
   ${arcs}
-  ${glows}
+  <text x="${(w * 0.775).toFixed(0)}" y="${(h * 0.615).toFixed(0)}" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="${(h * 0.5).toFixed(0)}" font-weight="800" letter-spacing="${(h * 0.02).toFixed(0)}" fill="${bright}" opacity="0.1">2419</text>
   ${dots}
   <rect width="${w}" height="${h}" fill="url(#${id}s)"/>
 </svg>
 `
 }
 
-/** 现有数据引用的是 carousel/test-N.svg（不是 slide-N.svg），生成器要与实际引用对齐 */
+/**
+ * 配色只保留「底色 + 强调色」。
+ * 文件名从 test-N 改为 slide-N：`public/_headers` 给 /images/* 一周强缓存，
+ * 同名替换会让回访用户最长一周看到旧图（见 README「替换素材的约定」）。
+ */
 const banners = [
-  { dark: '#0a1220', mid: '#1e3a8a', bright: '#22d3ee' },
-  { dark: '#170f26', mid: '#6d28d9', bright: '#e879b0' },
-  { dark: '#071c17', mid: '#0d9488', bright: '#34d399' },
-  { dark: '#1b1020', mid: '#b45309', bright: '#f59e0b' },
+  { dark: '#081020', bright: '#22d3ee' },
+  { dark: '#140d22', bright: '#e879b0' },
+  { dark: '#061814', bright: '#34d399' },
+  { dark: '#18101f', bright: '#f59e0b' },
 ]
 
-// 轮播图 16:6（写 test-N.svg，与 src/data/carousel.json 的引用一致）
+// 轮播图 16:6（写 slide-N.svg，与 src/data/carousel.json 的引用一致）
 banners.forEach((b, i) => {
-  const file = join(outDir, `carousel/test-${i + 1}.svg`)
+  const file = join(outDir, `carousel/slide-${i + 1}.svg`)
   mkdirSync(dirname(file), { recursive: true })
   writeFileSync(file, banner({ w: 1600, h: 600, ...b, seed: 3000 + i * 13 }), 'utf8')
 })

@@ -225,4 +225,16 @@ function onKeydown(e: KeyboardEvent) {
     opacity: 0.85;
   }
 }
+
+/* 窄屏横幅只有 134px 高，42px 的箭头居中后（y 46–88）正好压住标题第一行，
+   看起来像标题被糊了一块。触屏本来就能左右滑、右下角还有圆点，
+   所以窄屏直接收起箭头；同时给字幕留出右侧位置，免得被圆点盖住。 */
+@media (max-width: 600px) {
+  .arrow {
+    display: none;
+  }
+  .caption {
+    padding-right: 88px;
+  }
+}
 </style>

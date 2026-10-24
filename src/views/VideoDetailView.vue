@@ -41,10 +41,11 @@ const totalBytes = ref(0)
    也不知道进度条到底能不能拖。所以把「直连流式」也做成一个显式状态，
    并用 element.seekable / buffered 如实反映，而不是靠猜。
    streamReason 区分「为什么退回流式」——体积/内存保护的情况下不该再劝人整段加载。 */
-const streamReason = ref<'user' | 'auto' | 'guard' | null>(null)
+const streamReason = ref<'user' | 'auto' | 'guard' | 'save-data' | 'slow' | null>(null)
 const canSeek = ref(false)
 const bufferedPct = ref(0)
-let rangeSupport: boolean | null = null
+/** 探测时拿到的文件体积：用来在「要不要预载」这一步就把代价说清楚 */
+const sourceBytes = ref(0)
 let abortCtrl: AbortController | null = null
 let blobUrl = ''
 let rawUrl = ''
@@ -68,13 +69,26 @@ const showStreamHint = computed(
   () => !loading.value && !seekFlash.value && streamReason.value !== null && !canSeek.value,
 )
 
-/** 直白写出「能否拖动」——这是用户最想知道的一件事，不该让他自己去试 */
+const STREAM_TEXT = {
+  'save-data': '省流量模式，未整段加载',
+  slow: '网络较慢，未整段加载',
+  guard: '文件较大，未整段加载',
+  user: '进度条暂不可拖',
+  auto: '进度条暂不可拖',
+} as const
+
+/** 直白写出「为什么没预载 / 能不能拖」——这是用户最想知道的事，不该让他自己去试 */
 const streamLabel = computed(() => {
+  const reason = streamReason.value
+  if (!reason) return ''
   const buffer = bufferedPct.value > 0 ? ` · 已缓冲 ${bufferedPct.value}%` : ''
-  return streamReason.value === 'guard'
-    ? `文件较大，边下边看${buffer}`
-    : `进度条暂不可拖${buffer}`
+  return STREAM_TEXT[reason] + buffer
 })
+
+/** 按钮上直接写要花多少流量，比「加载整段」含糊其辞有用 */
+const loadCostLabel = computed(() =>
+  sourceBytes.value > 0 ? `加载 ${fmtMB(sourceBytes.value)} MB` : '加载整段',
+)
 
 /* 从「拖不动」变成「拖得动」的那一下值得说一声，否则用户不会主动去试 */
 const seekFlash = ref(false)
@@ -91,22 +105,23 @@ type Probe = { ranged: boolean | null; size: number }
 
 /**
  * 探测是否支持分段请求，并顺带拿到文件大小（服务器忽略 Range 时回的是完整文件，
- * Content-Length 就是真实大小）。结论整站一致，所以只探一次。
+ * Content-Length 就是真实大小）。
  *
- * 网络异常时返回 `ranged: null`（未知）而**不写入缓存**：
- * 否则一次临时断网就会让整个会话都按「不支持」处理，白白预载每支视频。
+ * 不复用上一次的结论：**体积每支视频都不一样**，而「要不要预载」恰好要用体积判断。
+ * 探测请求拿到响应头就立刻 abort，不会真把文件下下来，代价约等于一次 RTT。
+ * 网络异常时返回 `ranged: null`（未知），不写任何「不支持」的结论 ——
+ * 否则一次临时断网会让整个会话里每支视频都白下一遍。
  */
 async function probeSource(url: string): Promise<Probe> {
-  if (rangeSupport !== null) return { ranged: rangeSupport, size: totalBytes.value }
   const ctrl = new AbortController()
   try {
     const res = await fetch(url, { headers: { Range: 'bytes=0-0' }, signal: ctrl.signal })
-    rangeSupport = res.status === 206
-    return { ranged: rangeSupport, size: Number(res.headers.get('Content-Length') || 0) }
+    // 真的返回 206 时 Content-Length 只有 1 字节，但这个分支随后会走原生播放，用不到体积
+    return { ranged: res.status === 206, size: Number(res.headers.get('Content-Length') || 0) }
   } catch {
     return { ranged: null, size: 0 }
   } finally {
-    ctrl.abort() // 不支持 Range 时服务器会回整个文件，拿到响应头立刻掐断
+    ctrl.abort()
   }
 }
 
@@ -114,6 +129,26 @@ async function probeSource(url: string): Promise<Probe> {
 function lowMemoryDevice(): boolean {
   const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory
   return typeof mem === 'number' && mem < MIN_DEVICE_MEMORY
+}
+
+/**
+ * 省流量 / 弱网时不要偷偷下整段。
+ *
+ * 视频动辄 12–20 MB，一进页面就整段预载，用手机流量的同学完全没有知情权，
+ * 而我们又分辨不出 WiFi 和蜂窝（`effectiveType` 在两者上都报 4g）。
+ * 能拿到的可靠信号只有两个：系统的「省流量模式」开关，以及明确标注的弱网类型。
+ * 命中就先把代价（多少 MB）摆出来，让人自己点。
+ */
+function networkWantsLight(): 'save-data' | 'slow' | null {
+  const conn = (
+    navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string }
+    }
+  ).connection
+  if (!conn) return null
+  if (conn.saveData) return 'save-data'
+  if (conn.effectiveType && ['slow-2g', '2g', '3g'].includes(conn.effectiveType)) return 'slow'
+  return null
 }
 
 function isSameOrigin(url: string): boolean {
@@ -233,6 +268,7 @@ async function resolve() {
   streamReason.value = null
   canSeek.value = false
   bufferedPct.value = 0
+  sourceBytes.value = 0
   releaseBlob()
   cancelLoad()
   const current = video.value
@@ -253,6 +289,7 @@ async function resolve() {
 
     const probe = await probeSource(url)
     if (route.params.id !== current.id) return // 探测期间已经切走
+    sourceBytes.value = probe.size
     // 支持 Range：原生就能拖，不需要任何提示
     if (probe.ranged === true) {
       resolvedSrc.value = url
@@ -261,6 +298,13 @@ async function resolve() {
     // 体积过大 / 内存偏小：退回直连流式，宁可拖不动也不要把页面撑爆
     if (probe.size > MAX_BLOB_BYTES || lowMemoryDevice()) {
       streamReason.value = 'guard'
+      resolvedSrc.value = url
+      return
+    }
+    // 省流量 / 弱网：先把「要花多少 MB」摆出来，让人自己决定，不偷偷下整段
+    const light = networkWantsLight()
+    if (light) {
+      streamReason.value = light
       resolvedSrc.value = url
       return
     }
@@ -320,6 +364,7 @@ watch(
     streamReason.value = null
     canSeek.value = false
     bufferedPct.value = 0
+    sourceBytes.value = 0
     void resolve()
   },
 )
@@ -444,7 +489,7 @@ const related = computed(() => content.publicVideos.filter((v) => v.id !== video
                 type="button"
                 @click="retryPreload"
               >
-                加载整段
+                {{ loadCostLabel }}
               </button>
             </div>
             <div v-if="seekFlash" class="drag-hint drag-hint--ok" role="status">

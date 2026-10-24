@@ -1,28 +1,28 @@
 [
   {
     "id": "slide-1",
-    "image": "/images/carousel/test-1.svg",
+    "image": "/images/carousel/slide-1.svg",
     "title": "测试轮播一",
     "subtitle": "这是一段测试副标题文字。",
     "link": "/about"
   },
   {
     "id": "slide-2",
-    "image": "/images/carousel/test-2.svg",
+    "image": "/images/carousel/slide-2.svg",
     "title": "测试轮播二",
     "subtitle": "这是一段测试副标题文字。",
     "link": "/albums"
   },
   {
     "id": "slide-3",
-    "image": "/images/carousel/test-3.svg",
+    "image": "/images/carousel/slide-3.svg",
     "title": "测试轮播三",
     "subtitle": "这是一段测试副标题文字。",
     "link": "/articles"
   },
   {
     "id": "slide-4",
-    "image": "/images/carousel/test-4.svg",
+    "image": "/images/carousel/slide-4.svg",
     "title": "测试轮播四",
     "subtitle": "这是一段测试副标题文字。",
     "link": "/videos"

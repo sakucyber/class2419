@@ -81,7 +81,6 @@ class2419/
 ├── index.html                # CSP、SEO/社交卡片 meta、PWA manifest
 ├── vite.config.ts            # 别名、分包、CSP 注入、404.html、SW 预缓存注入
 ├── esa.jsonc                 # 阿里云 ESA 构建与路由配置
-├── wrangler.jsonc            # Cloudflare Workers 静态资源配置
 ├── eslint.config.js / .prettierrc / tsconfig*.json
 └── package.json
 ```
@@ -118,14 +117,21 @@ npm run generate:images
 
 ## 🌐 部署
 
-构建产物为纯静态文件，任意静态托管均可。仓库内已备好三份平台配置，互不干扰：
+构建产物为纯静态文件，任意静态托管均可。仓库内已备好下列平台配置，互不干扰：
 
 | 平台 | 配置文件 | SPA 回退靠什么 |
 | --- | --- | --- |
 | 阿里云 ESA「函数和 Pages」 | `esa.jsonc` | `assets.notFoundStrategy = singlePageApplication` |
 | Cloudflare Pages | `_headers` / `_redirects` | 产物里**不要有** `404.html`，Pages 会自动回退 |
-| Cloudflare Workers | `wrangler.jsonc` | `assets.not_found_handling` |
 | GitHub Pages | `VITE_BASE` + `VITE_SPA_404` | 生成 `404.html`（index.html 的副本） |
+
+> Cloudflare Workers 也能托管同一份 `dist`，但**当前实际只用了 Pages 与 ESA**，
+> 所以仓库里不再保留 `wrangler.jsonc`（留着会让人误以为它在生效）。
+> 真要切到 Workers 时，在根目录加一个即可：
+>
+> ```jsonc
+> { "assets": { "directory": "./dist", "not_found_handling": "single-page-application" } }
+> ```
 
 ### 阿里云 ESA
 
@@ -197,7 +203,7 @@ npm run build && npx serve dist
 - Service Worker 的缓存名（`buildId`）现在包含**文件内容哈希**，替换同名图片后会换缓存名并在 install 时用 `cache: 'reload'` 重取，能更新；但**首次访问、直接打开图片链接、或禁用了 SW 的浏览器**仍可能读到 HTTP 缓存里的旧文件。
 - **因此替换素材时建议换文件名**：`cryx-1.svg` → `cryx-2026-10.svg`，并同步改 `src/data/*.json` 里的路径。一次改动，永远不用再担心缓存。
 - 视频尤其注意：单支 12–20 MB，旧文件会在缓存里躺一周。演示/验收前若要换片，直接换文件名最省事。
-- `public/_headers` 只在 **Cloudflare Pages / Netlify** 这类支持 `_headers` 的平台生效；部署到阿里云 ESA 时，安全头与缓存策略需要在控制台另行配置（ESA 也不会读 `wrangler.jsonc`）。
+- `public/_headers` 只在 **Cloudflare Pages / Netlify** 这类支持 `_headers` 的平台生效；部署到阿里云 ESA 时，安全头与缓存策略需要在控制台另行配置。
 
 ## 🔐 安全与隐私说明（必读）
 
