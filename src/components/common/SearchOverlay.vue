@@ -25,7 +25,6 @@ watch(
   },
 )
 
-/* 打开时焦点进入输入框、Tab 在浮层内循环、Esc 关闭、关闭后焦点还原 */
 useFocusTrap(overlayEl, () => props.open, { onEscape: close })
 
 function go(hit: { to: string }) {
@@ -57,45 +56,47 @@ const typeLabel: Record<string, string> = {
       aria-modal="true"
       aria-label="全站搜索"
     >
-      <div class="search-mask" @click="close"></div>
-      <div class="search-panel">
-        <form class="search-bar" role="search" @submit.prevent="submit">
-          <AppIcon class="search-icon" name="search" :size="18" :stroke-width="2" />
+      <div class="mask" @click="close"></div>
+      <div class="panel">
+        <form class="bar" role="search" @submit.prevent="submit">
+          <AppIcon class="icon" name="search" :size="18" :stroke-width="1.9" />
           <input
             v-model="keyword"
             type="search"
-            class="search-input"
+            class="input"
             placeholder="搜索相册、视频、文章或标签…"
             aria-label="搜索关键词"
           />
           <button type="button" class="btn btn--ghost btn--sm" @click="close">取消</button>
         </form>
 
-        <div class="search-body">
-          <p v-if="!keyword.trim()" class="search-tip">
+        <div class="body">
+          <p v-if="!keyword.trim()" class="tip">
             试试搜索「运动会」「研学」「合唱」，或点按标签浏览。
           </p>
           <template v-else>
-            <p class="search-count">找到 {{ results.length }} 条结果</p>
-            <ul v-if="results.length" class="search-list">
+            <p class="count">找到 {{ results.length }} 条结果</p>
+            <ul v-if="results.length" class="list">
               <li v-for="hit in results" :key="hit.type + hit.id">
-                <button class="search-item" @click="go(hit)">
+                <button type="button" class="item" @click="go(hit)">
                   <img v-if="hit.cover" :src="hit.cover" alt="" class="cover" loading="lazy" />
                   <span v-else class="cover cover--tag" aria-hidden="true">#</span>
                   <span class="meta">
                     <strong>{{ hit.title }}</strong>
                     <small>{{ hit.subtitle }}</small>
                   </span>
-                  <span class="type-chip">{{ typeLabel[hit.type] }}</span>
+                  <span class="type">{{ typeLabel[hit.type] }}</span>
                 </button>
               </li>
             </ul>
             <div v-else class="state-block">
-              <AppIcon class="state-icon" name="compass" :size="42" :stroke-width="1.4" />
+              <span class="state-icon" aria-hidden="true">
+                <AppIcon name="compass" :size="36" :stroke-width="1.35" />
+              </span>
               <p class="state-title">没有找到相关内容</p>
-              <p>
-                换个关键词试试，或前往
-                <RouterLink to="/articles" @click="close">文章列表</RouterLink> 看看。
+              <p class="state-desc">
+                换个关键词试试，或前往 <RouterLink to="/articles" @click="close">文章列表</RouterLink>
+                看看。
               </p>
             </div>
           </template>
@@ -115,88 +116,94 @@ const typeLabel: Record<string, string> = {
   align-items: flex-start;
   padding: max(6vh, var(--space-8)) var(--space-4) var(--space-4);
 }
-.search-mask {
+.mask {
   position: absolute;
   inset: 0;
   background: var(--overlay);
+  backdrop-filter: blur(4px);
 }
-.search-panel {
+.panel {
   position: relative;
   width: min(640px, 100%);
-  max-height: 80vh;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-3);
+  max-height: 82vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: pop var(--duration) var(--ease);
+  background: var(--surface);
+  border: var(--card-bd-w) solid var(--line);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-3);
+  animation: panel-in var(--dur) var(--ease-out);
 }
-@keyframes pop {
+@keyframes panel-in {
   from {
     opacity: 0;
-    transform: translateY(-12px) scale(0.98);
+    transform: translateY(-10px);
   }
 }
-.search-icon {
-  color: var(--text-3);
-  flex: none;
-}
-.search-bar {
+.bar {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--line);
 }
-.search-input {
+.icon {
+  color: var(--text-3);
+  flex: none;
+}
+.bar .input {
   flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: var(--text);
-  font-size: 1.05rem;
   min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 0.4em 0;
+  font-size: 1.02rem;
 }
-.search-body {
+.bar .input:focus {
+  box-shadow: none;
+}
+.body {
   overflow-y: auto;
   padding: var(--space-3) var(--space-4) var(--space-4);
 }
-.search-tip,
-.search-count {
+.tip,
+.count {
   color: var(--text-3);
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
   margin: var(--space-2) 0 var(--space-3);
 }
-.search-item {
+.item {
   width: 100%;
   display: flex;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2);
-  border: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
   background: transparent;
-  border-radius: var(--radius-sm);
   text-align: left;
   color: var(--text);
-  transition: background var(--duration-fast) var(--ease);
+  transition:
+    background-color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
 }
-.search-item:hover {
-  background: var(--primary-soft);
+.item:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft-2);
 }
 .cover {
-  width: 56px;
+  width: 58px;
   height: 42px;
   object-fit: cover;
-  border-radius: var(--radius-xs);
   flex: none;
+  border-radius: var(--radius-xs);
   background: var(--bg-soft);
 }
 .cover--tag {
   display: grid;
   place-items: center;
-  color: var(--primary);
+  color: var(--accent-ink);
   font-weight: 700;
 }
 .meta {
@@ -206,22 +213,35 @@ const typeLabel: Record<string, string> = {
   flex-direction: column;
 }
 .meta strong {
-  font-size: 0.95rem;
+  font-size: var(--fs-md);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .meta small {
   color: var(--text-3);
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
 }
-.type-chip {
+.type {
   flex: none;
-  font-size: 0.72rem;
+  font-size: var(--fs-2xs);
   font-weight: 700;
-  color: var(--primary);
-  background: var(--primary-soft);
-  padding: 0.15em 0.6em;
-  border-radius: var(--radius-full);
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+}
+[data-style='japandi'] .type {
+  border-radius: 999px;
+}
+[data-style='brutal'] .panel {
+  border-width: 3px;
+  box-shadow: 8px 8px 0 #111;
+}
+[data-style='brutal'] .type {
+  border: 2px solid #111;
+  background: var(--accent);
+  color: #111;
+  font-weight: 900;
 }
 </style>

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import AppIcon from '@/components/common/AppIcon.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import { useContentStore } from '@/store/content'
 
 const route = useRoute()
@@ -37,6 +38,7 @@ watch(
   },
 )
 
+const TYPES = ['all', 'album', 'video', 'article', 'tag'] as const
 const typeLabel: Record<string, string> = {
   album: '相册',
   video: '视频',
@@ -47,40 +49,41 @@ const typeLabel: Record<string, string> = {
 
 <template>
   <div class="container page">
-    <header class="page-head">
-      <h1>全站搜索</h1>
-      <div class="search-box card">
-        <AppIcon name="search" :size="17" />
-        <input
-          v-model="keyword"
-          type="search"
-          class="search-input"
-          placeholder="输入关键词，搜索相册、视频、文章或标签…"
-          aria-label="搜索关键词"
-          autofocus
-        />
-      </div>
-      <div class="tabs" role="tablist" aria-label="结果类型">
-        <button
-          v-for="t in ['all', 'album', 'video', 'article', 'tag'] as const"
-          :key="t"
-          class="chip"
-          :class="{ 'chip--active': typeFilter === t }"
-          role="tab"
-          :aria-selected="typeFilter === t"
-          @click="typeFilter = t"
-        >
-          {{ t === 'all' ? '全部' : typeLabel[t] }}
-          <span class="count">{{ counts[t] }}</span>
-        </button>
-      </div>
-    </header>
+    <PageHeader kicker="Search" title="全站搜索" subtitle="相册、视频、文章与标签，一次搜完。" />
+
+    <div class="search-box card">
+      <AppIcon name="search" :size="18" :stroke-width="1.9" />
+      <input
+        v-model="keyword"
+        type="search"
+        class="search-input"
+        placeholder="输入关键词，搜索相册、视频、文章或标签…"
+        aria-label="搜索关键词"
+        autofocus
+      />
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="结果类型">
+      <button
+        v-for="t in TYPES"
+        :key="t"
+        class="chip"
+        type="button"
+        :class="{ 'chip--active': typeFilter === t }"
+        role="tab"
+        :aria-selected="typeFilter === t"
+        @click="typeFilter = t"
+      >
+        {{ t === 'all' ? '全部' : typeLabel[t] }}
+        <span class="count num">{{ counts[t] }}</span>
+      </button>
+    </div>
 
     <EmptyState
       v-if="!keyword.trim()"
       icon="sparkles"
       title="搜点什么吧"
-      description="例如：运动会、研学、合唱、林老师…"
+      description="例如：运动会、研学、合唱、赖老师…"
     />
     <EmptyState
       v-else-if="!filtered.length"
@@ -110,40 +113,35 @@ const typeLabel: Record<string, string> = {
 <style scoped>
 .page {
   padding-top: var(--space-6);
-  max-width: 820px;
-}
-.page-head {
-  margin-bottom: var(--space-6);
-}
-h1 {
-  font-size: var(--fs-2xl);
-  margin-bottom: var(--space-4);
+  max-width: 860px;
 }
 .search-box {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   padding: 0 var(--space-4);
+  margin-bottom: var(--space-4);
+  color: var(--text-3);
 }
 .search-input {
   flex: 1;
-  border: none;
-  background: transparent;
-  outline: none;
-  color: var(--text);
-  padding: 0.7em 0;
-  font-size: 1.05rem;
   min-width: 0;
+  padding: 0.75em 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 1.05rem;
 }
 .tabs {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-3);
+  margin-bottom: var(--space-6);
 }
 .count {
+  font-size: 0.7rem;
   opacity: 0.7;
-  font-size: 0.75rem;
 }
 
 .results {
@@ -163,17 +161,18 @@ h1 {
 .cover {
   width: 84px;
   height: 56px;
-  object-fit: cover;
-  border-radius: var(--radius-xs);
   flex: none;
+  object-fit: cover;
   background: var(--bg-soft);
+  border-radius: var(--radius-xs);
 }
 .cover--tag {
   display: grid;
   place-items: center;
-  color: var(--primary);
-  font-weight: 700;
+  color: var(--accent-ink);
+  font-family: var(--font-display);
   font-size: 1.2rem;
+  font-weight: 700;
 }
 .meta {
   flex: 1;
@@ -181,19 +180,30 @@ h1 {
 }
 .meta strong {
   display: block;
-  font-size: 1rem;
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: var(--display-weight);
 }
 .meta small {
   color: var(--text-3);
-  font-size: 0.8rem;
+  font-size: var(--fs-xs);
 }
 .type {
   flex: none;
-  font-size: 0.75rem;
+  padding: 2px 8px;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  font-size: var(--fs-2xs);
   font-weight: 700;
-  color: var(--primary);
-  background: var(--primary-soft);
-  padding: 2px 10px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-xs);
+}
+[data-style='japandi'] .type {
+  border-radius: 999px;
+}
+[data-style='brutal'] .type {
+  border: 2px solid #111;
+  background: var(--accent);
+  color: #111;
+  font-weight: 900;
 }
 </style>

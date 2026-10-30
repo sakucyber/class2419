@@ -124,6 +124,7 @@ function pwaPrecachePlugin(): Plugin {
       for (const file of [
         'compat.js',
         'probe-es2020.js',
+        'theme-init.js',
         'manifest.webmanifest',
         'favicon.svg',
         'icon-192.png',

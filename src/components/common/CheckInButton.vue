@@ -4,8 +4,8 @@
  *
  * - 纯本地：只写 localStorage（键 `checkin`），无网络、无后端。
  * - 已打卡后渲染成 <span>（不是 disabled 的 button）——从结构上就不可能重复点击。
- * - 粒子动画在 L0 / 关闭动效时直接跳过，只更新文案；
- *   粒子层挂在容器上而不是按钮里，这样按钮被替换成文案时动画不会被掐断。
+ * - 粒子层挂在容器上而不是按钮里，这样按钮被替换成文案时动画不会被掐断。
+ * - 粒子形状与配色按风格切换（年鉴=纸屑、日式=圆点、粗野=方块、原版=圆点）。
  */
 import { onBeforeUnmount, ref } from 'vue'
 
@@ -23,7 +23,6 @@ interface Spark {
 }
 
 const sparks = ref<Spark[]>([])
-/** 供读屏播报的即时提示 */
 const notice = ref('')
 let seq = 0
 let clearTimer = 0
@@ -32,7 +31,6 @@ function onCheckIn(): void {
   if (!interaction.checkIn()) return
   notice.value = '今日打卡成功'
 
-  // 低性能设备（L0）或关闭动效时不放粒子，避免为一次点击引入 12 个动画节点
   if (!effects.enhancedActive) return
 
   sparks.value = Array.from({ length: 12 }, () => {
@@ -42,7 +40,7 @@ function onCheckIn(): void {
   window.clearTimeout(clearTimer)
   clearTimer = window.setTimeout(() => {
     sparks.value = []
-  }, 950)
+  }, 1000)
 }
 
 onBeforeUnmount(() => window.clearTimeout(clearTimer))
@@ -61,8 +59,13 @@ onBeforeUnmount(() => window.clearTimeout(clearTimer))
       >
     </span>
 
-    <span class="checkin-sparks" aria-hidden="true">
-      <i v-for="s in sparks" :key="s.id" :style="{ left: s.left + '%', animationDelay: s.delay + 'ms' }" />
+    <span class="sparks" aria-hidden="true">
+      <i
+        v-for="(s, i) in sparks"
+        :key="s.id"
+        :class="`spark-${i % 4}`"
+        :style="{ left: s.left + '%', animationDelay: s.delay + 'ms' }"
+      />
     </span>
 
     <span class="visually-hidden" aria-live="polite">{{ notice }}</span>
@@ -76,70 +79,115 @@ onBeforeUnmount(() => window.clearTimeout(clearTimer))
   justify-content: center;
   margin-bottom: var(--space-4);
 }
-
 .checkin-btn,
 .checkin-done {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
-  font-size: 0.82rem;
+  padding: 7px 16px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-xs);
   line-height: 1.6;
 }
-
 .checkin-btn {
-  border: 1px dashed var(--border-strong);
+  border: 1px dashed var(--line-2);
   background: transparent;
   color: var(--text-2);
-  cursor: pointer;
   transition:
-    color var(--duration) var(--ease),
-    border-color var(--duration) var(--ease),
-    background var(--duration) var(--ease);
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
 }
 .checkin-btn:hover {
-  color: var(--primary);
-  border-color: var(--primary);
-  background: var(--primary-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent-ink);
+  background: var(--accent-soft);
 }
-.checkin-btn:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
 .checkin-done {
+  border: 1px solid var(--line);
   color: var(--text-3);
-  border: 1px solid var(--border);
+}
+[data-style='annual'] .checkin-btn,
+[data-style='annual'] .checkin-done {
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+[data-style='brutal'] .checkin-btn,
+[data-style='brutal'] .checkin-done {
+  border-radius: 0;
+  border-width: 3px;
+  border-style: solid;
+  font-weight: 900;
+}
+[data-style='brutal'] .checkin-btn {
+  background: var(--accent);
+  color: #111;
+  border-color: #111;
+  box-shadow: 3px 3px 0 #111;
+}
+[data-style='brutal'] .checkin-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #111;
 }
 
-/* 粒子层：不接收指针事件，按钮被替换成文案时它仍在 */
-.checkin-sparks {
+.sparks {
   position: absolute;
   inset: 0;
   pointer-events: none;
   overflow: visible;
 }
-.checkin-sparks i {
+.sparks i {
   position: absolute;
   bottom: 38%;
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: var(--primary);
+  background: var(--accent);
   opacity: 0;
-  animation: spark-up 780ms var(--ease-out-quart) forwards;
+  animation: spark-up 820ms var(--ease-out) forwards;
 }
+.sparks .spark-1 {
+  background: var(--accent-2);
+}
+.sparks .spark-2 {
+  background: var(--text-3);
+}
+.sparks .spark-3 {
+  background: var(--warning);
+}
+[data-style='annual'] .sparks i {
+  width: 3px;
+  height: 8px;
+  border-radius: 0;
+}
+[data-style='brutal'] .sparks i {
+  width: 7px;
+  height: 7px;
+  border-radius: 0;
+}
+[data-style='brutal'] .sparks .spark-0 {
+  background: var(--accent);
+}
+[data-style='brutal'] .sparks .spark-1 {
+  background: var(--accent-2);
+}
+[data-style='brutal'] .sparks .spark-2 {
+  background: var(--danger);
+}
+[data-style='brutal'] .sparks .spark-3 {
+  background: var(--success);
+}
+
 @keyframes spark-up {
   0% {
-    transform: translateY(0) scale(0.6);
+    transform: translateY(0) scale(0.6) rotate(0deg);
     opacity: 0;
   }
   22% {
     opacity: 0.95;
   }
   100% {
-    transform: translateY(-44px) scale(0.2);
+    transform: translateY(-46px) scale(0.25) rotate(140deg);
     opacity: 0;
   }
 }

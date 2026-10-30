@@ -60,12 +60,12 @@ withDefaults(
   gap: var(--space-2);
 }
 .skel-line {
-  height: 14px;
-  border-radius: var(--radius-full);
+  height: 13px;
+  border-radius: var(--radius-xs);
 }
 .skel-hero {
-  height: clamp(180px, 32vw, 360px);
-  border-radius: var(--radius-lg);
+  height: clamp(200px, 34vw, 400px);
+  border-radius: var(--card-radius);
 }
 .skel-text {
   display: flex;

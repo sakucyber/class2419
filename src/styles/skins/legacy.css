@@ -1,0 +1,154 @@
+/* ==========================================================================
+ * 风格 4 · 原版（保留）
+ *
+ * 原站点的视觉语言：深色优先、玻璃拟态、渐变高光、spring 缓动、大圆角。
+ * 保留它是为了「老访客回到熟悉的界面」，同时也是风格系统的一次回归测试 ——
+ * 同一份 DOM 必须能还原出改动前的观感。
+ * ========================================================================== */
+
+[data-style='legacy'] {
+  --bg: #f0ecfa;
+  --bg-soft: rgba(126, 86, 165, 0.08);
+  --surface: rgba(255, 255, 255, 0.84);
+  --surface-2: rgba(255, 255, 255, 0.6);
+  --surface-hover: #ffffff;
+  --field-bg: #ffffff;
+  --text: #241f33;
+  --text-2: #544d6b;
+  --text-3: #6b6382;
+  --text-4: #8b83a1;
+  --text-inverse: #ffffff;
+  --line: rgba(122, 86, 158, 0.16);
+  --line-2: rgba(122, 86, 158, 0.28);
+  --line-hover: rgba(122, 86, 158, 0.4);
+  --paper-rule: transparent;
+
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.12);
+  --accent-soft-2: rgba(37, 99, 235, 0.22);
+  --accent-contrast: #ffffff;
+  --accent-gradient: linear-gradient(135deg, #3b82f6, #22d3ee);
+  --accent-2: #c084fc;
+  --glow: rgba(37, 99, 235, 0.28);
+
+  --danger: #dc2626;
+  --warning: #d97706;
+  --success: #16a34a;
+  --info: #2563eb;
+  --overlay: rgba(40, 28, 60, 0.42);
+  --scrim: linear-gradient(100deg, rgba(6, 8, 18, 0.95) 0%, rgba(6, 8, 18, 0.86) 48%, rgba(6, 8, 18, 0.34) 100%);
+  --skeleton-a: rgba(126, 90, 160, 0.1);
+  --skeleton-b: rgba(126, 90, 160, 0.05);
+
+  --shadow-1: 0 1px 2px rgba(74, 50, 112, 0.05), 0 4px 12px rgba(74, 50, 112, 0.07);
+  --shadow-2: 0 2px 6px rgba(74, 50, 112, 0.06), 0 14px 32px rgba(74, 50, 112, 0.1);
+  --shadow-3: 0 6px 18px rgba(74, 50, 112, 0.1), 0 26px 56px rgba(74, 50, 112, 0.14);
+  --card-shadow: var(--shadow-1);
+  --hover-shadow: var(--shadow-3);
+  --press-shadow: var(--shadow-2);
+
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
+  --radius-pill: 999px;
+  --card-radius: 22px;
+  --card-bd-w: 1px;
+  --surface-blur: blur(18px) saturate(1.6);
+  --btn-radius: 999px;
+  --btn-bd-w: 1px;
+  --btn-bd: transparent;
+  --btn-bg: var(--accent);
+  --btn-bg-hover: var(--accent-hover);
+  --btn-color: #ffffff;
+  --btn-weight: 700;
+  --btn-shadow: none;
+  --btn-hover-shadow: 0 6px 20px var(--glow);
+  --btn-hover-transform: translateY(-2px);
+  --btn-active-transform: scale(0.96);
+  --chip-radius: 999px;
+  --chip-bd-w: 1px;
+  --chip-bg: transparent;
+  --chip-active-bg: var(--accent-soft);
+  --chip-active-color: var(--accent-ink);
+  --chip-active-bd: var(--accent-soft-2);
+  --chip-marker: 0px;
+  --field-radius: 16px;
+  --field-bd-w: 1px;
+  --progress-h: 6px;
+  --progress-radius: 999px;
+  --progress-bd-w: 0;
+  --progress-track: rgba(126, 86, 165, 0.16);
+  --progress-fill: var(--accent);
+  --badge-size: clamp(150px, 17vw, 230px);
+  --badge-radius: 50%;
+  --badge-bd-w: 0;
+  --badge-bg: transparent;
+  --badge-color: #ffffff;
+  --badge-shadow: none;
+
+  --hover-transform: translateY(-6px) scale(1.012);
+  --press-transform: translateY(0) scale(0.988);
+  --header-bg: rgba(240, 236, 250, 0.72);
+  --header-blur: blur(30px) saturate(1.8);
+  --header-bd-w: 1px;
+  --deco-opacity: 0.55;
+  --section-gap: 40px;
+
+  --font-display:
+    'ZCOOL KuaiLe', 'HarmonyOS Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    sans-serif;
+  --font-quote: var(--font-serif);
+  --display-weight: 900;
+  --display-tracking: 0.5px;
+  --display-leading: 1.25;
+  --body-weight: 400;
+  --body-leading: 1.7;
+}
+
+[data-style='legacy'][data-theme='dark'] {
+  --bg: #08080f;
+  --bg-soft: rgba(255, 255, 255, 0.05);
+  --surface: rgba(255, 255, 255, 0.045);
+  --surface-2: rgba(255, 255, 255, 0.03);
+  --surface-hover: rgba(255, 255, 255, 0.085);
+  --field-bg: #141a26;
+  --text: #f2eef8;
+  --text-2: #b3aec4;
+  --text-3: #8b84a0;
+  --text-4: #7c7590;
+  --text-inverse: #08080f;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-2: rgba(255, 255, 255, 0.18);
+  --line-hover: rgba(255, 255, 255, 0.28);
+  --paper-rule: transparent;
+
+  --accent: #2563eb;
+  --accent-hover: #3b82f6;
+  --accent-soft: rgba(37, 99, 235, 0.18);
+  --accent-soft-2: rgba(37, 99, 235, 0.32);
+  --accent-2: #c084fc;
+  --glow: rgba(37, 99, 235, 0.4);
+
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --success: #4ade80;
+  --info: #60a5fa;
+  --overlay: rgba(2, 4, 12, 0.68);
+  --scrim: linear-gradient(100deg, rgba(4, 6, 14, 0.96) 0%, rgba(4, 6, 14, 0.88) 48%, rgba(4, 6, 14, 0.4) 100%);
+  --skeleton-a: rgba(255, 255, 255, 0.06);
+  --skeleton-b: rgba(255, 255, 255, 0.02);
+
+  --shadow-1: 0 2px 10px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
+  --shadow-2: 0 6px 18px rgba(0, 0, 0, 0.35), 0 18px 44px rgba(0, 0, 0, 0.35);
+  --shadow-3: 0 12px 30px rgba(0, 0, 0, 0.45), 0 30px 70px rgba(0, 0, 0, 0.45);
+  --card-shadow: var(--shadow-1);
+  --hover-shadow: var(--shadow-3);
+  --press-shadow: var(--shadow-2);
+  --surface-blur: blur(20px) saturate(1.7);
+
+  --progress-track: rgba(255, 255, 255, 0.1);
+  --header-bg: rgba(8, 8, 15, 0.72);
+}

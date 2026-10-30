@@ -4,9 +4,9 @@
  *
  * 两个变体：
  * - `ios`：iOS Safari 没有 beforeinstallprompt，只能用示意图 + 文案教用户手动添加
- * - `other`：Chromium 但没拿到安装事件（已安装过 / 不满足条件）时的兜底说明
+ * - `other`：Chromium 但没拿到安装事件时的兜底说明
  *
- * 示意图是**内联 SVG**：不引外部图片（CSP 下也不产生额外请求）。
+ * 示意图是内联 SVG：不引外部图片（CSP 下也不产生额外请求）。
  */
 import { onBeforeUnmount, ref, watch } from 'vue'
 
@@ -34,7 +34,6 @@ watch(
   (open) => lockScroll(open),
 )
 
-/* 焦点进入弹层、Tab 圈定、Esc 关闭、关闭后还原焦点 */
 useFocusTrap(cardEl, () => props.open, { onEscape: () => emit('close') })
 
 onBeforeUnmount(() => lockScroll(false))
@@ -45,33 +44,31 @@ onBeforeUnmount(() => lockScroll(false))
     <Transition name="guide">
       <div
         v-if="open"
-        class="guide-layer"
+        class="layer"
         role="dialog"
         aria-modal="true"
         aria-labelledby="guide-title"
         @click.self="emit('close')"
       >
-        <div ref="cardEl" class="guide-card">
-          <h2 id="guide-title" class="guide-title">添加到主屏幕</h2>
+        <div ref="cardEl" class="card">
+          <h2 id="guide-title" class="title">添加到主屏幕</h2>
 
-          <!-- 示意：Safari 底部工具栏，分享按钮高亮 -->
           <svg
             v-if="variant === 'ios'"
-            class="guide-figure"
+            class="figure"
             viewBox="0 0 280 118"
             role="img"
             aria-label="示意图：Safari 底部工具栏中间的分享按钮"
           >
-            <rect x="8" y="60" width="264" height="48" rx="13" fill="currentColor" opacity="0.07" />
-            <rect x="32" y="76" width="17" height="15" rx="3" fill="currentColor" opacity="0.32" />
-            <rect x="68" y="76" width="17" height="15" rx="3" fill="currentColor" opacity="0.32" />
-            <rect x="196" y="76" width="17" height="15" rx="3" fill="currentColor" opacity="0.32" />
-            <rect x="232" y="76" width="17" height="15" rx="3" fill="currentColor" opacity="0.32" />
-
-            <circle cx="140" cy="83" r="21" fill="var(--primary)" opacity="0.15" />
+            <rect x="8" y="60" width="264" height="48" rx="6" fill="currentColor" opacity="0.07" />
+            <rect x="32" y="76" width="17" height="15" rx="2" fill="currentColor" opacity="0.32" />
+            <rect x="68" y="76" width="17" height="15" rx="2" fill="currentColor" opacity="0.32" />
+            <rect x="196" y="76" width="17" height="15" rx="2" fill="currentColor" opacity="0.32" />
+            <rect x="232" y="76" width="17" height="15" rx="2" fill="currentColor" opacity="0.32" />
+            <circle cx="140" cy="83" r="21" fill="var(--accent)" opacity="0.15" />
             <g
               fill="none"
-              stroke="var(--primary)"
+              stroke="var(--accent)"
               stroke-width="2.2"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -80,18 +77,11 @@ onBeforeUnmount(() => lockScroll(false))
               <path d="m135.2 74.8 4.8-4.8 4.8 4.8" />
               <path d="M130.4 80.6v8.8h19.2v-8.8" />
             </g>
-
-            <path
-              d="M140 44v-9"
-              stroke="var(--primary)"
-              stroke-width="2"
-              stroke-linecap="round"
-              opacity="0.55"
-            />
+            <path d="M140 44v-9" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" opacity="0.55" />
             <path
               d="m135.6 39.6 4.4-4.6 4.4 4.6"
               fill="none"
-              stroke="var(--primary)"
+              stroke="var(--accent)"
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -103,13 +93,13 @@ onBeforeUnmount(() => lockScroll(false))
               text-anchor="middle"
               font-size="12"
               font-weight="700"
-              fill="var(--primary)"
+              fill="var(--accent)"
             >
               点这里
             </text>
           </svg>
 
-          <ol class="guide-steps">
+          <ol class="steps">
             <template v-if="variant === 'ios'">
               <li>点击底部工具栏的<strong>「分享」</strong>图标（方框 + 向上箭头）</li>
               <li>在弹出的菜单里向下滑，选择<strong>「添加到主屏幕」</strong></li>
@@ -122,9 +112,9 @@ onBeforeUnmount(() => lockScroll(false))
             </template>
           </ol>
 
-          <p class="guide-note">装到桌面后可以全屏打开，像 App 一样使用。</p>
+          <p class="note">装到桌面后可以全屏打开，像 App 一样使用。</p>
 
-          <button class="guide-close" type="button" @click="emit('close')">
+          <button class="btn close" type="button" @click="emit('close')">
             <AppIcon name="check" :size="15" :stroke-width="2.6" />
             我知道了
           </button>
@@ -135,7 +125,7 @@ onBeforeUnmount(() => lockScroll(false))
 </template>
 
 <style scoped>
-.guide-layer {
+.layer {
   position: fixed;
   inset: 0;
   z-index: var(--z-lightbox);
@@ -145,74 +135,48 @@ onBeforeUnmount(() => lockScroll(false))
   padding: 24px;
   background: var(--overlay);
   backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
 }
-
-.guide-card {
+.card {
   width: min(90vw, 380px);
   max-height: calc(100vh - 48px);
   overflow: auto;
   padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: var(--bg);
+  background: var(--surface);
+  border: var(--card-bd-w) solid var(--line);
+  border-radius: var(--card-radius);
   box-shadow: var(--shadow-3);
 }
-
-.guide-title {
-  margin: 0 0 var(--space-4);
-  font-size: 1.05rem;
+.title {
+  margin-bottom: var(--space-4);
+  font-size: var(--fs-lg);
 }
-
-.guide-figure {
+.figure {
   display: block;
   width: 100%;
   height: auto;
-  margin: 0 0 var(--space-4);
+  margin-bottom: var(--space-4);
   color: var(--text-2);
 }
-
-.guide-steps {
-  margin: 0 0 var(--space-3);
-  padding-left: 1.2em;
+.steps {
   display: grid;
   gap: 8px;
-  font-size: 0.9rem;
-  line-height: 1.65;
+  margin: 0 0 var(--space-3);
+  padding-left: 1.2em;
+  list-style: decimal;
   color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.7;
 }
-.guide-steps strong {
+.steps strong {
   color: var(--text);
 }
-
-.guide-note {
-  margin: 0 0 var(--space-4);
-  font-size: 0.8rem;
+.note {
+  margin-bottom: var(--space-4);
   color: var(--text-3);
+  font-size: var(--fs-2xs);
 }
-
-.guide-close {
+.close {
   width: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 11px 18px;
-  border: none;
-  border-radius: var(--radius-full);
-  background: var(--primary);
-  color: var(--primary-contrast);
-  font-weight: 700;
-  font-size: 0.92rem;
-  cursor: pointer;
-  transition: background var(--duration) var(--ease);
-}
-.guide-close:hover {
-  background: var(--primary-hover);
-}
-.guide-close:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 3px;
 }
 
 .guide-enter-active,
@@ -223,12 +187,12 @@ onBeforeUnmount(() => lockScroll(false))
 .guide-leave-to {
   opacity: 0;
 }
-.guide-enter-active .guide-card {
-  animation: guide-in 320ms var(--ease-out-expo) both;
+.guide-enter-active .card {
+  animation: guide-in 300ms var(--ease-out) both;
 }
 @keyframes guide-in {
   from {
-    transform: translateY(10px) scale(0.97);
+    transform: translateY(10px);
     opacity: 0;
   }
   to {

@@ -1,9 +1,14 @@
 <script setup lang="ts">
+/**
+ * 基于 IntersectionObserver 的懒加载图片，自带骨架与错误态。
+ *
+ * 观察的是**容器**而不是 <img>：图片在加载完成前是 display:none，
+ * 而 display:none 的元素没有盒子，观察器永远不会判定它进入视口 —— 会死锁。
+ */
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import AppIcon from '@/components/common/AppIcon.vue'
 
-/** 基于 IntersectionObserver 的懒加载图片，自带骨架与错误态 */
 const props = withDefaults(
   defineProps<{
     src: string
@@ -18,25 +23,18 @@ const props = withDefaults(
 )
 
 const el = ref<HTMLImageElement | null>(null)
-/**
- * 容器引用。IntersectionObserver 必须观察**容器**而不是 <img>：
- * <img> 在加载完成前是 v-show="loaded" → display:none，而 display:none 的元素没有盒子，
- * 观察器永远不会判定它进入视口 → load() 不执行 → loaded 永为 false —— 死锁。
- * 容器带 aspect-ratio，任何状态下都有盒子，观察它才可靠。
- */
 const root = ref<HTMLDivElement | null>(null)
 const loaded = ref(false)
 const failed = ref(false)
-/** 是否已进入过视口（或 eager 直接放过）。用于 src 变化时决定要不要立刻换图 */
 let entered = false
 let observer: IntersectionObserver | null = null
 
 function load() {
   if (loaded.value || failed.value) return
-  const img = new Image()
-  if (props.srcset) img.srcset = props.srcset
-  img.src = props.src
-  img.onload = () => {
+  const probe = new Image()
+  if (props.srcset) probe.srcset = props.srcset
+  probe.src = props.src
+  probe.onload = () => {
     loaded.value = true
     if (el.value) {
       el.value.src = props.src
@@ -44,32 +42,27 @@ function load() {
       if (props.sizes) el.value.sizes = props.sizes
     }
   }
-  img.onerror = () => {
+  probe.onerror = () => {
     failed.value = true
   }
 }
 
 onMounted(() => {
-  if (props.eager) {
-    entered = true
-    load()
-    return
-  }
-  if (!('IntersectionObserver' in window)) {
+  if (props.eager || !('IntersectionObserver' in window)) {
     entered = true
     load()
     return
   }
   observer = new IntersectionObserver(
     (entries) => {
-      if (entries.some((e) => e.isIntersecting)) {
+      if (entries.some((entry) => entry.isIntersecting)) {
         entered = true
         load()
         observer?.disconnect()
         observer = null
       }
     },
-    { rootMargin: '200px' },
+    { rootMargin: '220px' },
   )
   if (root.value) observer.observe(root.value)
 })
@@ -79,7 +72,6 @@ watch(
   () => {
     loaded.value = false
     failed.value = false
-    // 已经进入过视口（或 eager）就直接换图；否则维持懒加载，等观察器触发
     if (entered || props.eager) load()
   },
 )
@@ -89,18 +81,10 @@ onBeforeUnmount(() => observer?.disconnect())
 
 <template>
   <div ref="root" class="lazy-image" :style="{ aspectRatio: aspect, borderRadius: radius }">
-    <!-- aria-label 会覆盖 alt 的可读内容，这里只留 alt -->
-    <img
-      v-show="loaded && !failed"
-      ref="el"
-      class="img"
-      :class="{ 'is-loaded': loaded && !failed }"
-      :alt="alt"
-      decoding="async"
-    />
+    <img v-show="loaded && !failed" ref="el" class="img" :alt="alt" decoding="async" />
     <div v-if="!loaded && !failed" class="lazy-skeleton skeleton" aria-hidden="true"></div>
     <div v-if="failed" class="lazy-fail" role="img" :aria-label="`${alt || '图片'}加载失败`">
-      <AppIcon name="image" :size="26" :stroke-width="1.4" />
+      <AppIcon name="image" :size="24" :stroke-width="1.35" />
       <small>图片加载失败</small>
     </div>
   </div>
@@ -110,8 +94,8 @@ onBeforeUnmount(() => observer?.disconnect())
 .lazy-image {
   position: relative;
   overflow: hidden;
-  background: var(--bg-soft);
   width: 100%;
+  background: var(--bg-soft);
 }
 .img {
   width: 100%;
@@ -119,13 +103,11 @@ onBeforeUnmount(() => observer?.disconnect())
   object-fit: cover;
   display: block;
   transition:
-    transform var(--duration-slow) var(--ease),
-    opacity var(--duration) var(--ease);
+    transform var(--dur-slow) var(--ease),
+    opacity var(--dur) var(--ease);
 }
-/* 加载完成时淡入。只动 opacity、不加 fill-mode：
-   一旦给 transform 设了 forwards，卡片封面的 hover 缩放就再也压不上去了。 */
-.img.is-loaded {
-  animation: img-fade var(--duration) var(--ease);
+.img {
+  animation: img-fade var(--dur) var(--ease);
 }
 @keyframes img-fade {
   from {
@@ -139,7 +121,6 @@ onBeforeUnmount(() => observer?.disconnect())
 .lazy-fail {
   position: absolute;
   inset: 0;
-  /* 占位/失败态跟随容器圆角，否则圆角封面里会出现一块方角灰底 */
   border-radius: inherit;
 }
 .lazy-fail {
@@ -150,6 +131,6 @@ onBeforeUnmount(() => observer?.disconnect())
   gap: 4px;
   color: var(--text-3);
   background: var(--bg-soft);
-  font-size: 0.8rem;
+  font-size: var(--fs-2xs);
 }
 </style>

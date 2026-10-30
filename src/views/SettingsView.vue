@@ -3,7 +3,9 @@ import { ref } from 'vue'
 
 import AppIcon from '@/components/common/AppIcon.vue'
 import InstallGuide from '@/components/common/InstallGuide.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import type { IconName } from '@/components/common/icons'
+import { STYLE_OPTIONS } from '@/config/styles'
 import { useContentStore } from '@/store/content'
 import type { TierPreference } from '@/store/effects'
 import { useEffectsStore } from '@/store/effects'
@@ -21,15 +23,12 @@ const confirmReset = ref(false)
 const message = ref('')
 const importInput = ref<HTMLInputElement | null>(null)
 
-/** 特效等级选项。auto = 交给设备探测，其余为手动锁定 */
 const tiers: { key: TierPreference; label: string; desc: string }[] = [
   { key: 'auto', label: '自动', desc: '按设备能力自动选择' },
   { key: 'L2', label: '高', desc: '3D 徽章 + 全部特效' },
   { key: 'L1', label: '中', desc: '轻量动效，不含 3D' },
   { key: 'L0', label: '低', desc: '仅静态，最省电' },
 ]
-
-/** aria-live 播报：切换后念一句当前状态，供读屏用户确认 */
 const effectsNotice = ref('')
 
 function chooseTier(key: TierPreference): void {
@@ -44,9 +43,6 @@ function toggleThree(event: Event): void {
   effectsNotice.value = on ? '已开启 3D 场景' : '已关闭 3D 场景'
 }
 
-/* ── 安装到桌面 ──
- * 支持才显示（不支持的环境整块隐藏）；已安装则显示状态而不是按钮。
- * iOS 没有 beforeinstallprompt，会返回 manual-ios → 弹图文指引。 */
 const guideOpen = ref(false)
 const guideVariant = ref<'ios' | 'other'>('ios')
 const installNotice = ref('')
@@ -74,10 +70,11 @@ const themes: { key: ThemeMode; label: string; icon: IconName }[] = [
   { key: 'auto', label: '跟随系统', icon: 'monitor' },
 ]
 const accents: { key: AccentKey; label: string; color: string }[] = [
-  { key: 'blue', label: '晴空蓝', color: '#2563eb' },
-  { key: 'green', label: '常青绿', color: '#0d9488' },
-  { key: 'orange', label: '活力橙', color: '#ea580c' },
-  { key: 'pink', label: '樱花粉紫', color: '#e879b0' },
+  { key: 'auto', label: '随风格', color: '' },
+  { key: 'blue', label: '晴空蓝', color: '#1f56d6' },
+  { key: 'green', label: '常青绿', color: '#0d7a6f' },
+  { key: 'orange', label: '活力橙', color: '#b8560f' },
+  { key: 'pink', label: '樱花粉', color: '#b04a80' },
 ]
 const fontSizes: { key: FontSizeKey; label: string }[] = [
   { key: 'sm', label: '小' },
@@ -96,10 +93,6 @@ async function doReset() {
   }
 }
 
-/* ── 备份导出 / 导入 ──
- * 数据只存在这个浏览器里，清缓存 = 全丢，所以必须给用户一个带走它的方式。
- * 导出内容 = 本地内容（相册/视频/文章/公告）+ 互动数据（收藏/视频进度/阅读位置/打卡）。
- * 导入是**合并**：同 id 覆盖，不删除现有内容；旧版（v1）备份没有 interaction 字段也能导入。 */
 function backupFileName(): string {
   const d = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
@@ -136,7 +129,7 @@ function pickBackup(): void {
 async function onBackupFile(event: Event): Promise<void> {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
-  input.value = '' // 允许连续导入同一个文件
+  input.value = ''
   if (!file) return
   try {
     const payload = JSON.parse(await file.text()) as Record<string, unknown>
@@ -153,25 +146,65 @@ async function onBackupFile(event: Event): Promise<void> {
 
 <template>
   <div class="container page">
-    <header class="page-head">
-      <h1>设置</h1>
-      <p class="subtitle">个性化你的浏览体验，所有设置仅保存在本地浏览器</p>
-    </header>
+    <PageHeader
+      kicker="Settings"
+      title="设置"
+      subtitle="个性化你的浏览体验，所有设置仅保存在本地浏览器。"
+    />
 
     <!-- 外观 -->
-    <section class="card block" aria-labelledby="theme-title">
-      <h2 id="theme-title">外观主题</h2>
-      <div class="option-row" role="radiogroup" aria-label="主题模式">
+    <section class="card block" aria-labelledby="style-title">
+      <div class="block-head">
+        <h2 id="style-title">视觉风格</h2>
+        <span class="block-note">四种风格共用同一份内容与功能</span>
+      </div>
+
+      <div class="style-grid" role="radiogroup" aria-label="视觉风格">
+        <button
+          v-for="option in STYLE_OPTIONS"
+          :key="option.key"
+          type="button"
+          class="style-card"
+          :class="{ active: settingsStore.settings.style === option.key }"
+          role="radio"
+          :aria-checked="settingsStore.settings.style === option.key"
+          @click="settingsStore.settings.style = option.key"
+        >
+          <span class="style-preview" aria-hidden="true">
+            <i
+              v-for="(color, i) in option.swatches"
+              :key="i"
+              :style="{ background: color }"
+            />
+          </span>
+          <span class="style-meta">
+            <strong>{{ option.label }}</strong>
+            <small>{{ option.en }}</small>
+            <em>{{ option.desc }}</em>
+          </span>
+          <AppIcon
+            v-if="settingsStore.settings.style === option.key"
+            class="style-check"
+            name="checkCircle"
+            :size="18"
+            :stroke-width="1.9"
+          />
+        </button>
+      </div>
+
+      <h3 class="sub-title">主题</h3>
+      <div class="seg" role="radiogroup" aria-label="主题模式">
         <button
           v-for="t in themes"
           :key="t.key"
-          class="option"
+          type="button"
+          class="seg-btn"
           :class="{ active: settingsStore.settings.theme === t.key }"
           role="radio"
           :aria-checked="settingsStore.settings.theme === t.key"
           @click="settingsStore.settings.theme = t.key"
         >
-          <AppIcon :name="t.icon" :size="17" />
+          <AppIcon :name="t.icon" :size="16" :stroke-width="1.9" />
           {{ t.label }}
         </button>
       </div>
@@ -181,23 +214,29 @@ async function onBackupFile(event: Event): Promise<void> {
         <button
           v-for="a in accents"
           :key="a.key"
-          class="option color-option"
+          type="button"
+          class="option"
           :class="{ active: settingsStore.settings.accent === a.key }"
           role="radio"
           :aria-checked="settingsStore.settings.accent === a.key"
           @click="settingsStore.settings.accent = a.key"
         >
-          <span class="swatch" :style="{ background: a.color }" aria-hidden="true"></span>
+          <span v-if="a.key === 'auto'" class="swatch swatch--auto" aria-hidden="true">
+            <i></i><i></i><i></i><i></i>
+          </span>
+          <span v-else class="swatch" :style="{ background: a.color }" aria-hidden="true"></span>
           {{ a.label }}
         </button>
       </div>
+      <p class="hint-line">「随风格」会使用该风格自带的强调色；显式选择后只替换强调色，纸张与墨色不变。</p>
 
       <h3 class="sub-title">字号</h3>
-      <div class="option-row" role="radiogroup" aria-label="字号">
+      <div class="seg" role="radiogroup" aria-label="字号">
         <button
           v-for="f in fontSizes"
           :key="f.key"
-          class="option"
+          type="button"
+          class="seg-btn"
           :class="{ active: settingsStore.settings.fontSize === f.key }"
           role="radio"
           :aria-checked="settingsStore.settings.fontSize === f.key"
@@ -207,9 +246,9 @@ async function onBackupFile(event: Event): Promise<void> {
         </button>
       </div>
 
-      <h3 class="sub-title">动效</h3>
+      <h3 class="sub-title">动效与质感</h3>
       <label class="switch-row">
-        <span>启用页面动效（关闭后将最大限度减少动画，适配晕动敏感）</span>
+        <span>启用页面动效（关闭后最大限度减少动画，适配晕动敏感）</span>
         <input
           type="checkbox"
           class="switch"
@@ -217,10 +256,8 @@ async function onBackupFile(event: Event): Promise<void> {
           @change="settingsStore.settings.animations = ($event.target as HTMLInputElement).checked"
         />
       </label>
-
-      <h3 class="sub-title">视觉特效</h3>
       <label class="switch-row">
-        <span>液态玻璃（界面上的毛玻璃模糊效果，低性能设备建议关闭）</span>
+        <span>液态玻璃（毛玻璃模糊，低性能设备建议关闭）</span>
         <input
           type="checkbox"
           class="switch"
@@ -232,7 +269,9 @@ async function onBackupFile(event: Event): Promise<void> {
 
     <!-- 特效与性能 -->
     <section class="card block" aria-labelledby="effects-title">
-      <h2 id="effects-title">特效与性能</h2>
+      <div class="block-head">
+        <h2 id="effects-title">特效与性能</h2>
+      </div>
       <p class="block-desc">
         等级越高画面越丰富，对设备要求也越高。选「自动」会按 CPU、内存、显卡能力自行判断；
         手动选择后会被记住，优先于自动检测。
@@ -243,6 +282,7 @@ async function onBackupFile(event: Event): Promise<void> {
         <button
           v-for="t in tiers"
           :key="t.key"
+          type="button"
           class="option tier-option"
           :class="{ active: effectsStore.tierPreference === t.key }"
           role="radio"
@@ -295,13 +335,15 @@ async function onBackupFile(event: Event): Promise<void> {
       <p class="visually-hidden" aria-live="polite">{{ effectsNotice }}</p>
     </section>
 
-    <!-- 安装到桌面（不支持 PWA 的环境整块隐藏） -->
+    <!-- 安装到桌面 -->
     <section
       v-if="pwaState.installed || canInstall()"
       class="card block"
       aria-labelledby="install-title"
     >
-      <h2 id="install-title">安装到桌面</h2>
+      <div class="block-head">
+        <h2 id="install-title">安装到桌面</h2>
+      </div>
       <p class="block-desc">
         装到桌面后可以全屏打开，像 App 一样顺手；打开过一次后，页面和相册图片会缓存到本地，
         断网也能翻（视频体积大，不缓存，仍需联网）。
@@ -312,40 +354,46 @@ async function onBackupFile(event: Event): Promise<void> {
           <AppIcon name="check" :size="15" :stroke-width="2.8" />
           已安装
         </span>
-        <button v-else class="install-btn" type="button" @click="onInstall">
+        <button v-else class="btn" type="button" @click="onInstall">
           <AppIcon name="plus" :size="15" :stroke-width="2.4" />
           添加到主屏幕
         </button>
       </div>
 
       <p class="visually-hidden" aria-live="polite">{{ installNotice }}</p>
-
       <InstallGuide :open="guideOpen" :variant="guideVariant" @close="guideOpen = false" />
     </section>
 
     <!-- 数据 -->
     <section class="card block" aria-labelledby="data-title">
-      <h2 id="data-title">数据管理</h2>
+      <div class="block-head">
+        <h2 id="data-title">数据管理</h2>
+      </div>
       <p class="block-desc">
         本站在浏览器本地（localStorage / IndexedDB）保存你的收藏、观看进度与阅读位置。
         清除浏览器数据会导致这些内容全部丢失，建议定期「导出备份」（一个 JSON 文件）。
         导入会与现有数据合并，同 id 覆盖；旧版备份也兼容。
       </p>
       <div class="btn-row">
-        <button class="btn btn--soft" @click="exportBackup">
-          <AppIcon name="download" :size="16" />
+        <button class="btn btn--soft" type="button" @click="exportBackup">
+          <AppIcon name="download" :size="15" />
           导出备份
         </button>
-        <button class="btn btn--soft" @click="pickBackup">
-          <AppIcon name="upload" :size="16" />
+        <button class="btn btn--soft" type="button" @click="pickBackup">
+          <AppIcon name="upload" :size="15" />
           导入备份
         </button>
-        <button class="btn btn--danger" :disabled="confirmReset" @click="confirmReset = true">
+        <button
+          class="btn btn--danger"
+          type="button"
+          :disabled="confirmReset"
+          @click="confirmReset = true"
+        >
           重置全部本地数据
         </button>
         <template v-if="confirmReset">
-          <button class="btn btn--danger" @click="doReset">确认重置？</button>
-          <button class="btn btn--ghost" @click="confirmReset = false">取消</button>
+          <button class="btn btn--danger" type="button" @click="doReset">确认重置？</button>
+          <button class="btn btn--ghost" type="button" @click="confirmReset = false">取消</button>
         </template>
       </div>
       <input
@@ -361,12 +409,15 @@ async function onBackupFile(event: Event): Promise<void> {
 
     <!-- 关于 -->
     <section class="card block" aria-labelledby="about-title">
-      <h2 id="about-title">关于本站</h2>
+      <div class="block-head">
+        <h2 id="about-title">关于本站</h2>
+      </div>
       <ul class="about-list">
         <li><strong>项目：</strong>新屋岭中学2419班班级空间（纯前端静态站点）</li>
         <li><strong>技术栈：</strong>Vue 3 + Vite + TypeScript + Vue Router + Pinia</li>
         <li><strong>部署：</strong>纯静态产物，当前托管于 Cloudflare Pages 与阿里云 ESA</li>
         <li><strong>数据来源：</strong>内容以静态 JSON / Markdown 形式随仓库一起发布</li>
+        <li><strong>视觉：</strong>内置纸质年鉴 / Japandi / 硬边杂志 / 原版四套风格，可随时切换</li>
       </ul>
     </section>
   </div>
@@ -375,38 +426,112 @@ async function onBackupFile(event: Event): Promise<void> {
 <style scoped>
 .page {
   padding-top: var(--space-6);
-  max-width: 760px;
+  max-width: 860px;
 }
-.page-head {
-  margin-bottom: var(--space-5);
-}
-h1 {
-  font-size: var(--fs-2xl);
-}
-.subtitle {
-  color: var(--text-3);
-  font-size: var(--fs-sm);
-  margin-top: 4px;
-}
-
 .block {
   padding: clamp(18px, 3vw, 28px);
-  /* 16px 在 30px 大圆角旁边显得挤，和页面其它区块的呼吸感对不上 */
   margin-bottom: var(--space-5);
 }
-.block h2 {
-  font-size: 1.15rem;
+.block-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
   margin-bottom: var(--space-4);
 }
-.sub-title {
-  font-size: 0.92rem;
-  color: var(--text-2);
-  margin: var(--space-5) 0 var(--space-3);
+.block h2 {
+  font-size: var(--fs-lg);
+}
+.block-note {
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
 }
 .block-desc {
-  color: var(--text-2);
-  font-size: 0.9rem;
   margin-bottom: var(--space-4);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.8;
+}
+.sub-title {
+  margin: var(--space-5) 0 var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.style-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .style-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.style-card {
+  position: relative;
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  text-align: left;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+.style-card:hover {
+  border-color: var(--line-hover);
+}
+.style-card.active {
+  border-color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+.style-preview {
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 58px;
+  height: 58px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+}
+.style-preview i {
+  display: block;
+}
+.style-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.style-meta strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: var(--display-weight);
+}
+.style-meta small {
+  font-size: var(--fs-2xs);
+  letter-spacing: 1px;
+  color: var(--text-3);
+}
+.style-meta em {
+  margin-top: 3px;
+  font-style: normal;
+  font-size: var(--fs-2xs);
+  line-height: 1.55;
+  color: var(--text-2);
+}
+.style-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: var(--accent-ink);
 }
 
 .option-row {
@@ -418,29 +543,88 @@ h1 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 0.5em 1.1em;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  background: var(--card);
+  min-height: 36px;
+  padding: 0.35em 0.9em;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  background: transparent;
   color: var(--text-2);
+  font-size: var(--fs-sm);
   font-weight: 600;
-  font-size: 0.92rem;
-  transition: all var(--duration-fast) var(--ease);
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
 }
 .option:hover {
-  border-color: var(--primary-soft-2);
-  color: var(--primary);
+  color: var(--text);
+  border-color: var(--line-hover);
 }
 .option.active {
-  border-color: var(--primary);
-  background: var(--primary-soft);
-  color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-soft);
+  color: var(--accent-ink);
+  border-color: var(--accent-ink);
+  background: var(--accent-soft);
 }
 .swatch {
   width: 16px;
   height: 16px;
-  border-radius: var(--radius-full);
+  border-radius: 50%;
+  flex: none;
+}
+.swatch--auto {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.swatch--auto i {
+  display: block;
+}
+.swatch--auto i:nth-child(1) {
+  background: #ab5c19;
+}
+.swatch--auto i:nth-child(2) {
+  background: #5f7a5b;
+}
+.swatch--auto i:nth-child(3) {
+  background: #ffd23f;
+}
+.swatch--auto i:nth-child(4) {
+  background: #2563eb;
+}
+.hint-line {
+  margin-top: var(--space-2);
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
+  line-height: 1.6;
+}
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.seg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.4em 0.95em;
+  border: none;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.seg-btn:last-child {
+  border-right: none;
+}
+.seg-btn.active {
+  background: var(--accent);
+  color: var(--accent-contrast);
 }
 
 .switch-row {
@@ -448,114 +632,43 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  font-size: 0.92rem;
+  padding: 9px 0;
+  font-size: var(--fs-sm);
   color: var(--text-2);
   cursor: pointer;
 }
-/* 开关：40×22 + 16px 旋钮。原来的 46×26 在这页偏大偏重，
-   关态用带描边的浅底 + 灰色旋钮，开态才上主色，视觉重量更轻。 */
-.switch {
-  appearance: none;
-  width: 40px;
-  height: 22px;
-  border-radius: var(--radius-full);
-  background: var(--bg-soft);
-  border: 1px solid var(--border-strong);
-  position: relative;
-  cursor: pointer;
-  flex: none;
-  transition:
-    background var(--duration-fast) var(--ease),
-    border-color var(--duration-fast) var(--ease);
-}
-.switch::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: var(--radius-full);
-  background: var(--text-3);
-  transition:
-    transform var(--duration-fast) var(--ease-spring),
-    background var(--duration-fast) var(--ease);
-}
-.switch:checked {
-  background: var(--primary);
-  border-color: var(--primary);
-}
-.switch:checked::after {
-  transform: translateX(18px);
-  background: #fff;
-}
-.switch:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 3px;
-}
 
-.btn-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-.message {
-  margin-top: var(--space-3);
-  color: var(--success);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.about-list {
-  display: grid;
-  gap: var(--space-3);
-  font-size: 0.92rem;
-  color: var(--text-2);
-}
-.about-list code {
-  background: var(--bg-soft);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xs);
-  padding: 1px 8px;
-  font-family: var(--font-mono);
-}
-
-/* ── 特效与性能 ── */
 .tier-option {
   min-width: 4.2em;
   justify-content: center;
 }
-.tier-option:disabled,
+.option:disabled,
 .switch:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
-.tier-option:disabled {
-  pointer-events: none;
-}
 .tier-current {
   margin: var(--space-3) 0 0;
-  font-size: 0.86rem;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 .tier-current strong {
-  color: var(--primary);
+  color: var(--accent-ink);
   font-family: var(--font-mono);
   letter-spacing: 0.04em;
 }
 .effects-hint {
   margin: var(--space-3) 0 0;
   padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--primary-soft-2);
-  background: var(--primary-soft);
+  border: 1px solid var(--accent-soft-2);
+  background: var(--accent-soft);
   color: var(--text-2);
-  font-size: 0.86rem;
-  line-height: 1.6;
+  font-size: var(--fs-xs);
+  line-height: 1.65;
 }
 .device-details {
   margin-top: var(--space-4);
-  font-size: 0.86rem;
+  font-size: var(--fs-xs);
   color: var(--text-2);
 }
 .device-details summary {
@@ -564,7 +677,7 @@ h1 {
   user-select: none;
 }
 .device-details summary:hover {
-  color: var(--primary);
+  color: var(--accent-ink);
 }
 .device-details ul {
   margin: var(--space-3) 0 0;
@@ -575,44 +688,89 @@ h1 {
 .device-reasons {
   color: var(--text-3);
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
-/* ── 安装到桌面 ── */
 .install-row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-}
-.install-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 18px;
-  border: none;
-  border-radius: var(--radius-full);
-  background: var(--primary);
-  color: var(--primary-contrast);
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background var(--duration) var(--ease);
-}
-.install-btn:hover {
-  background: var(--primary-hover);
-}
-.install-btn:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 3px;
 }
 .install-state {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   color: var(--text-2);
-  font-size: 0.88rem;
+  font-size: var(--fs-sm);
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.message {
+  margin-top: var(--space-3);
+  color: var(--success);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.about-list {
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+/* 风格 */
+[data-style='japandi'] .option {
+  border-radius: 999px;
+}
+[data-style='japandi'] .seg {
+  border-radius: 999px;
+}
+[data-style='japandi'] .style-card {
+  border-color: transparent;
+  box-shadow: var(--shadow-2);
+}
+[data-style='japandi'] .style-card.active {
+  border-color: var(--accent-soft-2);
+}
+[data-style='brutal'] .style-card {
+  border-width: 3px;
+  border-color: #111;
+}
+[data-style='brutal'] .style-card.active {
+  background: var(--accent);
+  box-shadow: 4px 4px 0 #111;
+  color: #111;
+}
+[data-style='brutal'] .style-card.active .style-meta small,
+[data-style='brutal'] .style-card.active .style-meta em {
+  color: #111;
+}
+[data-style='brutal'] .style-preview,
+[data-style='brutal'] .seg,
+[data-style='brutal'] .option,
+[data-style='brutal'] .install-state {
+  border-width: 3px;
+  border-color: #111;
+}
+[data-style='brutal'] .option.active {
+  background: var(--accent);
+  color: #111;
+  border-color: #111;
+  box-shadow: 2px 2px 0 #111;
+}
+[data-style='brutal'] .seg-btn.active {
+  background: #111;
+  color: var(--accent);
+}
+[data-style='brutal'] .swatch {
+  border-radius: 0;
+  border: 2px solid #111;
 }
 </style>

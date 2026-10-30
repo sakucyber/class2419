@@ -10,6 +10,7 @@ import { computed } from 'vue'
 
 import AppIcon from '@/components/common/AppIcon.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import AlbumCard from '@/components/media/AlbumCard.vue'
 import ArticleCard from '@/components/media/ArticleCard.vue'
 import VideoCard from '@/components/media/VideoCard.vue'
@@ -54,14 +55,11 @@ function remove(kind: Kind, id: string): void {
 
 <template>
   <div class="container page">
-    <header class="page-head">
-      <div>
-        <h1>我的收藏</h1>
-        <p class="subtitle">
-          收藏只保存在当前浏览器；共 {{ total }} 项。在详情页点「收藏」即可加入这里。
-        </p>
-      </div>
-    </header>
+    <PageHeader
+      kicker="Favorites"
+      title="我的收藏"
+      :subtitle="`收藏只保存在当前浏览器；共 ${total} 项。在详情页点「收藏」即可加入这里。`"
+    />
 
     <EmptyState
       v-if="!total"
@@ -75,9 +73,11 @@ function remove(kind: Kind, id: string): void {
     <template v-else>
       <section v-if="sections.albums.length" class="group" aria-labelledby="fav-albums">
         <h2 id="fav-albums" class="group-title">
-          <AppIcon name="image" :size="17" /> 相册（{{ sections.albums.length }}）
+          <AppIcon name="image" :size="16" :stroke-width="1.9" />
+          相册
+          <span class="num">{{ sections.albums.length }}</span>
         </h2>
-        <div class="grid-3">
+        <div class="grid-cards">
           <div v-for="album in sections.albums" :key="'album:' + album.id" class="fav-item">
             <AlbumCard :album="album" />
             <button class="remove" type="button" @click="remove('album', album.id)">
@@ -89,9 +89,11 @@ function remove(kind: Kind, id: string): void {
 
       <section v-if="sections.videos.length" class="group" aria-labelledby="fav-videos">
         <h2 id="fav-videos" class="group-title">
-          <AppIcon name="video" :size="17" /> 视频（{{ sections.videos.length }}）
+          <AppIcon name="video" :size="16" :stroke-width="1.9" />
+          视频
+          <span class="num">{{ sections.videos.length }}</span>
         </h2>
-        <div class="grid-3">
+        <div class="grid-cards">
           <div v-for="video in sections.videos" :key="'video:' + video.id" class="fav-item">
             <VideoCard :video="video" />
             <button class="remove" type="button" @click="remove('video', video.id)">
@@ -103,9 +105,11 @@ function remove(kind: Kind, id: string): void {
 
       <section v-if="sections.articles.length" class="group" aria-labelledby="fav-articles">
         <h2 id="fav-articles" class="group-title">
-          <AppIcon name="article" :size="17" /> 文章（{{ sections.articles.length }}）
+          <AppIcon name="article" :size="16" :stroke-width="1.9" />
+          文章
+          <span class="num">{{ sections.articles.length }}</span>
         </h2>
-        <div class="grid-3">
+        <div class="grid-cards">
           <div v-for="article in sections.articles" :key="'article:' + article.id" class="fav-item">
             <ArticleCard :article="article" />
             <button class="remove" type="button" @click="remove('article', article.id)">
@@ -122,17 +126,6 @@ function remove(kind: Kind, id: string): void {
 .page {
   padding-top: var(--space-6);
 }
-.page-head {
-  margin-bottom: var(--space-5);
-}
-h1 {
-  font-size: var(--fs-2xl);
-}
-.subtitle {
-  margin-top: 6px;
-  color: var(--text-3);
-  font-size: var(--fs-sm);
-}
 .group {
   margin-bottom: var(--space-8);
 }
@@ -141,8 +134,17 @@ h1 {
   align-items: center;
   gap: 8px;
   margin-bottom: var(--space-4);
-  font-size: 1.05rem;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-md);
   color: var(--text-2);
+}
+.group-title .num {
+  margin-left: 2px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
 }
 .fav-item {
   display: flex;
@@ -152,41 +154,30 @@ h1 {
 .remove {
   align-self: flex-start;
   padding: 4px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--text-3);
-  font-size: 0.78rem;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease);
+  font-size: var(--fs-2xs);
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
 }
 .remove:hover {
   color: var(--danger);
   border-color: var(--danger);
 }
-.remove:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+[data-style='japandi'] .remove {
+  border-radius: 999px;
 }
-.grid-3 {
-  display: grid;
-  gap: var(--space-4);
-  grid-template-columns: 1fr;
+[data-style='brutal'] .remove {
+  border-width: 3px;
+  border-color: #111;
+  color: #111;
+  font-weight: 900;
 }
-@media (min-width: 640px) {
-  .grid-3 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (min-width: 960px) {
-  .grid-3 {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-@media (min-width: 1600px) {
-  .grid-3 {
-    grid-template-columns: repeat(4, 1fr);
-  }
+[data-style='brutal'] .remove:hover {
+  background: var(--danger);
+  color: #fff;
 }
 </style>

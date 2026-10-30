@@ -2,22 +2,16 @@
  * 3D 班级徽章场景（Three.js）。
  *
  * ⚠️ 只有本目录下的文件允许静态 import three。
- * 它只能经 `utils/webgl.ts` 的动态 import 进入，从而保证 three / GLTFLoader
- * 落在**独立的异步 chunk** 里，不阻塞首屏 LCP。
- * 如果哪天在普通组件里直接 `import ... from 'three'`，这条隔离就破了。
+ * 它只能经 `utils/webgl.ts` 的动态 import 进入，从而保证 three 落在独立的异步 chunk 里。
  *
- * 两个刻意的取舍（都是实测后改的，别轻易改回去）：
+ * 两种几何体：
+ *   star   —— 原版风格的圆形星章（保留给 legacy）
+ *   plaque —— 方形浮雕牌，正面是运行时用 canvas 画出的班号（年鉴/日式/粗野）
  *
- * 1) **不用 EffectComposer / UnrealBloomPass。**
- *    徽章叠在毛玻璃卡片上，画布必须是透明的；而 EffectComposer 的最终输出会丢掉 alpha，
- *    实测表现为画布变成一块不透明的黑方块 —— 比没有辉光难看得多。
- *    改用 emissive 材质自发光，配合 IBL 反射做出金属质感，代价低得多
- *    （Bloom 本来就是这条链路上最贵的一遍）。
- *    注意：不要给 canvas 加 CSS filter 做辉光 —— 画布每帧都在重绘，CSS 滤镜会跟着逐帧重算。
- *
- * 2) **自转改为小幅摆动**，不是连续旋转。
- *    连续转必然经过"侧对镜头"的角度，那时徽章只剩一条细椭圆，观感很差。
- *    改成 sin 摆动（约 ±32°）并叠加固定俯仰角，任何时刻都能看清正面的星形。
+ * 两个刻意的取舍（都是实测后定的，别轻易改回去）：
+ * 1) 不用 EffectComposer / UnrealBloomPass：画布必须透明，而 Composer 的输出会丢掉
+ *    alpha，叠在卡片上就是一块黑方块。改用 emissive 材质 + IBL 反射做金属质感。
+ * 2) 自转改为小幅摆动：连续旋转必然经过侧对镜头的角度，观感很差。
  */
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
@@ -30,51 +24,49 @@ interface BadgeParts {
   disposables: Array<THREE.BufferGeometry | THREE.Material | THREE.Texture>
 }
 
-/** 生成徽章几何体：主体圆盘 + 外环 + 内环 + 挤出星形 + 一圈铆钉 */
-function buildBadge(quality: SceneQuality): BadgeParts {
+type Palette = NonNullable<CreateSceneOptions['palette']>
+
+/** 生成圆形星章：主体圆盘 + 外环 + 内环 + 挤出星形 + 一圈铆钉 */
+function buildStar(quality: SceneQuality, palette: Palette): BadgeParts {
   const root = new THREE.Group()
   const disposables: BadgeParts['disposables'] = []
 
-  const gold = new THREE.MeshStandardMaterial({
-    color: 0xe8b84b,
+  const metal = new THREE.MeshStandardMaterial({
+    color: palette.line,
     metalness: 1,
     roughness: 0.26,
-    emissive: new THREE.Color(0xe8b84b).multiplyScalar(0.16),
+    emissive: new THREE.Color(palette.line).multiplyScalar(0.16),
   })
   const deep = new THREE.MeshStandardMaterial({
-    color: 0x241f38,
+    color: palette.side,
     metalness: 0.55,
     roughness: 0.42,
   })
   const accent = new THREE.MeshStandardMaterial({
-    color: 0xe879b0,
+    color: palette.accent,
     metalness: 0.7,
     roughness: 0.3,
-    emissive: new THREE.Color(0xe879b0).multiplyScalar(0.42),
+    emissive: new THREE.Color(palette.accent).multiplyScalar(0.42),
   })
-  disposables.push(gold, deep, accent)
+  disposables.push(metal, deep, accent)
 
-  // 主体圆盘
   const discGeo = new THREE.CylinderGeometry(1, 1, 0.14, Math.round(96 * quality.detail), 1)
   const disc = new THREE.Mesh(discGeo, deep)
   disc.rotation.x = Math.PI / 2
   root.add(disc)
   disposables.push(discGeo)
 
-  // 外圈
   const ringGeo = new THREE.TorusGeometry(1.06, 0.05, 16, Math.round(128 * quality.detail))
-  const ring = new THREE.Mesh(ringGeo, gold)
+  const ring = new THREE.Mesh(ringGeo, metal)
   root.add(ring)
   disposables.push(ringGeo)
 
-  // 内圈细边（发光）
   const innerGeo = new THREE.TorusGeometry(0.78, 0.02, 12, Math.round(96 * quality.detail))
   const inner = new THREE.Mesh(innerGeo, accent)
   inner.position.z = 0.09
   root.add(inner)
   disposables.push(innerGeo)
 
-  // 中心星形：用 Shape 挤出，避免依赖字体文件
   const star = new THREE.Shape()
   const outer = 0.42
   const innerR = 0.18
@@ -95,12 +87,11 @@ function buildBadge(quality: SceneQuality): BadgeParts {
     bevelSegments: quality.detail >= 1 ? 3 : 1,
     curveSegments: Math.round(12 * quality.detail),
   })
-  const starMesh = new THREE.Mesh(starGeo, gold)
+  const starMesh = new THREE.Mesh(starGeo, metal)
   starMesh.position.z = 0.1
   root.add(starMesh)
   disposables.push(starGeo)
 
-  // 一圈小铆钉
   const studCount = Math.round(12 * quality.detail)
   const studGeo = new THREE.SphereGeometry(0.035, 10, 10)
   disposables.push(studGeo)
@@ -114,14 +105,183 @@ function buildBadge(quality: SceneQuality): BadgeParts {
   return { root, disposables }
 }
 
-/**
- * 创建场景。
- *
- * GLTFLoader 已就位但仅在传入 modelUrl 时启用；真实模型放进 public/models/ 即可切换。
- */
+function toCssHex(value: number): string {
+  return `#${value.toString(16).padStart(6, '0')}`
+}
+
+/** 把班号画到 canvas 上，作为牌面贴图。circle 用于 Japandi 的圆形牌 */
+function makeFaceTexture(
+  palette: Palette,
+  glyph: string,
+  sub: string,
+  shape: 'square' | 'circle',
+): THREE.CanvasTexture {
+  const size = 512
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return new THREE.CanvasTexture(canvas)
+
+  const paper = toCssHex(palette.paper)
+  const ink = toCssHex(palette.ink)
+  const accent = toCssHex(palette.accent)
+  const line = toCssHex(palette.line)
+
+  if (shape === 'circle') {
+    // 圆柱顶面的 UV 是一个内切圆；直接画满整个画布即可被裁成圆形
+    ctx.fillStyle = paper
+    ctx.fillRect(0, 0, size, size)
+    ctx.strokeStyle = line
+    ctx.lineWidth = 10
+    ctx.beginPath()
+    ctx.arc(size / 2, size / 2, 242, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.strokeStyle = accent
+    ctx.lineWidth = 3
+    ctx.beginPath()
+    ctx.arc(size / 2, size / 2, 222, 0, Math.PI * 2)
+    ctx.stroke()
+  } else {
+    ctx.fillStyle = paper
+    ctx.fillRect(0, 0, size, size)
+    ctx.strokeStyle = ink
+    ctx.lineWidth = 8
+    ctx.strokeRect(22, 22, size - 44, size - 44)
+    ctx.strokeStyle = line
+    ctx.lineWidth = 2
+    ctx.strokeRect(42, 42, size - 84, size - 84)
+  }
+
+  ctx.fillStyle = ink
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.font = `600 ${glyph.length > 1 ? 190 : 230}px "Noto Serif SC", "Songti SC", SimSun, serif`
+  ctx.fillText(glyph, size / 2, size / 2 - 12)
+
+  ctx.font = '600 22px "Noto Sans SC", "Microsoft YaHei", sans-serif'
+  ctx.fillStyle = accent
+  ;(ctx as CanvasRenderingContext2D & { letterSpacing?: string }).letterSpacing = '6px'
+  ctx.fillText(sub, size / 2, size - 74)
+  return new THREE.CanvasTexture(canvas)
+}
+
+/** 生成方形浮雕牌：金属底板 + canvas 贴图正面 + 四角铆钉 */
+function buildPlaque(
+  quality: SceneQuality,
+  palette: Palette,
+  glyph: string,
+  sub: string,
+): BadgeParts {
+  const root = new THREE.Group()
+  const disposables: BadgeParts['disposables'] = []
+
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: palette.side,
+    metalness: 0.85,
+    roughness: 0.34,
+  })
+  const faceTexture = makeFaceTexture(palette, glyph, sub, 'square')
+  faceTexture.colorSpace = THREE.SRGBColorSpace
+  // 牌面是「印刷品」：用 Basic 材质，避免强光把纸面和文字洗白
+  const faceMat = new THREE.MeshBasicMaterial({ map: faceTexture, toneMapped: false })
+  const metalMat = new THREE.MeshStandardMaterial({
+    color: palette.line,
+    metalness: 0.95,
+    roughness: 0.28,
+    emissive: new THREE.Color(palette.line).multiplyScalar(0.08),
+  })
+  disposables.push(bodyMat, faceMat, metalMat, faceTexture)
+
+  const bodyGeo = new THREE.BoxGeometry(1.94, 1.94, 0.16)
+  const body = new THREE.Mesh(bodyGeo, bodyMat)
+  root.add(body)
+  disposables.push(bodyGeo)
+
+  const faceGeo = new THREE.PlaneGeometry(1.8, 1.8)
+  const face = new THREE.Mesh(faceGeo, faceMat)
+  face.position.z = 0.081
+  root.add(face)
+  disposables.push(faceGeo)
+
+  const studGeo = new THREE.SphereGeometry(0.038, 12, 12)
+  disposables.push(studGeo)
+  const offsets: Array<[number, number]> = [
+    [-0.86, -0.86],
+    [0.86, -0.86],
+    [-0.86, 0.86],
+    [0.86, 0.86],
+  ]
+  const cornerCount = quality.detail >= 0.8 ? offsets.length : 0
+  for (let i = 0; i < cornerCount; i += 1) {
+    const [x, y] = offsets[i]
+    const stud = new THREE.Mesh(studGeo, metalMat)
+    stud.position.set(x, y, 0.1)
+    root.add(stud)
+  }
+
+  return { root, disposables }
+}
+
+/** 生成圆形牌（Japandi）：圆柱 + 圆形贴图 + 一圈细边 */
+function buildDisc(
+  quality: SceneQuality,
+  palette: Palette,
+  glyph: string,
+  sub: string,
+): BadgeParts {
+  const root = new THREE.Group()
+  const disposables: BadgeParts['disposables'] = []
+
+  const sideMat = new THREE.MeshStandardMaterial({
+    color: palette.side,
+    metalness: 0.4,
+    roughness: 0.5,
+  })
+  const bottomMat = new THREE.MeshStandardMaterial({
+    color: palette.side,
+    metalness: 0.4,
+    roughness: 0.55,
+  })
+  const faceTexture = makeFaceTexture(palette, glyph, sub, 'circle')
+  faceTexture.colorSpace = THREE.SRGBColorSpace
+  // 圆柱顶盖的 UV 相对画面旋转了 90°，不转回来「叁」会躺倒
+  faceTexture.center.set(0.5, 0.5)
+  faceTexture.rotation = Math.PI / 2
+  const faceMat = new THREE.MeshBasicMaterial({ map: faceTexture, toneMapped: false })
+  const ringMat = new THREE.MeshStandardMaterial({
+    color: palette.line,
+    metalness: 0.8,
+    roughness: 0.35,
+  })
+  disposables.push(sideMat, bottomMat, faceMat, ringMat, faceTexture)
+
+  const discGeo = new THREE.CylinderGeometry(1, 1, 0.14, Math.round(96 * quality.detail), 1)
+  // 圆柱材质组顺序：0 侧面 / 1 顶面 / 2 底面
+  const disc = new THREE.Mesh(discGeo, [sideMat, faceMat, bottomMat])
+  disc.rotation.x = Math.PI / 2
+  root.add(disc)
+  disposables.push(discGeo)
+
+  const ringGeo = new THREE.TorusGeometry(1.01, 0.028, 12, Math.round(128 * quality.detail))
+  const ring = new THREE.Mesh(ringGeo, ringMat)
+  ring.position.z = 0.075
+  root.add(ring)
+  disposables.push(ringGeo)
+
+  return { root, disposables }
+}
+
 export async function createBadgeScene(options: CreateSceneOptions): Promise<SceneHandle> {
   const { canvas, quality, onContextLost } = options
   const parent = canvas.parentElement ?? canvas
+  const palette: Palette = options.palette ?? {
+    paper: 0x151223,
+    ink: 0xe8b84b,
+    line: 0xe8b84b,
+    accent: 0xe879b0,
+    side: 0x241f38,
+  }
 
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -129,9 +289,7 @@ export async function createBadgeScene(options: CreateSceneOptions): Promise<Sce
     alpha: true,
     powerPreference: 'high-performance',
   })
-  // 透明画布的关键：清屏色 alpha 必须为 0，否则叠在毛玻璃卡片上就是一块黑方块
   renderer.setClearColor(0x000000, 0)
-  // 硬约束：像素比上限 1.5（由调用方按降级状态给出）
   renderer.setPixelRatio(quality.dpr)
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
@@ -139,14 +297,13 @@ export async function createBadgeScene(options: CreateSceneOptions): Promise<Sce
 
   const scene = new THREE.Scene()
 
-  // 用 RoomEnvironment 生成 IBL，免去外置 HDR 文件（CSP 下也不引入外部资源）
+  // RoomEnvironment 生成 IBL，免去外置 HDR（CSP 下不引入外部资源）
   const room = new RoomEnvironment()
   const pmrem = new THREE.PMREMGenerator(renderer)
   const envRT = pmrem.fromScene(room, 0.04)
   scene.environment = envRT.texture
   pmrem.dispose()
 
-  /** 递归释放一个对象树里的几何体与材质（RoomEnvironment 内部也有自己的资源） */
   function disposeObjectTree(root: THREE.Object3D): void {
     root.traverse((obj) => {
       if (!(obj instanceof THREE.Mesh)) return
@@ -158,19 +315,27 @@ export async function createBadgeScene(options: CreateSceneOptions): Promise<Sce
   }
 
   const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100)
-  camera.position.set(0, 0, 4.3)
+  camera.position.set(0, 0, 4.4)
 
   const key = new THREE.DirectionalLight(0xffffff, 2.2)
   key.position.set(2.5, 3, 4)
   scene.add(key)
-  const rim = new THREE.DirectionalLight(0x8ab4ff, 1.5)
+  const rim = new THREE.DirectionalLight(0x8ab4ff, 1.3)
   rim.position.set(-3, -1.5, 2)
   scene.add(rim)
-  scene.add(new THREE.AmbientLight(0xffffff, 0.32))
+  scene.add(new THREE.AmbientLight(0xffffff, 0.36))
 
-  const badge = buildBadge(quality)
-  // 固定俯仰角，让徽章始终有立体感，而不是正对镜头的一块圆饼
-  badge.root.rotation.x = -0.16
+  const variant = options.variant ?? 'star'
+  const glyph = options.glyph || '19'
+  const sub = options.sub || 'CLASS OF 2027'
+  const badge =
+    variant === 'plaque'
+      ? buildPlaque(quality, palette, glyph, sub)
+      : variant === 'disc'
+        ? buildDisc(quality, palette, glyph, sub)
+        : buildStar(quality, palette)
+
+  badge.root.rotation.x = -0.12
   scene.add(badge.root)
 
   // 可选 GLB 模型：存在则替换内置几何体
@@ -183,13 +348,11 @@ export async function createBadgeScene(options: CreateSceneOptions): Promise<Sce
       badge.root.visible = false
       scene.add(loadedModel)
     } catch {
-      /* 加载失败静默回退到内置几何体徽章 */
+      /* 加载失败静默回退到内置几何体 */
     }
   }
 
   const target = loadedModel ?? badge.root
-
-  // 指针视差（记录目标值，渲染时阻尼跟随）
   const pointer = { x: 0, y: 0 }
   const smooth = { x: 0, y: 0 }
 
@@ -211,7 +374,6 @@ export async function createBadgeScene(options: CreateSceneOptions): Promise<Sce
   let startAt = 0
 
   return {
-    /** 透明画布与后处理不可兼得，这里恒为 false（理由见文件头） */
     get hasPostprocessing(): boolean {
       return false
     },
@@ -220,12 +382,11 @@ export async function createBadgeScene(options: CreateSceneOptions): Promise<Sce
       if (startAt === 0) startAt = timeMs
       const t = (timeMs - startAt) / 1000
 
-      // 小幅摆动（约 ±32°），永不侧对镜头
-      target.rotation.y = Math.sin(t * 0.45) * 0.56
-      // 轻微上下浮动，减弱"贴纸感"
+      // 摆动幅度：星章可以大一些，牌面要能读清数字
+      const swing = variant === 'star' ? 0.56 : 0.32
+      target.rotation.y = Math.sin(t * 0.45) * swing
       target.position.y = Math.sin(t * 0.8) * 0.035
 
-      // 相机视差：阻尼跟随指针
       smooth.x += (pointer.x - smooth.x) * 0.06
       smooth.y += (pointer.y - smooth.y) * 0.06
       camera.position.x = smooth.x * 0.5
@@ -253,11 +414,9 @@ export async function createBadgeScene(options: CreateSceneOptions): Promise<Sce
       canvas.removeEventListener('webglcontextlost', handleContextLost)
       for (const item of badge.disposables) item.dispose()
       if (loadedModel) disposeObjectTree(loadedModel)
-      // RoomEnvironment 内部也建了几何体/材质，不释放的话反复开关 3D 会积累 GPU 资源
       disposeObjectTree(room)
       envRT.dispose()
       renderer.dispose()
-      // 主动归还 WebGL 上下文（浏览器对同时存在的上下文数量有上限）
       renderer.forceContextLoss()
     },
   }

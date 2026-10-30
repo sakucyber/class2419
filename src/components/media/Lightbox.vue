@@ -56,7 +56,6 @@ watch(
   { immediate: true },
 )
 
-/* 打开时焦点移进弹层、Tab 在弹层内循环、关闭后还原；Esc 关闭也交给它统一处理 */
 useFocusTrap(dialogEl, () => props.open, { onEscape: close })
 
 onBeforeUnmount(() => {
@@ -97,24 +96,28 @@ function onTouchEnd(e: TouchEvent) {
       @touchstart.passive="onTouchStart"
       @touchend.passive="onTouchEnd"
     >
-      <header class="lb-header">
-        <span class="counter">{{ index + 1 }} / {{ items.length }}</span>
+      <header class="lb-head">
+        <span class="counter num">{{ index + 1 }} / {{ items.length }}</span>
         <div class="lb-actions">
-          <button class="lb-btn" aria-label="下载图片" @click="download">
+          <button class="lb-btn" type="button" aria-label="下载图片" @click="download">
             <AppIcon name="download" :size="18" />
           </button>
-          <button class="lb-btn" aria-label="关闭预览" @click="close">
+          <button class="lb-btn" type="button" aria-label="关闭预览" @click="close">
             <AppIcon name="close" :size="18" />
           </button>
         </div>
       </header>
 
-      <button class="lb-arrow lb-arrow--prev" aria-label="上一张" @click="prev">‹</button>
-      <figure class="lb-stage" @click.self="close">
-        <img :src="current.src" :alt="current.caption || '预览图片'" class="lb-img" />
+      <button class="lb-arrow lb-arrow--prev" type="button" aria-label="上一张" @click="prev">
+        ‹
+      </button>
+      <figure class="stage" @click.self="close">
+        <img :src="current.src" :alt="current.caption || '预览图片'" class="image" />
         <figcaption v-if="current.caption" class="lb-caption">{{ current.caption }}</figcaption>
       </figure>
-      <button class="lb-arrow lb-arrow--next" aria-label="下一张" @click="next">›</button>
+      <button class="lb-arrow lb-arrow--next" type="button" aria-label="下一张" @click="next">
+        ›
+      </button>
     </div>
   </Teleport>
 </template>
@@ -124,17 +127,17 @@ function onTouchEnd(e: TouchEvent) {
   position: fixed;
   inset: 0;
   z-index: var(--z-lightbox);
-  background: rgba(6, 10, 20, 0.92);
   display: grid;
   grid-template-rows: auto 1fr;
-  animation: fadeIn var(--duration) var(--ease);
+  background: rgba(6, 10, 20, 0.94);
+  animation: fade-in var(--dur) var(--ease);
 }
-@keyframes fadeIn {
+@keyframes fade-in {
   from {
     opacity: 0;
   }
 }
-.lb-header {
+.lb-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -142,8 +145,8 @@ function onTouchEnd(e: TouchEvent) {
   color: #e2e8f0;
 }
 .counter {
-  font-variant-numeric: tabular-nums;
   font-weight: 600;
+  letter-spacing: 1px;
 }
 .lb-actions {
   display: flex;
@@ -152,19 +155,18 @@ function onTouchEnd(e: TouchEvent) {
 .lb-btn {
   width: 40px;
   height: 40px;
-  border: none;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  font-size: 1.1rem;
   display: grid;
   place-items: center;
-  transition: background var(--duration-fast) var(--ease);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: #fff;
+  transition: background-color var(--dur-fast) var(--ease);
 }
 .lb-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.16);
 }
-.lb-stage {
+.stage {
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -174,37 +176,37 @@ function onTouchEnd(e: TouchEvent) {
   padding: 0 var(--space-12) var(--space-6);
   min-height: 0;
 }
-.lb-img {
+.image {
   max-width: 100%;
   max-height: 78vh;
   object-fit: contain;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
 }
 .lb-caption {
   color: #cbd5e1;
-  font-size: 0.95rem;
+  font-size: var(--fs-md);
   text-align: center;
 }
 .lb-arrow {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 48px;
-  height: 48px;
-  border: none;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  font-size: 1.8rem;
-  line-height: 1;
+  z-index: 1;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
-  transition: background var(--duration-fast) var(--ease);
-  z-index: 1;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 1.7rem;
+  line-height: 1;
+  transition: background-color var(--dur-fast) var(--ease);
 }
 .lb-arrow:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.24);
 }
 .lb-arrow--prev {
   left: var(--space-3);
@@ -212,14 +214,24 @@ function onTouchEnd(e: TouchEvent) {
 .lb-arrow--next {
   right: var(--space-3);
 }
+[data-style='brutal'] .lb-btn,
+[data-style='brutal'] .lb-arrow {
+  border-width: 3px;
+  border-color: #fff;
+  border-radius: 0;
+}
+[data-style='annual'] .lb-btn,
+[data-style='annual'] .lb-arrow {
+  border-radius: 2px;
+}
 
 @media (max-width: 640px) {
-  .lb-stage {
+  .stage {
     padding: 0 var(--space-4) var(--space-4);
   }
   .lb-arrow {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
     font-size: 1.4rem;
   }
 }

@@ -8,6 +8,7 @@ import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
 import LazyImage from '@/components/common/LazyImage.vue'
 import PolaroidModal from '@/components/common/PolaroidModal.vue'
+import ProgressBar from '@/components/common/ProgressBar.vue'
 import SectionHeader from '@/components/common/SectionHeader.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
 import HeroBadge from '@/components/effects/HeroBadge.vue'
@@ -19,20 +20,26 @@ import type { PolaroidPhoto } from '@/types'
 import { withBase } from '@/utils/base'
 import { formatDate, formatRelative } from '@/utils/format'
 
-/** 首页 hero 背景（运行时字符串，需要按部署 base 加前缀） */
 const heroBg = withBase('/images/misc/class-card-bg.svg')
-
 const content = useContentStore()
 
 const latestAlbums = computed(() => content.publicAlbums.slice(0, 3))
 const latestVideos = computed(() => content.publicVideos.slice(0, 3))
 const latestArticles = computed(() => content.publicArticles.slice(0, 4))
-const notices = computed(() => content.publicAnnouncements.slice(0, 4))
+const notices = computed(() => content.publicAnnouncements.slice(0, 3))
+
+/** 三年行程进度：建班 → 中考，给倒计时卡一个「已经走了多远」的参照 */
+const journeyPct = computed(() => {
+  const start = new Date(content.classInfo.foundedAt).getTime()
+  const end = new Date(content.classInfo.examAt).getTime()
+  const now = Date.now()
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return 0
+  return Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)))
+})
 
 /* ─────────────── 随机回忆（拍立得） ───────────────
- * 数据源是**已发布相册**的全部照片（当前 37 张），不新增任何数据结构：
- * 照片本身没有日期，`date` 取所属相册的 createdAt，界面写「收录于」。
- */
+ * 数据源是已发布相册的全部照片，不新增任何数据结构；
+ * 照片本身没有日期，`date` 取所属相册的 createdAt，界面写「收录于」。 */
 const allPhotos = computed<PolaroidPhoto[]>(() =>
   content.publicAlbums.flatMap((album) =>
     (album.photos ?? []).map((photo) => ({
@@ -51,16 +58,14 @@ let lastPhotoId = ''
 function openRandomMemory(): void {
   const pool = allPhotos.value
   if (pool.length === 0) return
-  // 只有一张时不做排除，否则会抽不出东西
   const candidates = pool.length > 1 ? pool.filter((p) => p.id !== lastPhotoId) : pool
   const picked = candidates[Math.floor(Math.random() * candidates.length)]
   lastPhotoId = picked.id
   polaroid.value = picked
 }
 
-/* hero 背景视差：轻微下移 + 渐隐，跟随首屏滚动。
- * 用 rAF 合并同一帧内的多次 scroll 事件：这个值每像素都在变，直接写 ref 会把
- * 滚动事件变成「每帧一次组件重渲染」，低端机上就是肉眼可见的掉帧。 */
+/* hero 背景轻微视差：只有原版风格（满幅背景）需要它。
+   用 rAF 合并同一帧内的多次 scroll，避免每像素一次组件重渲染。 */
 const parallax = ref(0)
 let parallaxRaf = 0
 function onScroll() {
@@ -80,13 +85,9 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="home">
-    <!-- 加载态 -->
     <template v-if="content.loading">
       <div class="container section">
         <SkeletonBlock variant="hero" />
-      </div>
-      <div class="container section">
-        <SkeletonBlock variant="grid" :count="3" />
       </div>
       <div class="container section">
         <SkeletonBlock variant="grid" :count="3" />
@@ -97,59 +98,79 @@ onBeforeUnmount(() => {
 
     <template v-else>
       <!-- 班级名片 + 倒计时 -->
-      <section class="container section hero-wrap">
-        <article class="class-card">
-          <div
-            class="card-bg"
-            :style="{ transform: `scale(1.12) translateY(${parallax * 0.22}px)` }"
-          >
-            <LazyImage :src="heroBg" alt="" aspect="16 / 9" radius="0" eager />
-          </div>
-          <!-- 装饰性 3D/2.5D 徽章：aria-hidden + pointer-events:none，不遮挡右侧文案 -->
-          <HeroBadge />
-          <div class="card-content">
-            <p class="eyebrow">
-              <span class="eyebrow-dot" aria-hidden="true"></span>
-              {{ content.classInfo.school }} · {{ content.classInfo.grade }}
-            </p>
-            <h1 class="class-name">
-              <span class="cn-pre">我们是</span
-              ><span class="grad-text">{{ content.classInfo.shortName }}</span>
+      <section class="container hero-wrap">
+        <article class="hero card">
+          <div class="hero-body">
+            <div class="hero-head">
+              <HeroBadge />
+              <div class="hero-head-text">
+                <p class="kicker">Class of 2027</p>
+                <p class="eyebrow">{{ content.classInfo.school }} · {{ content.classInfo.grade }}</p>
+              </div>
+            </div>
+
+            <h1 class="hero-title">
+              <span class="pre">我们是</span>
+              <span class="name">{{ content.classInfo.shortName }}</span>
             </h1>
+
             <p class="slogan">{{ content.classInfo.slogan }}</p>
             <p class="intro">{{ content.classInfo.description }}</p>
+
             <ul class="stats" aria-label="班级数据">
-              <li v-for="s in content.classInfo.stats" :key="s.label" class="stat-chip">
-                <strong>{{ s.value }}</strong>
+              <li v-for="s in content.classInfo.stats" :key="s.label" class="stat">
+                <strong class="num">{{ s.value }}</strong>
                 <span>{{ s.label }}</span>
               </li>
             </ul>
-            <div class="hero-actions">
-              <RouterLink to="/about" class="btn btn--gradient hero-btn-primary"
-                >了解我们 →</RouterLink
-              >
-              <RouterLink to="/albums" class="btn hero-btn-ghost">逛逛相册</RouterLink>
-              <button type="button" class="btn hero-btn-ghost" @click="openRandomMemory">
+
+            <div class="actions">
+              <RouterLink to="/about" class="btn">
+                了解我们
+                <AppIcon name="arrowRight" :size="15" :stroke-width="2" />
+              </RouterLink>
+              <RouterLink to="/albums" class="btn btn--ghost">逛逛相册</RouterLink>
+              <button type="button" class="btn btn--ghost" @click="openRandomMemory">
                 <AppIcon name="camera" :size="15" :stroke-width="1.9" />
                 随机回忆
               </button>
             </div>
           </div>
+
+          <div
+            class="hero-media"
+            :style="{
+              transform: `translateY(${Math.min(parallax * 0.06, 18)}px) scale(1.02)`,
+            }"
+          >
+            <LazyImage :src="heroBg" alt="" aspect="16 / 10" radius="0" eager />
+            <span class="hero-caption" aria-hidden="true">Plate I · 2024—2027</span>
+          </div>
         </article>
 
-        <aside
-          v-reveal="{ type: 'left', delay: 1 }"
-          class="countdown-card card"
-          aria-label="中考倒计时"
-        >
-          <div class="count-head">
+        <aside class="count card" aria-label="中考倒计时">
+          <div class="count-top">
             <span class="count-label">
-              <AppIcon name="hourglass" :size="15" />
+              <AppIcon name="hourglass" :size="14" :stroke-width="1.9" />
               距离中考
             </span>
-            <span class="count-date-chip">{{ formatDate(content.classInfo.examAt, true) }}</span>
+            <span class="count-date num">{{ formatDate(content.classInfo.examAt) }}</span>
           </div>
-          <CountdownTimer label="中考" :target="content.classInfo.examAt" />
+
+          <CountdownTimer
+            :target="content.classInfo.examAt"
+            label="中考"
+            caption="COUNTDOWN TO THE EXAM"
+          />
+
+          <div class="journey">
+            <div class="journey-head">
+              <span>初中三年</span>
+              <span class="num">{{ journeyPct }}%</span>
+            </div>
+            <ProgressBar :value="journeyPct" label="初中三年进度" />
+          </div>
+
           <p class="count-note">笔锋所至，皆是心之所向。稳住，2419。</p>
         </aside>
       </section>
@@ -160,23 +181,24 @@ onBeforeUnmount(() => {
       </section>
 
       <!-- 公告 -->
-      <section v-if="notices.length" v-reveal class="container section">
+      <section v-if="notices.length" id="notices" v-reveal class="container section">
         <SectionHeader
           tag="Notice"
           title="班级公告"
           subtitle="访问地址说明与站点更新，都在这里"
+          :linkable="false"
         />
         <ul class="notice-list">
           <li
             v-for="n in notices"
             :key="n.id"
             class="notice card"
-            :class="`level-${n.level || 'info'}`"
+            :class="`notice--${n.level || 'info'}`"
           >
             <div class="notice-head">
-              <AppIcon v-if="n.pinned" class="pin" name="pin" :size="15" aria-label="置顶" />
+              <span class="notice-badge">{{ n.pinned ? '置顶' : '公告' }}</span>
               <strong>{{ n.title }}</strong>
-              <time :datetime="n.createdAt">{{ formatRelative(n.createdAt) }}</time>
+              <time class="num" :datetime="n.createdAt">{{ formatRelative(n.createdAt) }}</time>
             </div>
             <p>{{ n.content }}</p>
           </li>
@@ -186,8 +208,7 @@ onBeforeUnmount(() => {
       <!-- 最新相册 -->
       <section v-reveal class="container section">
         <SectionHeader tag="Album" title="最新相册" subtitle="咔嚓，把时光存档" to="/albums" />
-        <SkeletonBlock v-if="content.loading" variant="grid" :count="3" />
-        <div v-else-if="latestAlbums.length" class="grid-3">
+        <div v-if="latestAlbums.length" class="grid-cards">
           <AlbumCard v-for="a in latestAlbums" :key="a.id" :album="a" />
         </div>
         <EmptyState
@@ -201,7 +222,7 @@ onBeforeUnmount(() => {
       <!-- 最新视频 -->
       <section v-reveal class="container section">
         <SectionHeader tag="Video" title="最新视频" subtitle="动态记录，声临其境" to="/videos" />
-        <div v-if="latestVideos.length" class="grid-3">
+        <div v-if="latestVideos.length" class="grid-cards">
           <VideoCard v-for="v in latestVideos" :key="v.id" :video="v" />
         </div>
         <EmptyState
@@ -215,8 +236,8 @@ onBeforeUnmount(() => {
       <!-- 最新文章 -->
       <section v-reveal class="container section">
         <SectionHeader tag="Article" title="最新文章" subtitle="笔尖下的2419" to="/articles" />
-        <div v-if="latestArticles.length" class="articles-grid">
-          <ArticleCard :article="latestArticles[0]" featured class="featured" />
+        <div v-if="latestArticles.length" class="articles">
+          <ArticleCard :article="latestArticles[0]" featured />
           <div class="article-list">
             <ArticleCard v-for="a in latestArticles.slice(1)" :key="a.id" :article="a" />
           </div>
@@ -230,389 +251,283 @@ onBeforeUnmount(() => {
       </section>
     </template>
 
-    <!-- 随机回忆拍立得（内部 Teleport 到 body） -->
     <PolaroidModal :photo="polaroid" @close="polaroid = null" />
   </div>
 </template>
 
 <style scoped>
 .section {
-  margin-top: var(--space-8);
-}
-.section:first-child {
-  margin-top: var(--space-6);
+  margin-top: var(--section-gap);
 }
 
-/* 班级名片 */
 .hero-wrap {
   display: grid;
   gap: var(--space-4);
+  padding-top: var(--space-6);
 }
-@media (min-width: 900px) {
+@media (min-width: 960px) {
   .hero-wrap {
-    grid-template-columns: 1.7fr 1fr;
+    grid-template-columns: minmax(0, 1.62fr) minmax(300px, 0.92fr);
     align-items: stretch;
   }
 }
-.class-card {
-  position: relative;
+
+/* ---------- 班级名片 ---------- */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr;
   overflow: hidden;
-  /* 3D 徽章宽度的唯一来源：HeroBadge.vue 与下面 .intro 的避让都读这个变量，
-     避免两处各写一份 clamp 导致对不上 */
-  --hero-badge-w: clamp(150px, 17vw, 230px);
   padding: 0;
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-2);
-  min-height: clamp(320px, 38vw, 420px);
-  isolation: isolate;
+  min-height: 0;
 }
-/* 遮罩单独一层，这样右侧能留出更多图片空间，文字区也能收窄 */
-.class-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background: linear-gradient(
-    100deg,
-    rgba(6, 8, 18, 0.95) 0%,
-    rgba(6, 8, 18, 0.86) 48%,
-    rgba(6, 8, 18, 0.34) 100%
-  );
+@media (min-width: 900px) {
+  .hero {
+    grid-template-columns: minmax(0, 1.32fr) minmax(240px, 0.88fr);
+  }
 }
-.card-bg {
-  position: absolute;
-  inset: 0;
-  will-change: transform;
-}
-.card-bg :deep(.img) {
-  filter: saturate(1.1) contrast(1.05);
-  height: 100% !important;
-}
-.card-content {
+.hero-body {
   position: relative;
   z-index: 1;
-  padding: clamp(24px, 3.5vw, 40px);
-  color: #fff;
-  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-width: 660px;
+  gap: 12px;
+  padding: clamp(22px, 3.2vw, 40px);
+}
+.hero-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: 2px;
+}
+.hero-head-text {
+  min-width: 0;
+}
+.hero-head-text .kicker {
+  margin-bottom: 4px;
 }
 .eyebrow {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  gap: 8px;
-  padding: 7px 18px;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  font-size: 0.76rem;
-  letter-spacing: 2px;
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.92);
-}
-.eyebrow-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  background: #34d399;
-  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.28);
-  animation: pulse-dot 2.4s ease-in-out infinite;
-}
-@keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.45;
-  }
-}
-.class-name {
-  font-family: var(--font-display);
-  color: #fff;
-  font-size: clamp(1.75rem, 4.6vw, 2.6rem);
-  font-weight: 900;
-  line-height: 1.2;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
   letter-spacing: 1px;
-  margin-top: 4px;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.4);
 }
-/* 「我们是」压到 0.55 倍，让班号成为唯一视觉焦点 */
-.cn-pre {
-  font-size: 0.55em;
-  font-weight: 700;
+.hero-title {
+  font-size: clamp(2rem, 4.6vw, 3.15rem);
+  line-height: 1.08;
+  letter-spacing: var(--display-tracking);
+}
+.hero-title .pre {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.3em;
+  font-weight: 600;
   letter-spacing: 3px;
-  margin-right: 0.25em;
-  vertical-align: 0.14em;
-  opacity: 0.85;
+  color: var(--text-3);
 }
-/* 班训已移除，这句标语成为标题下的唯一引导行，字重与透明度相应加强 */
+.hero-title .name {
+  display: block;
+  color: var(--text);
+}
 .slogan {
-  font-size: 0.9rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: rgba(255, 255, 255, 0.78);
+  font-family: var(--font-quote);
+  font-style: italic;
+  font-size: var(--fs-md);
+  color: var(--accent-ink);
+  letter-spacing: 1px;
 }
 .intro {
-  margin-top: 6px;
-  font-size: 0.86rem;
+  max-width: 54ch;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
   line-height: 1.85;
-  color: rgba(255, 255, 255, 0.78);
-  max-width: 56ch;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-/* 徽章可见时给它留出避让间距：实测在 1280 宽下 .intro 的 56ch 右边缘正好
-   压在徽章左边缘上（0px 间隙），省略号会贴着徽章，看着像被盖住。
-   只在 ≥900px（徽章显示区间）生效，且保留上面的 56ch 作为 min() 不受支持时的回退。 */
-@media (min-width: 900px) {
-  .intro {
-    max-width: min(56ch, calc(100% - var(--hero-badge-w) - 12px));
-  }
 }
 .stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 0;
   margin-top: auto;
   padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
 }
-/* 扁胶囊：数值与标签同一行，比原来的两行大方块紧凑很多 */
-.stat-chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 7px 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: var(--radius-full);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  transition: all var(--duration) var(--ease-spring);
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: var(--space-5);
+  margin-right: var(--space-5);
+  border-right: 1px solid var(--line);
 }
-.stat-chip:hover {
-  transform: translateY(-3px);
-  background: rgba(255, 255, 255, 0.18);
+.stat:last-child {
+  border-right: none;
+  margin-right: 0;
+  padding-right: 0;
 }
-.stat-chip strong {
-  font-size: 1.02rem;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
+.stat strong {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: var(--display-weight);
   line-height: 1.2;
 }
-.stat-chip span {
-  font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.72);
+.stat span {
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
+  letter-spacing: 0.5px;
 }
-.hero-actions {
+.actions {
   display: flex;
-  gap: 10px;
   flex-wrap: wrap;
-  margin-top: var(--space-3);
-}
-.hero-btn-primary,
-.hero-btn-ghost {
-  padding: 0.58em 1.5em;
-  font-size: 0.9rem;
-}
-.hero-btn-primary {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-.hero-btn-ghost {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: #fff;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-.hero-btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.22);
-  color: #fff;
-  box-shadow: none;
-}
-/* 窄屏：三个按钮原本挤成「2 + 1」，落单的那个很难看。
-   改成主按钮占满一行、两个次要按钮各占一半，视觉上成为 1 + 2 的稳定结构。 */
-@media (max-width: 520px) {
-  .hero-actions {
-    gap: 8px;
-  }
-  .hero-btn-primary {
-    flex: 1 1 100%;
-    justify-content: center;
-  }
-  .hero-actions .hero-btn-ghost {
-    flex: 1 1 calc(50% - 4px);
-    justify-content: center;
-  }
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 
-@media (max-width: 720px) {
-  .card-content {
-    max-width: 100%;
-    gap: 8px;
+.hero-media {
+  position: relative;
+  order: -1;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  will-change: transform;
+}
+.hero-media :deep(.img) {
+  filter: grayscale(0.5) sepia(0.16) contrast(1.02);
+}
+@media (min-width: 900px) {
+  .hero-media {
+    order: 0;
+    border-bottom: none;
+    border-left: 1px solid var(--line);
   }
-  .intro {
-    -webkit-line-clamp: 2;
+  /* 桌面端图片撑满正文高度；移动端交给 16/10 的固有比例，否则会被拉成方块 */
+  .hero-media :deep(.lazy-image) {
+    height: 100%;
   }
 }
+.hero-caption {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #16283d;
+  font-size: 0.58rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
 
-.countdown-card {
-  padding: var(--space-6);
+/* ---------- 倒计时 ---------- */
+.count {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  /* 卡片高度由 hero 撑开，用 space-between 让"标签—数字—备注"分布到上下，
-     否则内容居中会在亮色大卡片上留下两大块空白 */
   justify-content: space-between;
-  background: var(--card);
-  position: relative;
-  overflow: hidden;
+  padding: clamp(20px, 2.6vw, 28px);
 }
-/* 数字块撑满卡片宽度，避免宽屏下右侧留白 */
-.countdown-card :deep(.countdown) {
-  width: 100%;
-}
-.countdown-card :deep(.unit) {
-  flex: 1;
-}
-.countdown-card :deep(.sep) {
-  flex: none;
-  opacity: 0.45;
-}
-/* 宽屏下卡片被 hero 撑到 400+ 高，而内容只有 230 左右 —— 上下会留下两块大空白。
-   靠"把数字放大"来填满，比加装饰元素更克制：数字本来就是这张卡的主角。 */
-@media (min-width: 900px) {
-  .countdown-card :deep(.unit) {
-    padding: var(--space-3) var(--space-3);
-  }
-  .countdown-card :deep(.unit strong) {
-    font-size: clamp(2rem, 2.5vw, 2.7rem);
-    line-height: 1.15;
-  }
-  .countdown-card :deep(.unit span) {
-    margin-top: 2px;
-  }
-}
-.countdown-card::before {
-  content: '';
-  position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 140px;
-  height: 140px;
-  border-radius: var(--radius-full);
-  background: var(--primary-soft);
-  pointer-events: none;
-}
-.count-head {
+.count-top {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: var(--space-2);
   flex-wrap: wrap;
-  position: relative;
 }
 .count-label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
   color: var(--text-2);
-  font-size: 0.88rem;
-  font-weight: 700;
   letter-spacing: 0.5px;
 }
-.count-date-chip {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--primary);
-  background: var(--primary-soft);
-  border: 1px solid var(--primary-soft-2);
-  padding: 2px 10px;
-  border-radius: var(--radius-full);
-  font-variant-numeric: tabular-nums;
+.count-date {
+  font-size: var(--fs-2xs);
+  color: var(--accent-ink);
+  letter-spacing: 1px;
+}
+.journey {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.journey-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
+  letter-spacing: 1px;
 }
 .count-note {
+  font-family: var(--font-quote);
+  font-style: italic;
+  font-size: var(--fs-sm);
   color: var(--text-3);
-  font-size: 0.85rem;
+  line-height: 1.7;
 }
-/* 公告 */
+
+/* ---------- 公告 ---------- */
 .notice-list {
   display: grid;
   gap: var(--space-3);
 }
 .notice {
-  padding: var(--space-4);
-  border-left: 4px solid var(--border-strong);
+  padding: var(--space-4) var(--space-5);
+  border-left: 3px solid var(--notice-accent, var(--line-2));
 }
-.notice.level-warning {
-  border-left-color: var(--warning);
+.notice--info {
+  --notice-accent: var(--info);
 }
-.notice.level-success {
-  border-left-color: var(--success);
+.notice--success {
+  --notice-accent: var(--success);
 }
-.notice.level-info {
-  border-left-color: var(--info);
+.notice--warning {
+  --notice-accent: var(--warning);
 }
 .notice-head {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.notice-badge {
+  flex: none;
+  padding: 1px 6px;
+  border: 1px solid var(--notice-accent, var(--line-2));
+  color: var(--notice-accent, var(--text-3));
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.notice-head strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: var(--display-weight);
 }
 .notice-head time {
   margin-left: auto;
-  color: var(--text-3);
-  font-size: 0.78rem;
   flex: none;
+  color: var(--text-3);
+  font-size: var(--fs-2xs);
 }
 .notice p {
   color: var(--text-2);
-  font-size: 0.9rem;
-}
-.pin {
-  font-size: 0.9rem;
+  font-size: var(--fs-sm);
+  line-height: 1.75;
 }
 
-/* 网格：卡片宽度保持在 300~400px 区间，宽屏靠增加列数而不是拉大卡片 */
-.grid-3 {
-  display: grid;
-  gap: var(--space-4);
-  grid-template-columns: 1fr;
-}
-@media (min-width: 620px) {
-  .grid-3 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (min-width: 960px) {
-  .grid-3 {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-@media (min-width: 1600px) {
-  .grid-3 {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.articles-grid {
+/* ---------- 文章区 ---------- */
+.articles {
   display: grid;
   gap: var(--space-4);
 }
 @media (min-width: 960px) {
-  .articles-grid {
-    grid-template-columns: 1.2fr 1fr;
+  .articles {
+    grid-template-columns: 1.15fr 1fr;
     align-items: start;
   }
-  .featured {
+  .articles > :first-child {
     position: sticky;
     top: calc(var(--header-h) + 16px);
   }
@@ -620,5 +535,216 @@ onBeforeUnmount(() => {
 .article-list {
   display: grid;
   gap: var(--space-3);
+}
+[data-style='annual'] .article-list {
+  gap: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+/* ---------- 风格差异 ---------- */
+[data-style='annual'] .hero-title .name {
+  font-family: var(--font-serif);
+  font-weight: 600;
+}
+[data-style='annual'] .hero-media :deep(.img) {
+  filter: grayscale(0.72) sepia(0.2) contrast(1.04);
+}
+[data-style='annual'] .notice {
+  background: #fff;
+  border-left-width: 2px;
+}
+
+[data-style='japandi'] .hero {
+  border-color: transparent;
+  box-shadow: var(--shadow-2);
+}
+[data-style='japandi'] .hero-media {
+  border-bottom: none;
+  border-left: none;
+  padding: 10px 10px 0;
+}
+[data-style='japandi'] .hero-media :deep(.lazy-image) {
+  border-radius: 14px;
+}
+[data-style='japandi'] .hero-media :deep(.img) {
+  filter: saturate(0.68) sepia(0.08);
+}
+[data-style='japandi'] .hero-caption {
+  right: 20px;
+  bottom: 20px;
+  background: rgba(255, 254, 251, 0.9);
+  color: var(--text-2);
+  border-radius: 999px;
+}
+[data-style='japandi'] .count {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding-left: 6px;
+}
+[data-style='japandi'] .notice {
+  border-left: none;
+  background: var(--surface);
+}
+[data-style='japandi'] .notice-head::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--notice-accent, var(--accent));
+  flex: none;
+}
+[data-style='japandi'] .notice-badge {
+  border: none;
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+[data-style='brutal'] .hero {
+  border: 3px solid #111;
+  box-shadow: 8px 8px 0 #111;
+}
+[data-style='brutal'] .hero-media {
+  border-bottom: 3px solid #111;
+  border-left: none;
+}
+[data-style='brutal'] .hero-media :deep(.img) {
+  filter: saturate(1.4) contrast(1.12);
+}
+[data-style='brutal'] .hero-title .name {
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+[data-style='brutal'] .hero-title .pre {
+  font-weight: 900;
+  color: var(--text);
+}
+[data-style='brutal'] .slogan {
+  align-self: flex-start;
+  padding: 2px 8px;
+  background: var(--accent);
+  color: #111;
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+[data-style='brutal'] .stats {
+  border-top: 3px solid #111;
+}
+[data-style='brutal'] .stat {
+  border-right: 3px solid #111;
+}
+[data-style='brutal'] .count {
+  background: var(--accent);
+  border: 3px solid #111;
+  box-shadow: 6px 6px 0 #111;
+  color: #111;
+}
+[data-style='brutal'] .count-label,
+[data-style='brutal'] .count-note,
+[data-style='brutal'] .journey-head,
+[data-style='brutal'] .count-date {
+  /* 倒计时卡在两种主题下都是亮黄底，文字必须固定墨色 */
+  color: #111;
+}
+[data-style='brutal'] .notice {
+  border: 3px solid #111;
+  border-left-width: 10px;
+  box-shadow: 4px 4px 0 #111;
+}
+[data-style='brutal'] .notice-badge {
+  border-width: 2px;
+  background: var(--accent);
+  color: #111;
+  font-weight: 900;
+}
+
+/* 原版：满幅图片 + 深色遮罩，保留改动前的观感 */
+[data-style='legacy'] .hero {
+  display: block;
+  min-height: clamp(360px, 40vw, 460px);
+}
+[data-style='legacy'] .hero-media {
+  position: absolute;
+  inset: 0;
+  order: 0;
+  border: none;
+  transform: none !important;
+}
+[data-style='legacy'] .hero-media :deep(.lazy-image) {
+  height: 100%;
+}
+[data-style='legacy'] .hero-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--scrim);
+}
+[data-style='legacy'] .hero-media :deep(.img) {
+  filter: saturate(1.1) contrast(1.05);
+}
+[data-style='legacy'] .hero-body {
+  min-height: clamp(360px, 40vw, 460px);
+  max-width: 660px;
+  justify-content: center;
+  color: #fff;
+  gap: 10px;
+}
+[data-style='legacy'] .hero-body :deep(.hero-badge) {
+  position: absolute;
+  right: clamp(18px, 4vw, 56px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+@media (max-width: 899px) {
+  [data-style='legacy'] .hero-body :deep(.hero-badge) {
+    display: none;
+  }
+}
+[data-style='legacy'] .hero-title .name,
+[data-style='legacy'] .hero-title .pre {
+  color: #fff;
+}
+[data-style='legacy'] .hero-head-text .kicker {
+  color: #f0c56a;
+}
+[data-style='legacy'] .eyebrow {
+  color: rgba(255, 255, 255, 0.72);
+}
+[data-style='legacy'] .slogan {
+  color: rgba(255, 255, 255, 0.8);
+  font-style: normal;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+[data-style='legacy'] .intro {
+  color: rgba(255, 255, 255, 0.78);
+}
+@media (min-width: 900px) {
+  /* 徽章压在右侧，正文必须让出它的宽度；否则省略号会贴着徽章，像被盖住 */
+  [data-style='legacy'] .intro {
+    max-width: min(54ch, calc(100% - var(--badge-size) - 28px));
+  }
+}
+[data-style='legacy'] .stats {
+  border-top-color: rgba(255, 255, 255, 0.18);
+}
+[data-style='legacy'] .stat {
+  border-right-color: rgba(255, 255, 255, 0.18);
+}
+[data-style='legacy'] .stat strong {
+  color: #fff;
+}
+[data-style='legacy'] .stat span {
+  color: rgba(255, 255, 255, 0.66);
+}
+[data-style='legacy'] .hero-caption {
+  display: none;
+}
+[data-style='legacy'] .count {
+  background: var(--surface);
 }
 </style>

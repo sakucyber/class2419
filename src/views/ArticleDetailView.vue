@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
+import ProgressBar from '@/components/common/ProgressBar.vue'
 import MediaActions from '@/components/media/MediaActions.vue'
 import { useContentStore } from '@/store/content'
 import { useInteractionStore } from '@/store/interaction'
@@ -20,7 +21,6 @@ const html = ref('')
 const toc = ref<TocItem[]>([])
 const renderError = ref('')
 const progress = ref(0)
-/** 封面加载失败时退回"无封面"的排版，避免顶部出现破损图标 */
 const coverFailed = ref(false)
 const showCover = computed(() => !!article.value?.cover && !coverFailed.value)
 const activeHeading = ref('')
@@ -56,11 +56,10 @@ const onScroll = throttle(() => {
 
   if (article.value) interaction.setArticleScroll(article.value.id, scrollTop)
 
-  // 高亮当前目录项
   let current = ''
   for (const item of toc.value) {
     const el = document.getElementById(item.id)
-    if (el && el.getBoundingClientRect().top <= 100) current = item.id
+    if (el && el.getBoundingClientRect().top <= 110) current = item.id
   }
   activeHeading.value = current
 }, 150)
@@ -78,6 +77,9 @@ watch(
   () => {
     progress.value = 0
     html.value = ''
+    toc.value = []
+    coverFailed.value = false
+    tocOpen.value = false
     render()
   },
 )
@@ -99,6 +101,11 @@ const neighbors = computed(() => {
 
 <template>
   <div>
+    <!-- 阅读进度：贴在视口最上方，随滚动增长 -->
+    <div v-if="article && progress > 0" class="read-progress" aria-hidden="true">
+      <ProgressBar :value="progress" label="阅读进度" />
+    </div>
+
     <div class="container page">
       <ErrorState v-if="content.error" :message="content.error" @retry="content.init()" />
 
@@ -113,8 +120,6 @@ const neighbors = computed(() => {
 
       <template v-else-if="article">
         <article class="article">
-          <!-- 标题与目录浮标放进同一个网格，让它们和正文卡片共用第一列：
-               否则标题在 .page 里居中、卡片在带目录的两列网格里左对齐，左边缘会差 80+ px -->
           <div class="article-layout">
             <header class="article-head" :class="{ 'has-cover': showCover }">
               <div v-if="showCover" class="head-cover" aria-hidden="true">
@@ -127,12 +132,15 @@ const neighbors = computed(() => {
                 </div>
                 <h1>{{ article.title }}</h1>
                 <p class="meta">
-                  <span class="meta-item"
-                    ><AppIcon name="pencil" :size="15" /> {{ article.author }}</span
-                  >
-                  <time :datetime="article.createdAt">{{ formatDate(article.createdAt) }}</time>
+                  <span class="meta-item">
+                    <AppIcon name="pencil" :size="14" :stroke-width="1.9" />
+                    {{ article.author }}
+                  </span>
+                  <time class="num" :datetime="article.createdAt">
+                    {{ formatDate(article.createdAt) }}
+                  </time>
                   <span>约 {{ article.readingMinutes }} 分钟阅读</span>
-                  <span>已读 {{ progress }}%</span>
+                  <span class="read-now num">已读 {{ progress }}%</span>
                 </p>
               </div>
             </header>
@@ -140,16 +148,20 @@ const neighbors = computed(() => {
             <div v-if="toc.length" class="toc-toggle-wrap">
               <button
                 class="btn btn--ghost btn--sm"
+                type="button"
                 :aria-expanded="tocOpen"
                 @click="tocOpen = !tocOpen"
               >
-                <AppIcon name="menu" :size="15" /> 目录（{{ toc.length }}）
+                <AppIcon name="list" :size="15" :stroke-width="1.9" />
+                目录（{{ toc.length }}）
               </button>
             </div>
 
             <div class="prose-wrap card">
               <div v-if="renderError" class="state-block">
-                <AppIcon class="state-icon" name="warning" :size="42" :stroke-width="1.4" />
+                <span class="state-icon" aria-hidden="true">
+                  <AppIcon name="warning" :size="38" :stroke-width="1.35" />
+                </span>
                 <p class="state-title">{{ renderError }}</p>
               </div>
               <!-- Markdown 渲染结果已经过 DOMPurify 消毒 -->
@@ -157,11 +169,7 @@ const neighbors = computed(() => {
               <div v-else class="prose" v-html="html"></div>
 
               <footer class="article-foot">
-                <MediaActions
-                  :id="article.id"
-                  kind="article"
-                  :share-title="article.title"
-                />
+                <MediaActions :id="article.id" kind="article" :share-title="article.title" />
               </footer>
             </div>
 
@@ -176,6 +184,7 @@ const neighbors = computed(() => {
                 <li v-for="item in toc" :key="item.id">
                   <button
                     class="toc-link"
+                    type="button"
                     :class="{ active: activeHeading === item.id, level3: item.level === 3 }"
                     @click="goTo(item.id)"
                   >
@@ -212,22 +221,29 @@ const neighbors = computed(() => {
 </template>
 
 <style scoped>
+.read-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: calc(var(--z-header) + 2);
+  pointer-events: none;
+}
+.read-progress :deep(.progress) {
+  border: none;
+  border-radius: 0;
+}
 .page {
   padding-top: var(--space-6);
   max-width: 1100px;
 }
+
 .article-head {
-  /* width:100% 必须有：网格项一旦有 margin:auto 就会取消 stretch，
-     元素会缩成内容宽度再居中（实测在 900 宽下只剩 396px）。
-     加上它之后头部与 .prose-wrap 完全同一套「760 居中」规则，左边缘必然一致。 */
   width: 100%;
   max-width: 760px;
   margin: 0 auto;
   padding-inline: clamp(20px, 4vw, 40px);
 }
-
-/* ── 沉浸式开头（有封面时）──
-   整块变成满幅视觉带，标题压在底部；无封面时保持上面的纯文字排版。 */
 .head-body {
   position: relative;
   z-index: 1;
@@ -237,10 +253,10 @@ const neighbors = computed(() => {
   overflow: hidden;
   isolation: isolate;
   padding-inline: 0;
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--border);
+  border: var(--card-bd-w) solid var(--line);
+  border-radius: var(--card-radius);
   background: var(--bg-soft);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--card-shadow);
 }
 .head-cover {
   position: absolute;
@@ -248,31 +264,23 @@ const neighbors = computed(() => {
   z-index: 0;
 }
 .head-cover img {
-  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-/* 底部压暗：白色标题压在任意封面上都能读 */
 .article-head.has-cover::after {
   content: '';
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    rgba(6, 8, 18, 0.1) 0%,
-    rgba(6, 8, 18, 0.52) 52%,
-    rgba(6, 8, 18, 0.9) 100%
-  );
+  background: var(--scrim);
 }
 .article-head.has-cover .head-body {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  min-height: clamp(230px, 26vw, 320px);
-  /* 横向内边距必须与 .prose-wrap 同值，否则封面带里的标题会比正文多缩进几像素 */
+  min-height: clamp(240px, 27vw, 330px);
   padding: clamp(24px, 4vw, 40px) clamp(20px, 4vw, 40px);
 }
 .article-head.has-cover h1 {
@@ -280,18 +288,22 @@ const neighbors = computed(() => {
   text-shadow: 0 2px 22px rgba(0, 0, 0, 0.42);
 }
 .article-head.has-cover .meta {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.82);
 }
 .article-head.has-cover .chip {
   background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.32);
   color: #fff;
 }
 .article-head.has-cover .chip--primary {
   background: #fff;
   border-color: transparent;
-  color: #23203a;
+  color: #16283d;
 }
+.article-head.has-cover :deep(.img) {
+  filter: grayscale(0.35) contrast(1.03);
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -299,21 +311,24 @@ const neighbors = computed(() => {
   margin-bottom: var(--space-3);
 }
 .article-head h1 {
-  font-size: clamp(1.5rem, 4vw, 2.2rem);
-  line-height: 1.35;
   margin-bottom: var(--space-3);
-}
-.meta-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  font-size: clamp(1.55rem, 4vw, 2.3rem);
+  line-height: 1.32;
 }
 .meta {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-4);
   color: var(--text-3);
-  font-size: 0.85rem;
+  font-size: var(--fs-xs);
+}
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.read-now {
+  color: var(--accent-ink);
 }
 
 .toc-toggle-wrap {
@@ -327,7 +342,6 @@ const neighbors = computed(() => {
   display: grid;
   gap: var(--space-5);
 }
-/* 标题 / 目录浮标 / 正文卡片都固定在第一列 —— 三者的左边缘由同一个列决定 */
 .article-head,
 .toc-toggle-wrap,
 .prose-wrap {
@@ -345,75 +359,73 @@ const neighbors = computed(() => {
     top: calc(var(--header-h) + 24px);
     display: block !important;
   }
-  /* 桌面端右侧已有常驻目录，这个浮标是重复的 */
   .toc-toggle-wrap {
     display: none;
   }
 }
 
 .prose-wrap {
-  padding: clamp(20px, 4vw, 40px);
+  width: 100%;
   max-width: 760px;
   margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
+  padding: clamp(20px, 4vw, 40px);
 }
 .article-foot {
   margin-top: var(--space-8);
   padding-top: var(--space-5);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--line);
 }
 
 .toc {
   display: none;
-  padding: var(--space-4);
   max-height: 70vh;
   overflow-y: auto;
+  padding: var(--space-4);
 }
 .toc.open {
   display: block;
 }
 .toc-title {
+  margin-bottom: var(--space-3);
+  font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--text-2);
-  margin-bottom: var(--space-3);
-  font-size: 0.9rem;
 }
 .toc-link {
   display: block;
   width: 100%;
-  text-align: left;
+  padding: 6px 10px;
   border: none;
+  border-left: 2px solid var(--line);
   background: none;
   color: var(--text-2);
-  font-size: 0.86rem;
-  padding: 6px 8px;
-  border-left: 2px solid var(--border);
-  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
-  transition: all var(--duration-fast) var(--ease);
+  font-size: var(--fs-xs);
+  text-align: left;
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
 }
 .toc-link:hover {
-  color: var(--primary);
-  border-left-color: var(--primary-soft-2);
+  color: var(--accent-ink);
+  border-left-color: var(--accent-soft-2);
 }
 .toc-link.active {
-  color: var(--primary);
-  border-left-color: var(--primary);
-  background: var(--primary-soft);
+  color: var(--accent-ink);
+  border-left-color: var(--accent-ink);
+  background: var(--accent-soft);
   font-weight: 600;
 }
 .toc-link.level3 {
-  padding-left: 20px;
-  font-size: 0.82rem;
+  padding-left: 22px;
+  font-size: 0.78rem;
 }
 
 .pager {
   display: grid;
   gap: var(--space-3);
-  margin-top: var(--space-8);
   max-width: 760px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: var(--space-8) auto 0;
 }
 @media (min-width: 640px) {
   .pager {
@@ -421,21 +433,19 @@ const neighbors = computed(() => {
   }
 }
 .pager-link {
-  padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: var(--space-4);
   color: var(--text);
 }
 .pager-link:hover {
   color: var(--text);
-  border-color: var(--primary-soft-2);
+  border-color: var(--line-hover);
 }
 .pager-link.next {
   text-align: right;
 }
-/* 只有上一篇或只有下一篇时占满整行，并改成「标签左 / 标题右」的一行式 ——
-   单纯铺满会让另一侧空出一大块（实测首篇文章就是这种情形） */
 @media (min-width: 640px) {
   .pager-link:only-of-type {
     grid-column: 1 / -1;
@@ -445,14 +455,67 @@ const neighbors = computed(() => {
     gap: var(--space-4);
   }
 }
-.pager-link:hover strong {
-  color: var(--primary);
+.pager-label {
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
 }
 .pager-link strong {
-  transition: color var(--duration) var(--ease);
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  transition: color var(--dur) var(--ease);
 }
-.pager-label {
-  font-size: 0.8rem;
-  color: var(--text-3);
+.pager-link:hover strong {
+  color: var(--accent-ink);
+}
+
+/* 风格 */
+[data-style='annual'] .article-head h1 {
+  font-weight: 600;
+}
+[data-style='annual'] .head-cover img {
+  filter: grayscale(0.5) sepia(0.16) contrast(1.03);
+}
+[data-style='annual'] .article-head.has-cover::after {
+  background: linear-gradient(
+    180deg,
+    rgba(22, 40, 61, 0.16) 0%,
+    rgba(22, 40, 61, 0.62) 52%,
+    rgba(22, 40, 61, 0.92) 100%
+  );
+}
+[data-style='annual'] .prose-wrap {
+  border-top: 3px double var(--line-2);
+}
+[data-style='japandi'] .article-head.has-cover {
+  border-color: transparent;
+  box-shadow: var(--shadow-2);
+}
+[data-style='japandi'] .head-cover img {
+  filter: saturate(0.62) sepia(0.06);
+}
+[data-style='japandi'] .article-head.has-cover::after {
+  background: linear-gradient(
+    180deg,
+    rgba(30, 38, 32, 0.08) 0%,
+    rgba(30, 38, 32, 0.55) 50%,
+    rgba(30, 38, 32, 0.86) 100%
+  );
+}
+[data-style='japandi'] .article-head.has-cover h1 {
+  text-shadow: 0 2px 18px rgba(30, 38, 32, 0.4);
+}
+[data-style='brutal'] .article-head.has-cover {
+  border: 3px solid #111;
+  box-shadow: 8px 8px 0 #111;
+}
+[data-style='brutal'] .head-cover img {
+  filter: saturate(1.35) contrast(1.1);
+}
+[data-style='brutal'] .prose-wrap {
+  border: 3px solid #111;
+  box-shadow: 6px 6px 0 #111;
+}
+[data-style='brutal'] .toc-link.active {
+  border-left-width: 6px;
 }
 </style>

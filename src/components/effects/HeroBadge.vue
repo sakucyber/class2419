@@ -2,31 +2,53 @@
 /**
  * 首页 hero 的班级徽章。
  *
- * 三种形态（由 effects store 的等级决定）：
- *   L2 + 3D 开关：动态加载 Three.js 场景，就绪后由 canvas 淡入覆盖在静态徽章上
- *                （先渲染静态占位，3D 就绪后淡入 —— 不阻塞 LCP）
- *   L1：CSS 2.5D —— 指针驱动的轻微倾斜，纯 transform，无 WebGL
- *   L0 / 关闭 3D / 加载失败：纯静态 SVG
+ * 形态由风格决定：
+ *   年鉴   —— 66px 方形描边框 + 衬线「叁」
+ *   Japandi —— 圆形鼠尾草绿底 + 白色衬线「叁」
+ *   粗野   —— 70px 黑底黄字方块 + 5px 硬投影
+ *   原版   —— 保留圆形星章
  *
- * 无障碍与布局约束：
- *   · 纯装饰，整块 aria-hidden，不进入无障碍树，也不接收指针事件（pointer-events: none），
- *     因此绝不会遮挡班级名片、倒计时、公告等关键内容
- *   · 窄屏（< 900px）直接隐藏：hero 变单列后右侧没有它的位置
- *   · 指针位置在 window 上监听后换算，不依赖元素自身命中
+ * 渲染等级由 effects store 决定：
+ *   L2 + 3D 开关：动态加载 Three.js 场景，就绪后淡入覆盖在静态徽章上
+ *   L1：CSS 2.5D —— 指针驱动的轻微倾斜
+ *   L0 / 关闭 3D / 加载失败：纯静态
+ *
+ * 无障碍与布局约束：整块 aria-hidden 且 pointer-events: none，绝不遮挡文案；
+ * 窄屏由父级决定是否隐藏。
  */
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import { useEffectsStore } from '@/store/effects'
+import { useSettingsStore } from '@/store/settings'
 import type { SceneHandle } from '@/utils/webgl'
 
 const effects = useEffectsStore()
+const settings = useSettingsStore()
 
 const hostRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
-/** idle → loading → ready / failed */
+/** 每次销毁场景都换一块新画布：WebGL 上下文被 forceContextLoss 之后不能复用 */
+const canvasKey = ref(0)
 const phase = ref<'idle' | 'loading' | 'ready' | 'failed'>('idle')
-/** L1 指针倾斜角（度） */
 const tilt = ref({ x: 0, y: 0 })
+
+const style = computed(() => settings.settings.style)
+const glyph = computed(() => (style.value === 'brutal' ? '19' : '叁'))
+const sub = computed(() => (style.value === 'brutal' ? 'CLASS OF 2027' : 'EST. 2024'))
+
+/** 3D 场景的材质配色；与静态徽章同源，切换风格时重建 */
+const PALETTES = {
+  annual: { paper: 0xfaf9f6, ink: 0x16283d, line: 0xcfcabd, accent: 0xab5c19, side: 0x16283d },
+  japandi: { paper: 0x9caf88, ink: 0xfffefb, line: 0xf5e6dd, accent: 0xf5e6dd, side: 0x6f8a6a },
+  brutal: { paper: 0xffd23f, ink: 0x111111, line: 0x111111, accent: 0x111111, side: 0x111111 },
+  legacy: { paper: 0x151223, ink: 0xe8b84b, line: 0xe8b84b, accent: 0xe879b0, side: 0x241f38 },
+} as const
+
+/** 几何体随风格：原版星章 / Japandi 圆牌 / 年鉴与粗野方形牌 */
+const variant = computed<'star' | 'plaque' | 'disc'>(() => {
+  if (style.value === 'legacy') return 'star'
+  return style.value === 'japandi' ? 'disc' : 'plaque'
+})
 
 let scene: SceneHandle | null = null
 let rafId = 0
@@ -36,6 +58,9 @@ let inView = false
 let starting = false
 let disposed = false
 let lastTiltFlush = 0
+/** 场景代次：异步加载期间若风格/开关又变了，旧结果必须丢弃 */
+let generation = 0
+let restartQueued = false
 
 const tiltStyle = computed(() => ({
   transform: `perspective(900px) rotateX(${tilt.value.x.toFixed(2)}deg) rotateY(${tilt.value.y.toFixed(
@@ -43,12 +68,9 @@ const tiltStyle = computed(() => ({
   )}deg)`,
 }))
 
-/* ─────────────────────────── 生命周期 ─────────────────────────── */
-
 function loop(): void {
   rafId = 0
   if (!scene || disposed) return
-  // 不可见（滚出视口 / 标签页隐藏）时暂停渲染，省电也避免把后台的 0 帧算进 FPS 采样
   if (!inView || document.hidden) {
     rafId = requestAnimationFrame(loop)
     return
@@ -58,44 +80,59 @@ function loop(): void {
 }
 
 async function start(): Promise<void> {
-  if (starting || scene || disposed) return
-  if (!effects.threeActive) return
-  const canvas = canvasRef.value
-  if (!canvas) return
+  if (disposed || !effects.threeActive) return
+  if (starting) {
+    // 上一次创建还没结束：记一笔，等它收尾后再用新参数重来
+    restartQueued = true
+    return
+  }
+  if (scene) return
 
+  const gen = generation
   starting = true
   phase.value = 'loading'
   try {
+    // 销毁时会换一块新 canvas，等 DOM patch 完成再取
+    await nextTick()
+    const canvas = canvasRef.value
+    if (!canvas) return
     const mod = await effects.loadSceneModule()
-    // 加载期间用户可能关了 3D、或组件已卸载
-    if (disposed || !effects.threeActive) return
-    scene = await mod.createBadgeScene({
+    if (gen !== generation || disposed || !effects.threeActive) return
+    const created = await mod.createBadgeScene({
       canvas,
       quality: effects.quality,
+      variant: variant.value,
+      glyph: glyph.value,
+      sub: sub.value,
+      palette: PALETTES[style.value],
       onContextLost: () => {
-        // WebGL 上下文丢失：释放并退回静态徽章，不整页崩
         disposeScene()
         phase.value = 'failed'
       },
     })
-    if (disposed) {
-      scene.dispose()
-      scene = null
+    if (gen !== generation || disposed || !effects.threeActive) {
+      created.dispose()
       return
     }
+    scene = created
     scene.resize()
     phase.value = 'ready'
     effects.startMonitoring()
     if (!rafId) rafId = requestAnimationFrame(loop)
   } catch {
-    // 模块加载超时 / import 失败 / 创建失败 → 保留静态占位即可
-    phase.value = 'failed'
+    if (gen === generation) phase.value = 'failed'
   } finally {
     starting = false
+    if (restartQueued) {
+      restartQueued = false
+      void start()
+    }
   }
 }
 
 function disposeScene(): void {
+  // 让正在进行的 start() 结果失效
+  generation += 1
   if (rafId) {
     cancelAnimationFrame(rafId)
     rafId = 0
@@ -103,25 +140,22 @@ function disposeScene(): void {
   scene?.dispose()
   scene = null
   effects.stopMonitoring()
+  // 关键：WebGL 上下文被 forceContextLoss 之后，同一块 canvas 不能再次创建渲染器
+  canvasKey.value += 1
 }
-
-/* ─────────────────────────── 输入与观察 ─────────────────────────── */
 
 function onPointerMove(event: PointerEvent): void {
   const el = hostRef.value
   if (!el) return
   const rect = el.getBoundingClientRect()
   if (rect.width === 0 || rect.height === 0) return
-
   const nx = (event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2)
   const ny = (event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2)
   const cx = Math.max(-1, Math.min(1, nx))
   const cy = Math.max(-1, Math.min(1, ny))
 
-  // L2：直接把指针交给相机视差（不产生 Vue 响应式更新）
   scene?.setPointer(cx, cy)
 
-  // L1：倾斜角做节流，避免每次 pointermove 都触发重渲染
   if (!effects.enhancedActive) return
   const now = performance.now()
   if (now - lastTiltFlush < 40) return
@@ -142,7 +176,6 @@ onMounted(() => {
     resizeObserver.observe(hostRef.value)
   }
 
-  // 进入视口才启动（首页 hero 本身就在首屏，这一层主要防的是"不在首页时也跑"）
   if (typeof IntersectionObserver === 'undefined') {
     inView = true
     void start()
@@ -171,9 +204,6 @@ onBeforeUnmount(() => {
   disposeScene()
 })
 
-/* ─────────────────────────── 联动 effects store ─────────────────────────── */
-
-// 3D 开关 / 等级 / 降级状态任何一项变化导致 threeActive 翻转时，销毁并重建，避免内存泄漏
 watch(
   () => effects.threeActive,
   (active) => {
@@ -186,32 +216,42 @@ watch(
   },
 )
 
-// 运行时降级只下调 DPR（几何细节 / 后处理在创建时就已确定，改它们需要重建场景，
-// 对徽章这种小场景不值得；DPR 本来就是开销最大的一项）
 watch(
   () => effects.quality,
   (quality) => scene?.setQuality(quality),
   { deep: true },
 )
 
-// 等级掉到 L1 及以下时，清掉倾斜残角
 watch(
   () => effects.enhancedActive,
   (active) => {
     if (!active) tilt.value = { x: 0, y: 0 }
   },
 )
+
+/** 换风格：3D 场景要按新配色重建 */
+watch(style, () => {
+  disposeScene()
+  phase.value = 'idle'
+  void start()
+})
 </script>
 
 <template>
-  <div ref="hostRef" class="hero-badge" aria-hidden="true">
-    <!-- 静态占位：始终渲染。既是 L0/L1 的最终形态，也是 L2 的首帧占位 -->
+  <div ref="hostRef" class="hero-badge" :class="{ 'is-3d': phase === 'ready' }" aria-hidden="true">
+    <!-- 静态徽章：始终渲染。既是 L0/L1 的最终形态，也是 L2 的首帧占位 -->
     <div
       class="badge-static"
-      :style="effects.enhancedActive ? tiltStyle : undefined"
       :class="{ 'is-tilting': effects.enhancedActive }"
+      :style="effects.enhancedActive ? tiltStyle : undefined"
     >
-      <svg viewBox="0 0 200 200" role="presentation" focusable="false">
+      <svg
+        v-if="style === 'legacy'"
+        class="star"
+        viewBox="0 0 200 200"
+        role="presentation"
+        focusable="false"
+      >
         <defs>
           <linearGradient id="hb-ring" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stop-color="#f0c56a" />
@@ -229,15 +269,7 @@ watch(
         </defs>
         <circle cx="100" cy="100" r="94" fill="url(#hb-disc)" />
         <circle cx="100" cy="100" r="94" fill="none" stroke="url(#hb-ring)" stroke-width="4.5" />
-        <circle
-          cx="100"
-          cy="100"
-          r="79"
-          fill="none"
-          stroke="#e879b0"
-          stroke-width="1.2"
-          opacity="0.7"
-        />
+        <circle cx="100" cy="100" r="79" fill="none" stroke="#e879b0" stroke-width="1.2" opacity="0.7" />
         <path
           d="M100 44 L112.4 79.6 L150 79.6 L119.8 101.6 L131.4 137.4 L100 115.4 L68.6 137.4 L80.2 101.6 L50 79.6 L87.6 79.6 Z"
           fill="url(#hb-star)"
@@ -252,43 +284,32 @@ watch(
           opacity="0.85"
         />
       </svg>
+
+      <span v-else class="plate">
+        <span class="plate-glyph">{{ glyph }}</span>
+        <span class="plate-sub">{{ sub }}</span>
+      </span>
     </div>
 
-    <!-- WebGL 画布：就绪后淡入覆盖静态占位 -->
     <canvas
       ref="canvasRef"
+      :key="canvasKey"
       class="badge-canvas"
       :class="{ 'is-ready': phase === 'ready' }"
-      width="320"
-      height="320"
+      width="360"
+      height="360"
     ></canvas>
   </div>
 </template>
 
 <style scoped>
 .hero-badge {
-  /* 装饰层：不接收指针事件，绝不遮挡右侧的班级信息；点击穿透到下层 */
-  position: absolute;
-  top: 50%;
-  right: clamp(18px, 4vw, 56px);
-  z-index: 1;
-  /* 宽度来源与 HomeView 的 .class-card 共用同一个变量，
-     这样 .intro 的避让距离与徽章实际宽度永远对得上 */
-  width: var(--hero-badge-w, clamp(150px, 17vw, 230px));
-  height: var(--hero-badge-w, clamp(150px, 17vw, 230px));
-  transform: translateY(-50%);
+  position: relative;
+  flex: none;
+  width: var(--badge-size);
+  height: var(--badge-size);
   pointer-events: none;
   user-select: none;
-  opacity: 0.95;
-  /* 旧内核 / 关闭动效时不参与任何动画 */
-  transition: opacity var(--duration) var(--ease);
-}
-
-/* 窄屏 hero 变单列，右侧没有它的位置 —— 直接不显示，避免压住文字 */
-@media (max-width: 899px) {
-  .hero-badge {
-    display: none;
-  }
 }
 
 .badge-static,
@@ -298,21 +319,113 @@ watch(
   width: 100%;
   height: 100%;
 }
+.badge-static {
+  z-index: 0;
+}
+.badge-canvas {
+  z-index: 1;
+}
 
-.badge-static svg {
+/* 粗野：3D 画布本身没有硬投影，用一层实色块补上「按在纸上」的重量 */
+[data-style='brutal'] .hero-badge.is-3d::before {
+  content: '';
+  position: absolute;
+  inset: 9%;
+  z-index: 0;
+  transform: translate(6px, 6px) rotate(-2deg);
+  background: var(--accent-2);
+}
+.badge-static {
+  display: grid;
+  place-items: center;
+}
+.star {
   display: block;
   width: 100%;
   height: 100%;
   filter: drop-shadow(0 12px 28px rgba(12, 8, 24, 0.45));
 }
-
-/* L1：指针倾斜用 transform 实现，代价极低；进出过渡稍慢，手感更"实体" */
 .badge-static.is-tilting {
-  transition: transform 220ms var(--ease-out-quart);
+  transition: transform 220ms var(--ease-out);
   will-change: transform;
 }
 
-/* L2：静态徽章淡出，canvas 淡入。两者时长一致避免闪烁 */
+.plate {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: var(--badge-bd-w) solid var(--line-2);
+  border-radius: var(--badge-radius);
+  background: var(--badge-bg);
+  color: var(--badge-color);
+  box-shadow: var(--badge-shadow);
+}
+.plate-glyph {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.plate-sub {
+  font-size: 0.42rem;
+  letter-spacing: 1.4px;
+  opacity: 0.72;
+}
+
+/* 年鉴：方形描边、衬线大字，副标压到最小 */
+[data-style='annual'] .plate {
+  border-color: var(--text);
+  background: transparent;
+}
+[data-style='annual'] .plate-glyph {
+  font-size: 2.15rem;
+}
+[data-style='annual'] .plate-sub {
+  font-size: 0.4rem;
+  letter-spacing: 1px;
+  color: var(--text-3);
+}
+
+/* Japandi：圆形鼠尾草绿底 + 白色衬线字 + 外圈描边 */
+[data-style='japandi'] .plate {
+  border: none;
+  border-radius: 50%;
+  background: var(--sage);
+  color: #fffefb;
+  box-shadow:
+    0 0 0 2px var(--accent-soft-2),
+    0 12px 26px -18px rgba(61, 74, 66, 0.6);
+}
+[data-style='japandi'] .plate-sub {
+  font-family: var(--font-hand);
+  font-size: 0.5rem;
+  letter-spacing: 1px;
+}
+
+/* 粗野：黑底黄字方块 + 蓝色硬投影 */
+[data-style='brutal'] .plate {
+  border: 3px solid #111;
+  background: #111;
+  color: var(--accent-ink);
+  box-shadow: 5px 5px 0 var(--accent-2);
+}
+[data-style='brutal'] .plate-glyph {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 2rem;
+  letter-spacing: -0.5px;
+}
+[data-style='brutal'] .plate-sub {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #f5f0e1;
+}
+
+/* L2：静态徽章淡出、canvas 淡入，时长一致避免闪烁 */
 .badge-canvas {
   opacity: 0;
   transition: opacity 520ms var(--ease);
@@ -320,8 +433,10 @@ watch(
 .badge-canvas.is-ready {
   opacity: 1;
 }
-
-/* 简化模式 / 关闭动效：去掉倾斜与淡入，直接呈现最终状态 */
+.hero-badge.is-3d .badge-static {
+  opacity: 0;
+  transition: opacity 520ms var(--ease);
+}
 :global(.is-legacy-browser) .badge-static.is-tilting {
   transition: none;
   will-change: auto;

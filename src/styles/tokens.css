@@ -1,0 +1,168 @@
+/* ==========================================================================
+ * 结构令牌（与配色无关）
+ *
+ * 设计系统的分层：
+ *   1. tokens.css  —— 尺度、字体栈、动效曲线、层级。所有风格共用，改一处全站生效。
+ *   2. skins/*.css —— 每个风格只负责「配色 + 形态（圆角/描边/阴影/字重）」。
+ *   3. base.css    —— 组件基类，全部读令牌，不写死颜色与圆角。
+ *
+ * 依靠这套分层，四种风格共用同一份 DOM 与同一份组件逻辑，
+ * 新增风格只需再加一个 skins/*.css 文件。
+ * ========================================================================== */
+
+:root {
+  /* ---- 字体栈 ----
+   * 站点是离线优先的 PWA，CSP 为 font-src 'self' data:，因此**不引外部字体**。
+   * Noto Serif SC / Source Han Serif 放在最前：用户本机装了就优先用；
+   * 未安装时依次退到 macOS 的 Songti SC、Windows 的 SimSun。
+   * 衬线字体只用于标题、引言与数字，正文始终用无衬线，保证长文可读性。 */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif;
+  --font-serif:
+    'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', STSong, 'SimSun', 'Times New Roman',
+    Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  /* 由各风格覆盖：年鉴/日式用衬线，粗野用超重无衬线，原版用展示字体 */
+  --font-display: var(--font-sans);
+  --font-quote: var(--font-serif);
+
+  /* ---- 间距 ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ---- 版式尺度 ---- */
+  --fs-2xs: 0.72rem;
+  --fs-xs: 0.78rem;
+  --fs-sm: 0.86rem;
+  --fs-md: 0.95rem;
+  --fs-lg: 1.05rem;
+  --fs-xl: 1.25rem;
+  --fs-2xl: clamp(1.4rem, 2.4vw, 1.8rem);
+  --fs-3xl: clamp(1.75rem, 3.2vw, 2.35rem);
+  --reading-width: 70ch;
+
+  /* ---- 布局 ---- */
+  --container-w: 1200px;
+  --header-h: 64px;
+  --bottom-nav-h: 60px;
+  --section-gap: var(--space-10);
+
+  /* ---- 动效 ---- */
+  --dur-fast: 140ms;
+  --dur: 240ms;
+  --dur-slow: 440ms;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --hover-transform: translateY(-2px);
+  --press-transform: translateY(0) scale(0.99);
+
+  /* ---- 层级 ---- */
+  --z-header: 100;
+  --z-drawer: 110;
+  --z-overlay: 120;
+  --z-lightbox: 130;
+
+  /* ---- 兜底形态（各风格必须覆盖）---- */
+  /* 强调色作为「文字颜色」时的取值。
+     年鉴/日式/原版与强调色相同；粗野风的强调色是亮黄，直接当文字会看不清，
+     所以在 brutal.css 里改成墨色（亮色主题）/ 亮黄（暗色主题）。 */
+  --accent-ink: var(--accent);
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-pill: 999px;
+  --card-radius: var(--radius-lg);
+  --card-bd-w: 1px;
+  --card-shadow: none;
+  --surface-blur: none;
+  --btn-radius: var(--radius-sm);
+  --btn-bd-w: 1px;
+  --btn-bd: transparent;
+  --btn-weight: 700;
+  --btn-shadow: none;
+  --btn-hover-shadow: none;
+  --btn-hover-transform: translateY(-1px);
+  --btn-active-transform: translateY(0);
+  --chip-radius: var(--radius-sm);
+  --chip-bd-w: 1px;
+  --chip-bg: transparent;
+  --field-radius: var(--radius-sm);
+  --field-bd-w: 1px;
+  --progress-h: 6px;
+  --progress-radius: 0;
+  --progress-bd-w: 0;
+  --badge-size: 66px;
+  --badge-radius: 0;
+  --badge-bd-w: 1px;
+  --display-weight: 700;
+  --display-tracking: 0.5px;
+  --display-leading: 1.25;
+  --body-weight: 400;
+  --body-leading: 1.75;
+  --header-bg: var(--bg);
+  --header-blur: none;
+  --header-bd-w: 1px;
+  --deco-opacity: 0.04;
+
+  --container-pad: var(--space-4);
+}
+
+/* 容器宽度随屏幕放宽，宽屏下不留下大面积空白（与原版一致） */
+@media (min-width: 1440px) {
+  :root {
+    --container-w: 1380px;
+  }
+}
+@media (min-width: 1800px) {
+  :root {
+    --container-w: 1620px;
+  }
+}
+
+/* 字号缩放：只改根字号，所有 rem 一起缩放 */
+html[data-font-size='sm'] {
+  font-size: 14px;
+}
+html[data-font-size='md'] {
+  font-size: 16px;
+}
+html[data-font-size='lg'] {
+  font-size: 17.5px;
+}
+
+/* 关闭动效 / 系统减弱动效：统一压到近似 0，但保留 transitionend 事件 */
+html.no-animations,
+html.no-animations *,
+html.no-animations *::before,
+html.no-animations *::after {
+  --dur-fast: 0.01ms !important;
+  --dur: 0.01ms !important;
+  --dur-slow: 0.01ms !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

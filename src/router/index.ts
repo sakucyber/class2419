@@ -123,13 +123,13 @@ const routes: RouteRecordRaw[] = [
     path: '/favorites',
     name: 'favorites',
     component: () => import('@/views/FavoritesView.vue'),
-    meta: { title: '我的收藏' },
+    meta: { title: '我的收藏', nav: '/favorites' },
   },
   {
     path: '/settings',
     name: 'settings',
     component: () => import('@/views/SettingsView.vue'),
-    meta: { title: '设置' },
+    meta: { title: '设置', nav: '/settings' },
   },
   {
     path: '/:pathMatch(.*)*',

@@ -3,11 +3,11 @@
  * 「随机回忆」拍立得弹层。
  *
  * 关键约束：
- * - **必须 Teleport 到 body**：页面切换动画会给视图根节点加 transform，
- *   会让 position:fixed 的子元素以它为包含块而错位（项目已有踩坑记录）。
+ * - 必须 Teleport 到 body：页面切换动画会给视图根节点加 transform，
+ *   会让 position:fixed 的子元素以它为包含块而错位。
  * - 只在 `photo` 非空时渲染（v-if），平时零成本。
- * - 入场动效被 `legacy.css` / 「关闭动效」的全局 `animation: none` 关掉时，
- *   卡片直接以最终状态呈现（基础样式里已写好倾斜角），不会出现"空白卡片"。
+ * - 年鉴风格下刻意取消倾斜与胶带感（设计规范禁忌），改为方正的照片版；
+ *   其余风格保留拍立得手感。
  */
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
@@ -21,8 +21,6 @@ const emit = defineEmits<{ close: [] }>()
 
 const cardRef = ref<HTMLDivElement | null>(null)
 const closeBtn = ref<HTMLButtonElement | null>(null)
-
-/** 记住是否由我们锁定了滚动，避免误伤别处（抽屉/搜索浮层）的状态 */
 let scrollLocked = false
 
 function lockScroll(lock: boolean): void {
@@ -41,7 +39,6 @@ function onKeydown(event: KeyboardEvent): void {
     emit('close')
     return
   }
-  // 简易焦点圈定：Tab 在卡片内的可聚焦元素之间循环
   if (event.key !== 'Tab' || !cardRef.value) return
   const focusables = Array.from(
     cardRef.value.querySelectorAll<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])'),
@@ -79,29 +76,29 @@ onBeforeUnmount(() => {
     <Transition name="polaroid">
       <div
         v-if="photo"
-        class="polaroid-layer"
+        class="layer"
         role="dialog"
         aria-modal="true"
         aria-labelledby="polaroid-caption"
         @click.self="emit('close')"
       >
-        <div class="polaroid-shell">
-          <div ref="cardRef" class="polaroid-card">
-            <div class="polaroid-frame">
+        <div class="shell">
+          <div ref="cardRef" class="card">
+            <div class="frame">
               <img :src="photo.src" :alt="photo.caption || photo.albumTitle" decoding="async" />
             </div>
-            <p id="polaroid-caption" class="polaroid-caption">
+            <p id="polaroid-caption" class="caption">
               {{ photo.caption || photo.albumTitle }}
             </p>
-            <p class="polaroid-meta">
-              {{ photo.albumTitle }} · 收录于 {{ formatDate(photo.date) }}
+            <p class="meta">
+              <span>{{ photo.albumTitle }}</span>
+              <span class="dot" aria-hidden="true">·</span>
+              <span>收录于 {{ formatDate(photo.date) }}</span>
             </p>
           </div>
-          <!-- 关闭按钮放在不裁切的壳层上：卡片自身是 overflow:auto（移动端短屏要能滚），
-               按钮定位在卡片外侧 11px，若挂在卡片里会被直接裁掉一半 -->
           <button
             ref="closeBtn"
-            class="polaroid-close"
+            class="close"
             type="button"
             aria-label="关闭"
             @click="emit('close')"
@@ -115,7 +112,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.polaroid-layer {
+.layer {
   position: fixed;
   inset: 0;
   z-index: var(--z-lightbox);
@@ -128,106 +125,173 @@ onBeforeUnmount(() => {
   -webkit-backdrop-filter: blur(6px);
 }
 
-/* 壳层：负责定位与倾斜，不裁切，让关闭按钮可以探出卡片外 */
-.polaroid-shell {
+.shell {
   position: relative;
   width: min(86vw, 340px);
-  /* 无动效环境下的最终倾斜角（有动效时由 keyframes 覆盖，结束值也是它） */
   transform: rotate(-1.5deg);
 }
 
-/* 拍立得相纸：刻意用暖白 + 深字，明暗主题下都成立（真实相纸就是这个颜色） */
-.polaroid-card {
+.card {
   width: 100%;
   max-height: calc(100vh - 48px);
   overflow: auto;
   padding: 14px 14px 0;
-  background: #fdfbf7;
+  background: var(--surface);
+  border: var(--card-bd-w) solid var(--line);
   border-radius: 6px;
-  color: #2a2438;
-  box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.45),
-    0 2px 6px rgba(0, 0, 0, 0.2);
+  color: var(--text);
+  box-shadow: var(--shadow-3);
 }
-
-.polaroid-frame {
+.frame {
   aspect-ratio: 1 / 1;
   overflow: hidden;
   border-radius: 3px;
-  background: #e8e4dc;
+  background: var(--bg-soft);
 }
-.polaroid-frame img {
+.frame img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
-.polaroid-caption {
-  margin: 12px 2px 4px;
-  font-size: 0.95rem;
-  font-weight: 700;
+.caption {
+  margin: 14px 2px 4px;
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: var(--display-weight);
   line-height: 1.5;
 }
-.polaroid-meta {
-  margin: 0 2px 14px;
-  font-size: 0.74rem;
-  color: #7d7688;
-  font-family: var(--font-mono);
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 2px 16px;
+  font-size: var(--fs-2xs);
+  color: var(--text-3);
+}
+.dot {
+  color: var(--line-2);
 }
 
-.polaroid-close {
+.close {
   position: absolute;
-  top: -11px;
-  right: -11px;
+  top: -12px;
+  right: -12px;
   width: 32px;
   height: 32px;
   display: grid;
   place-items: center;
+  border: 1px solid var(--line-2);
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  background: rgba(28, 22, 40, 0.82);
-  color: #fff;
-  cursor: pointer;
-  transition:
-    transform var(--duration) var(--ease-spring),
-    background var(--duration) var(--ease);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-2);
+  transition: transform var(--dur-fast) var(--ease);
 }
-.polaroid-close:hover {
-  transform: scale(1.08);
-  background: rgba(28, 22, 40, 1);
-}
-.polaroid-close:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+.close:hover {
+  transform: scale(1.06);
 }
 
-/* ── 过渡与入场 ── */
+/* 年鉴：方正照片版，无倾斜 */
+[data-style='annual'] .shell {
+  transform: none;
+}
+[data-style='annual'] .card {
+  border-radius: 2px;
+  background: #fff;
+  padding: 10px 10px 0;
+}
+[data-style='annual'] .frame {
+  border-radius: 0;
+}
+[data-style='annual'] .caption {
+  font-family: var(--font-serif);
+  font-weight: 600;
+}
+
+[data-style='japandi'] .shell {
+  transform: rotate(-2deg);
+}
+[data-style='japandi'] .card {
+  border-color: transparent;
+  border-radius: 18px;
+  background: #fffefb;
+  box-shadow: 0 26px 60px -30px rgba(61, 74, 66, 0.5);
+}
+[data-style='japandi'] .frame {
+  border-radius: 12px;
+}
+
+[data-style='brutal'] .shell {
+  transform: rotate(-2deg);
+}
+[data-style='brutal'] .card {
+  border: 3px solid #111;
+  border-radius: 0;
+  background: #fffdf7;
+  box-shadow: 8px 8px 0 #111;
+}
+[data-style='brutal'] .frame {
+  border-radius: 0;
+}
+[data-style='brutal'] .caption {
+  font-weight: 900;
+}
+
+[data-style='legacy'] .card {
+  border: none;
+  border-radius: 6px;
+  background: #fdfbf7;
+  color: #2a2438;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 2px 6px rgba(0, 0, 0, 0.2);
+}
+[data-style='legacy'] .frame {
+  background: #e8e4dc;
+}
+[data-style='legacy'] .meta {
+  color: #7d7688;
+}
+
+/* 过渡与入场 */
 .polaroid-enter-active {
-  transition: opacity 240ms var(--ease);
+  transition: opacity 220ms var(--ease);
 }
 .polaroid-leave-active {
-  transition: opacity 180ms var(--ease);
+  transition: opacity 160ms var(--ease);
 }
 .polaroid-enter-from,
 .polaroid-leave-to {
   opacity: 0;
 }
-
-/* 「翻出来」的手感：从侧面翻正 + 轻微放大（作用于壳层，按钮跟着一起翻） */
-.polaroid-enter-active .polaroid-shell {
-  animation: polaroid-in 460ms var(--ease-out-expo) both;
+.polaroid-enter-active .shell {
+  animation: polaroid-in 420ms var(--ease-out) both;
 }
 @keyframes polaroid-in {
   from {
-    transform: perspective(900px) rotateY(-18deg) rotate(-6deg) scale(0.88);
+    transform: rotate(-6deg) scale(0.9);
     opacity: 0;
   }
-  55% {
+  60% {
     opacity: 1;
   }
   to {
-    transform: perspective(900px) rotateY(0deg) rotate(-1.5deg) scale(1);
+    transform: rotate(-1.5deg) scale(1);
+    opacity: 1;
+  }
+}
+[data-style='annual'] .polaroid-enter-active .shell {
+  animation: plate-in 380ms var(--ease-out) both;
+}
+@keyframes plate-in {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
     opacity: 1;
   }
 }

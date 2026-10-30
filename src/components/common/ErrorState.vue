@@ -10,21 +10,17 @@ const emit = defineEmits<{ retry: [] }>()
 
 <template>
   <div class="state-block" role="alert">
-    <span class="state-icon" aria-hidden="true"
-      ><AppIcon name="warning" :size="42" :stroke-width="1.4"
-    /></span>
+    <span class="state-icon state-icon--warn" aria-hidden="true">
+      <AppIcon name="warning" :size="40" :stroke-width="1.35" />
+    </span>
     <p class="state-title">{{ title }}</p>
     <p class="state-desc">{{ message }}</p>
-    <button class="btn btn--soft btn--sm" @click="emit('retry')">重新加载</button>
+    <button class="btn btn--soft btn--sm" type="button" @click="emit('retry')">重新加载</button>
   </div>
 </template>
 
 <style scoped>
-.state-icon {
+.state-icon--warn {
   color: var(--warning);
-}
-.state-desc {
-  font-size: 0.9rem;
-  max-width: 360px;
 }
 </style>

@@ -3,13 +3,11 @@
  * 首次访问的 PWA 安装引导（底部抽屉）。
  *
  * 出现条件（全部满足才弹）：
- *   1. 移动端          2. 支持安装（原生事件或 iOS 手动路径）
- *   3. 未安装          4. 未被「以后都不弹出」永久屏蔽
- *   5. 本次会话没点过「以后再说」
- *   6. 距挂载已过 10 秒
+ *   1. 移动端  2. 支持安装  3. 未安装  4. 未被「以后都不弹出」永久屏蔽
+ *   5. 本次会话没点过「以后再说」  6. 距挂载已过 10 秒
  *
- * 两个退出选项的语义不同（这是需求的核心）：
- *   - 「以后再说」只作用于**本次会话**（内存 ref，不落盘）
+ * 两个退出选项的语义不同：
+ *   - 「以后再说」只作用于本次会话（内存变量，不落盘）
  *   - 「以后都不弹出」写 localStorage（键 `pwa`），永久生效
  */
 import { onBeforeUnmount, onMounted, ref } from 'vue'
@@ -24,7 +22,6 @@ const DELAY_MS = 10_000
 const visible = ref(false)
 const guideOpen = ref(false)
 const guideVariant = ref<'ios' | 'other'>('ios')
-/** 本次会话已选择「以后再说」——刻意不落盘 */
 let sessionDismissed = false
 let timer = 0
 
@@ -37,7 +34,6 @@ function permanentlyDismissed(): boolean {
 }
 
 function installable(): boolean {
-  // iOS 没有 beforeinstallprompt，但永远存在手动路径，所以算"可安装"
   return pwaState.canPrompt || canInstall()
 }
 
@@ -51,9 +47,6 @@ function maybeShow(): void {
 }
 
 onMounted(() => {
-  // 先在挂载时就排掉明显不该弹的情况，避免白等 10 秒。
-  // 注意不能在这一步就要求 canInstall() —— Android 的 beforeinstallprompt
-  // 常常晚于挂载才派发，那样会把这个会话永久跳过。
   if (pwaState.installed || permanentlyDismissed() || !isMobileDevice()) return
   timer = window.setTimeout(maybeShow, DELAY_MS)
 })
@@ -89,47 +82,43 @@ async function install(): Promise<void> {
     <Transition name="sheet">
       <div
         v-if="visible"
-        class="sheet-layer"
+        class="layer"
         role="dialog"
         aria-modal="false"
         aria-labelledby="sheet-title"
         @click.self="later"
       >
         <div class="sheet">
-          <div class="sheet-head">
-            <span class="sheet-icon" aria-hidden="true">
+          <div class="head">
+            <span class="icon" aria-hidden="true">
               <AppIcon name="download" :size="18" :stroke-width="2" />
             </span>
             <div>
-              <h2 id="sheet-title" class="sheet-title">把班级空间装到桌面</h2>
-              <p class="sheet-desc">全屏打开、离线也能翻相册，像 App 一样顺手。</p>
+              <h2 id="sheet-title" class="title">把班级空间装到桌面</h2>
+              <p class="desc">全屏打开、离线也能翻相册，像 App 一样顺手。</p>
             </div>
           </div>
 
-          <button class="sheet-primary" type="button" @click="install">
+          <button class="btn sheet-primary" type="button" @click="install">
             <AppIcon name="plus" :size="16" :stroke-width="2.4" />
             添加到主屏幕
           </button>
 
-          <div class="sheet-actions">
-            <button type="button" class="sheet-link" @click="later">以后再说</button>
-            <span class="sheet-sep" aria-hidden="true">·</span>
-            <button type="button" class="sheet-link" @click="never">以后都不弹出</button>
+          <div class="actions">
+            <button type="button" class="link" @click="later">以后再说</button>
+            <span class="sep" aria-hidden="true">·</span>
+            <button type="button" class="link" @click="never">以后都不弹出</button>
           </div>
         </div>
       </div>
     </Transition>
 
-    <InstallGuide
-      :open="guideOpen"
-      :variant="guideVariant"
-      @close="guideOpen = false"
-    />
+    <InstallGuide :open="guideOpen" :variant="guideVariant" @close="guideOpen = false" />
   </Teleport>
 </template>
 
 <style scoped>
-.sheet-layer {
+.layer {
   position: fixed;
   inset: 0;
   z-index: var(--z-drawer);
@@ -139,112 +128,80 @@ async function install(): Promise<void> {
   padding: 0 var(--space-3);
   background: rgba(0, 0, 0, 0.42);
 }
-
 .sheet {
   width: 100%;
   max-width: 520px;
-  /* 底部安全区：iPhone 的 Home 指示条不会压住按钮 */
   padding: var(--space-5) var(--space-5) max(var(--space-4), env(safe-area-inset-bottom));
-  border: 1px solid var(--border);
+  border: var(--card-bd-w) solid var(--line);
   border-bottom: none;
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  background: var(--bg);
+  border-radius: var(--card-radius) var(--card-radius) 0 0;
+  background: var(--surface);
   box-shadow: var(--shadow-3);
 }
-
-.sheet-head {
+.head {
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
   margin-bottom: var(--space-4);
 }
-.sheet-icon {
+.icon {
   flex: none;
   display: grid;
   place-items: center;
   width: 38px;
   height: 38px;
-  border-radius: var(--radius-sm);
-  background: var(--primary-soft);
-  color: var(--primary);
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-soft-2);
+  border-radius: var(--radius-xs);
 }
-.sheet-title {
-  margin: 0 0 4px;
-  font-size: 1rem;
+.title {
+  margin-bottom: 4px;
+  font-size: var(--fs-md);
 }
-.sheet-desc {
-  margin: 0;
-  font-size: 0.84rem;
-  line-height: 1.6;
+.desc {
   color: var(--text-3);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
 }
-
 .sheet-primary {
   width: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px 18px;
-  border: none;
-  border-radius: var(--radius-full);
-  background: var(--primary);
-  color: var(--primary-contrast);
-  font-size: 0.94rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background var(--duration) var(--ease);
 }
-.sheet-primary:hover {
-  background: var(--primary-hover);
-}
-.sheet-primary:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 3px;
-}
-
-.sheet-actions {
+.actions {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   margin-top: var(--space-3);
 }
-.sheet-link {
+.link {
   padding: 6px 4px;
   border: none;
   background: none;
   color: var(--text-3);
-  font-size: 0.8rem;
-  cursor: pointer;
+  font-size: var(--fs-xs);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.sheet-link:hover {
+.link:hover {
   color: var(--text-2);
 }
-.sheet-link:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-.sheet-sep {
-  color: var(--border-strong);
+.sep {
+  color: var(--line-2);
 }
 
-/* 滑入 */
 .sheet-enter-active {
-  transition: opacity 240ms var(--ease);
+  transition: opacity 220ms var(--ease);
 }
 .sheet-leave-active {
-  transition: opacity 180ms var(--ease);
+  transition: opacity 160ms var(--ease);
 }
 .sheet-enter-from,
 .sheet-leave-to {
   opacity: 0;
 }
 .sheet-enter-active .sheet {
-  animation: sheet-up 380ms var(--ease-out-expo) both;
+  animation: sheet-up 360ms var(--ease-out) both;
 }
 @keyframes sheet-up {
   from {

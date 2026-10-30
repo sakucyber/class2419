@@ -36,10 +36,32 @@ export interface SceneQuality {
   detail: number
 }
 
+/** 3D 徽章的材质配色（跟随视觉风格） */
+export interface ScenePalette {
+  /** 牌面/盘面底色 */
+  paper: number
+  /** 文字与主描边色 */
+  ink: number
+  /** 金属边、铆钉 */
+  line: number
+  /** 辅助强调色（小字、内圈） */
+  accent: number
+  /** 侧边、背面 */
+  side: number
+}
+
 export interface CreateSceneOptions {
   canvas: HTMLCanvasElement
   quality: SceneQuality
-  /** 可选的 GLB 模型地址；为空或加载失败则使用内置几何体徽章 */
+  /** 几何体：星章（原版） / 方形浮雕牌（年鉴、粗野） / 圆形牌（Japandi） */
+  variant?: 'star' | 'plaque' | 'disc'
+  /** 牌面正面的班号 */
+  glyph?: string
+  /** 牌面底部的小字 */
+  sub?: string
+  /** 材质配色 */
+  palette?: ScenePalette
+  /** 可选的 GLB 模型地址；为空或加载失败则使用内置几何体 */
   modelUrl?: string
   /** 上下文丢失回调，调用方据此切回静态图 */
   onContextLost?: () => void

@@ -128,15 +128,19 @@ export interface BackupPayload {
 }
 
 export type ThemeMode = 'light' | 'dark' | 'auto'
-export type AccentKey = 'blue' | 'green' | 'orange' | 'pink'
+/** 视觉风格（皮肤）。四套共用同一份 DOM 与逻辑。 */
+export type StyleKey = 'annual' | 'japandi' | 'brutal' | 'legacy'
+/** auto = 跟随当前风格；其余为显式覆盖 */
+export type AccentKey = 'auto' | 'blue' | 'green' | 'orange' | 'pink'
 export type FontSizeKey = 'sm' | 'md' | 'lg'
 
 export interface SiteSettings {
+  style: StyleKey
   theme: ThemeMode
   accent: AccentKey
   fontSize: FontSizeKey
   animations: boolean
-  /** 液态玻璃（毛玻璃背景模糊）。低性能设备可关闭以降低合成开销 */
+  /** 液态玻璃（毛玻璃背景模糊）。原版风格下生效最明显，低性能设备可关闭 */
   glass: boolean
 }
 

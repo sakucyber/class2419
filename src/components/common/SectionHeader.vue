@@ -1,23 +1,30 @@
 <script setup lang="ts">
-defineProps<{
-  title: string
-  subtitle?: string
-  to?: string
-  moreText?: string
-  tag?: string
-}>()
+import AppIcon from '@/components/common/AppIcon.vue'
+
+withDefaults(
+  defineProps<{
+    title: string
+    subtitle?: string
+    to?: string
+    moreText?: string
+    tag?: string
+    /** 是否显示右上角「查看更多」链接 */
+    linkable?: boolean
+  }>(),
+  { subtitle: '', to: '', moreText: '', tag: '', linkable: true },
+)
 </script>
 
 <template>
   <div class="section-header">
     <div class="heading">
-      <span v-if="tag" class="sec-tag">{{ tag }}</span>
-      <h2 class="title display-title">{{ title }}</h2>
+      <span v-if="tag" class="kicker">{{ tag }}</span>
+      <h2 class="title">{{ title }}</h2>
       <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
     </div>
-    <RouterLink v-if="to" class="more" :to="to">
-      {{ moreText || '查看更多' }}
-      <span class="more-arrow" aria-hidden="true">→</span>
+    <RouterLink v-if="linkable && to" class="more" :to="to">
+      {{ moreText || '查看全部' }}
+      <AppIcon name="arrowRight" :size="15" :stroke-width="2" />
     </RouterLink>
   </div>
 </template>
@@ -33,41 +40,58 @@ defineProps<{
 .heading {
   min-width: 0;
 }
+.kicker {
+  margin-bottom: 8px;
+}
 .title {
-  margin-top: 8px;
-  font-size: clamp(1.35rem, 3vw, 1.9rem);
+  font-size: clamp(1.3rem, 2.4vw, 1.72rem);
 }
 .subtitle {
   margin-top: 6px;
   color: var(--text-3);
-  font-size: 0.88rem;
+  font-size: var(--fs-sm);
 }
 .more {
   flex: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 0.5em 1.15em;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
+  padding: 6px 2px;
   color: var(--text-2);
-  font-size: 0.85rem;
-  font-weight: 700;
-  transition: all var(--duration) var(--ease-spring);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  border-bottom: 1px solid var(--line-2);
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
 }
 .more:hover {
-  color: var(--primary);
-  border-color: var(--primary-soft-2);
-  background: var(--primary-soft);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px var(--glow);
+  color: var(--accent-ink);
+  border-bottom-color: var(--accent-ink);
 }
-.more-arrow {
-  transition: transform var(--duration) var(--ease-spring);
+
+[data-style='annual'] .section-header {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line-2);
 }
-.more:hover .more-arrow {
-  transform: translateX(4px);
+[data-style='japandi'] .section-header {
+  align-items: flex-start;
+}
+[data-style='brutal'] .section-header {
+  padding-bottom: var(--space-3);
+  border-bottom: 3px solid #111;
+}
+[data-style='brutal'] .more {
+  padding: 4px 10px;
+  border: 3px solid #111;
+  background: #fffdf7;
+  box-shadow: 3px 3px 0 #111;
+  font-weight: 900;
+  color: #111;
+}
+[data-style='brutal'] .more:hover {
+  background: var(--accent);
+  color: #111;
 }
 
 @media (max-width: 560px) {

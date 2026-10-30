@@ -1,0 +1,166 @@
+/* ==========================================================================
+ * 风格 1 · 纸质年鉴（默认）
+ *
+ * 定位：装帧克制的学校年刊。大量留白、细线分隔、衬线标题、方形徽标、
+ * 几乎不用圆角。安静、高级、耐看。
+ * ========================================================================== */
+
+[data-style='annual'] {
+  /* ---- 纸与墨 ---- */
+  --bg: #faf9f6;
+  --bg-soft: #f3f0e8;
+  --surface: #ffffff;
+  --surface-2: #f8f5ef;
+  --surface-hover: #ffffff;
+  --field-bg: #ffffff;
+  --text: #16283d;
+  --text-2: #5d6b7a;
+  /* 规范里的 #98a3ae 在米白纸上只有 2.4:1，达不到 AA。
+     正文级的弱化文字压到 #667382（4.6:1），#98a3ae 保留为纯装饰用 --text-4。 */
+  --text-3: #667382;
+  --text-4: #98a3ae;
+  --text-inverse: #faf9f6;
+  --line: #e4e1d9;
+  --line-2: #cfcabd;
+  --line-hover: #bdb6a7;
+  --paper-rule: rgba(31, 58, 95, 0.032);
+
+  /* ---- 强调色：铁锈橙（#b5651d 微调至 #ab5c19 以满足 AA）---- */
+  --accent: #ab5c19;
+  --accent-hover: #8f4b13;
+  --accent-soft: #f8f1e8;
+  --accent-soft-2: #efe0cd;
+  --accent-contrast: #ffffff;
+  --accent-gradient: var(--accent);
+  --accent-2: #34506b;
+  --glow: rgba(171, 92, 25, 0.14);
+
+  --danger: #a8331f;
+  --warning: #9c5a12;
+  --success: #2f6b4f;
+  --info: #2f5578;
+  --overlay: rgba(22, 40, 61, 0.44);
+  --scrim: linear-gradient(180deg, rgba(22, 40, 61, 0.04) 0%, rgba(22, 40, 61, 0.76) 100%);
+  --skeleton-a: #ece8df;
+  --skeleton-b: #f7f4ee;
+
+  --shadow-1: 0 1px 0 rgba(22, 40, 61, 0.03);
+  --shadow-2: 0 18px 44px -30px rgba(22, 40, 61, 0.32);
+  --shadow-3: 0 32px 72px -36px rgba(22, 40, 61, 0.38);
+  --card-shadow: none;
+  --hover-shadow: 0 20px 44px -30px rgba(22, 40, 61, 0.34);
+  --press-shadow: none;
+
+  /* ---- 形态：近乎直角 ---- */
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 3px;
+  --radius-lg: 3px;
+  --radius-xl: 3px;
+  --radius-pill: 2px;
+  --card-radius: 3px;
+  --card-bd-w: 1px;
+  --surface-blur: none;
+  --btn-radius: 2px;
+  --btn-bd-w: 1px;
+  --btn-bd: var(--text);
+  --btn-bg: var(--text);
+  --btn-bg-hover: #24384f;
+  --btn-color: #fbfaf7;
+  --btn-weight: 600;
+  --btn-shadow: none;
+  --btn-hover-shadow: none;
+  --btn-hover-transform: translateY(-1px);
+  --btn-active-transform: translateY(0);
+  --chip-radius: 2px;
+  --chip-bd-w: 1px;
+  --chip-bg: #ffffff;
+  --chip-active-bg: #ffffff;
+  --chip-active-color: var(--text);
+  --chip-active-bd: var(--line-2);
+  --chip-marker: 2px;
+  --field-radius: 2px;
+  --field-bd-w: 1px;
+  --progress-h: 6px;
+  --progress-radius: 0;
+  --progress-bd-w: 0;
+  --progress-track: #e4e1d9;
+  --progress-fill: var(--text);
+  --badge-size: 66px;
+  --badge-radius: 0;
+  --badge-bd-w: 1px;
+  --badge-bg: transparent;
+  --badge-color: var(--text);
+  --badge-shadow: none;
+
+  --hover-transform: translateY(-2px);
+  --press-transform: translateY(0);
+  --header-bg: rgba(250, 249, 246, 0.94);
+  --header-blur: blur(10px) saturate(1.05);
+  --header-bd-w: 1px;
+  --deco-opacity: 0.035;
+  --section-gap: 48px;
+
+  /* ---- 字体 ---- */
+  --font-display: var(--font-serif);
+  --font-quote: var(--font-serif);
+  --display-weight: 600;
+  --display-tracking: 0.5px;
+  --display-leading: 1.25;
+  --body-weight: 400;
+  --body-leading: 1.78;
+}
+
+/* ---- 暗色：夜读版，仍保持纸感（暖黑 + 米色文字），不是纯黑 ---- */
+[data-style='annual'][data-theme='dark'] {
+  --bg: #14161a;
+  --bg-soft: #1a1d22;
+  --surface: #1c1f25;
+  --surface-2: #21252c;
+  --surface-hover: #22262d;
+  --field-bg: #191c21;
+  --text: #ece7dd;
+  --text-2: #b3b0a7;
+  --text-3: #8b929c;
+  --text-4: #6d747d;
+  --text-inverse: #14161a;
+  --line: #2c3138;
+  --line-2: #3d434c;
+  --line-hover: #4d545e;
+  --paper-rule: rgba(236, 231, 221, 0.022);
+
+  --accent: #d9884a;
+  --accent-hover: #e59a5f;
+  --accent-soft: rgba(217, 136, 74, 0.12);
+  --accent-soft-2: rgba(217, 136, 74, 0.24);
+  --accent-contrast: #1a1206;
+  --accent-2: #8fb0cf;
+  --glow: rgba(217, 136, 74, 0.18);
+
+  --danger: #e07a63;
+  --warning: #d99a4e;
+  --success: #6db08d;
+  --info: #82a9cc;
+  --overlay: rgba(4, 6, 10, 0.72);
+  --scrim: linear-gradient(180deg, rgba(4, 6, 10, 0.12) 0%, rgba(4, 6, 10, 0.84) 100%);
+  --skeleton-a: #24282f;
+  --skeleton-b: #2c3138;
+
+  --shadow-1: 0 1px 0 rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 18px 44px -30px rgba(0, 0, 0, 0.7);
+  --shadow-3: 0 32px 72px -36px rgba(0, 0, 0, 0.8);
+  --hover-shadow: 0 20px 44px -28px rgba(0, 0, 0, 0.8);
+
+  --btn-bg: #ece7dd;
+  --btn-bg-hover: #ffffff;
+  --btn-color: #14161a;
+  --btn-bd: #ece7dd;
+  --chip-bg: #1c1f25;
+  --chip-active-bg: #23272e;
+  --chip-active-color: #f4efe5;
+  --chip-active-bd: #4d545e;
+  --progress-track: #2c3138;
+  --progress-fill: #ece7dd;
+  --badge-color: #ece7dd;
+  --header-bg: rgba(20, 22, 26, 0.94);
+}

@@ -1,0 +1,166 @@
+/* ==========================================================================
+ * 风格 2 · Japandi（日式侘寂 + 北欧极简）
+ *
+ * 定位：装帧素雅的散文集。低饱和、大留白、柔和长阴影、圆润几何，
+ * 少量手写体点缀。安静、治愈，契合「慢慢来，比较快」的班级氛围。
+ * ========================================================================== */
+
+[data-style='japandi'] {
+  --bg: #f7f5f0;
+  --bg-soft: #efece4;
+  --surface: #fffefb;
+  --surface-2: #f7f3ea;
+  --surface-hover: #fffefb;
+  --field-bg: #fffefb;
+  --text: #3d4a42;
+  --text-2: #6b7a70;
+  /* #9aa79d 在雾白底上只有 2.3:1，正文级弱化文字用 #67766c（4.5:1） */
+  --text-3: #67766c;
+  --text-4: #9aa79d;
+  --text-inverse: #fffefb;
+  --line: #e8e4db;
+  --line-2: #d9d3c5;
+  --line-hover: #c8c1b0;
+  --paper-rule: rgba(61, 74, 66, 0.016);
+
+  /* 陶土橘：填充用 #b96f52 的柔和版，文字压到 #a85f43 以满足 AA */
+  --accent: #a85f43;
+  --accent-hover: #91503a;
+  --accent-soft: #f5e6dd;
+  --accent-soft-2: #ecd3c5;
+  --accent-contrast: #fffefb;
+  --accent-gradient: var(--accent);
+  --accent-2: #5f7a5b;
+  --sage: #9caf88;
+  --haze: #a8bfd4;
+  --sand: #e8ddc9;
+  --glow: rgba(168, 95, 67, 0.16);
+
+  --danger: #9c4a3c;
+  --warning: #9a6a2f;
+  --success: #55755c;
+  --info: #55738c;
+  --overlay: rgba(38, 46, 40, 0.4);
+  --scrim: linear-gradient(180deg, rgba(30, 38, 32, 0.02) 0%, rgba(30, 38, 32, 0.68) 100%);
+  --skeleton-a: #ebe6dc;
+  --skeleton-b: #f6f2ea;
+
+  --shadow-1: 0 2px 10px -8px rgba(61, 74, 66, 0.32);
+  --shadow-2: 0 8px 28px -18px rgba(61, 74, 66, 0.3);
+  --shadow-3: 0 20px 60px -28px rgba(61, 74, 66, 0.34);
+  --card-shadow: 0 8px 28px -18px rgba(61, 74, 66, 0.28);
+  --hover-shadow: 0 14px 34px -18px rgba(61, 74, 66, 0.36);
+  --press-shadow: 0 4px 14px -12px rgba(61, 74, 66, 0.3);
+
+  /* ---- 形态：整体非常圆润 ---- */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+  --card-radius: 20px;
+  --card-bd-w: 1px;
+  --surface-blur: none;
+  --btn-radius: 999px;
+  --btn-bd-w: 1px;
+  --btn-bd: transparent;
+  --btn-bg: var(--accent);
+  --btn-bg-hover: var(--accent-hover);
+  --btn-color: #fffefb;
+  --btn-weight: 600;
+  --btn-shadow: 0 8px 20px -14px rgba(168, 95, 67, 0.6);
+  --btn-hover-shadow: 0 12px 26px -14px rgba(168, 95, 67, 0.55);
+  --btn-hover-transform: translateY(-2px);
+  --btn-active-transform: translateY(0);
+  --chip-radius: 999px;
+  --chip-bd-w: 1px;
+  --chip-bg: transparent;
+  --chip-active-bg: var(--accent-soft);
+  --chip-active-color: var(--accent-ink);
+  --chip-active-bd: transparent;
+  --chip-marker: 0px;
+  --field-radius: 12px;
+  --field-bd-w: 1px;
+  --progress-h: 6px;
+  --progress-radius: 999px;
+  --progress-bd-w: 0;
+  --progress-track: #ece7dc;
+  --progress-fill: var(--accent-2);
+  --badge-size: 76px;
+  --badge-radius: 50%;
+  --badge-bd-w: 2px;
+  --badge-bg: var(--sage);
+  --badge-color: #fffefb;
+  --badge-shadow: 0 10px 26px -18px rgba(61, 74, 66, 0.5);
+
+  --hover-transform: translateY(-3px);
+  --press-transform: translateY(-1px);
+  --header-bg: rgba(247, 245, 240, 0.9);
+  --header-blur: blur(14px) saturate(1.1);
+  --header-bd-w: 1px;
+  --deco-opacity: 0.06;
+  --section-gap: 56px;
+
+  --font-display: var(--font-serif);
+  --font-quote: var(--font-serif);
+  --font-hand: 'Caveat', 'Klee One', 'Segoe Script', 'Bradley Hand', 'Snell Roundhand', cursive;
+  --display-weight: 500;
+  --display-tracking: 1px;
+  --display-leading: 1.4;
+  --body-weight: 400;
+  --body-leading: 1.85;
+}
+
+[data-style='japandi'][data-theme='dark'] {
+  --bg: #1f231f;
+  --bg-soft: #262a26;
+  --surface: #272b26;
+  --surface-2: #2d312c;
+  --surface-hover: #2f342e;
+  --field-bg: #2a2e29;
+  --text: #ece8dd;
+  --text-2: #b6bcb2;
+  --text-3: #949e95;
+  --text-4: #78827a;
+  --text-inverse: #1f231f;
+  --line: #383e37;
+  --line-2: #495046;
+  --line-hover: #5a6256;
+  --paper-rule: rgba(236, 232, 221, 0.018);
+
+  --accent: #e0a189;
+  --accent-hover: #ecb199;
+  --accent-soft: rgba(224, 161, 137, 0.14);
+  --accent-soft-2: rgba(224, 161, 137, 0.26);
+  --accent-contrast: #241a14;
+  --accent-2: #a8bf94;
+  --glow: rgba(224, 161, 137, 0.2);
+
+  --danger: #dd8f7f;
+  --warning: #d3a469;
+  --success: #9ab894;
+  --info: #9cb6cb;
+  --overlay: rgba(8, 12, 9, 0.68);
+  --scrim: linear-gradient(180deg, rgba(8, 12, 9, 0.06) 0%, rgba(8, 12, 9, 0.8) 100%);
+  --skeleton-a: #2e332d;
+  --skeleton-b: #383e37;
+
+  --shadow-1: 0 2px 10px -8px rgba(0, 0, 0, 0.6);
+  --shadow-2: 0 8px 28px -18px rgba(0, 0, 0, 0.65);
+  --shadow-3: 0 20px 60px -28px rgba(0, 0, 0, 0.7);
+  --card-shadow: 0 8px 28px -18px rgba(0, 0, 0, 0.6);
+  --hover-shadow: 0 14px 34px -18px rgba(0, 0, 0, 0.7);
+
+  --btn-bg: var(--accent);
+  --btn-bg-hover: var(--accent-hover);
+  --btn-color: #241a14;
+  --chip-bg: transparent;
+  --chip-active-bg: rgba(224, 161, 137, 0.16);
+  --chip-active-color: #f0b49d;
+  --progress-track: #333831;
+  --progress-fill: #a8bf94;
+  --badge-bg: #6f8a6a;
+  --badge-color: #fffefb;
+  --header-bg: rgba(31, 35, 31, 0.9);
+}

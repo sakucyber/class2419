@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
+import AppIcon from '@/components/common/AppIcon.vue'
+
 const visible = ref(false)
 
 function update() {
-  visible.value = window.scrollY > 500
+  visible.value = window.scrollY > 520
 }
 
 function toTop() {
@@ -20,7 +22,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', update))
 
 <template>
   <Teleport to="body">
-    <transition name="btt">
+    <Transition name="btt">
       <button
         v-if="visible"
         class="btt"
@@ -29,18 +31,9 @@ onBeforeUnmount(() => window.removeEventListener('scroll', update))
         title="回到顶部"
         @click="toTop"
       >
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path
-            d="M12 19V5M6 11l6-6 6 6"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
+        <AppIcon name="arrowUp" :size="18" :stroke-width="2.1" />
       </button>
-    </transition>
+    </Transition>
   </Teleport>
 </template>
 
@@ -54,24 +47,53 @@ onBeforeUnmount(() => window.removeEventListener('scroll', update))
   height: 46px;
   display: grid;
   place-items: center;
-  border: none;
-  border-radius: var(--radius-full);
-  background: var(--primary-gradient);
-  color: #fff;
-  box-shadow: 0 6px 24px var(--glow);
+  border: var(--card-bd-w) solid var(--line);
+  border-radius: var(--radius-xs);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--card-shadow);
   transition:
-    transform var(--duration) var(--ease-spring),
-    box-shadow var(--duration) var(--ease-out-quart);
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
 }
 .btt:hover {
-  transform: translateY(-5px) scale(1.08);
-  box-shadow: 0 10px 30px var(--glow);
+  transform: translateY(-2px);
+  box-shadow: var(--hover-shadow);
+  color: var(--accent-ink);
+  border-color: var(--line-hover);
 }
-.btt:active {
-  transform: scale(0.94);
+[data-style='annual'] .btt {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+[data-style='japandi'] .btt {
+  border-radius: 50%;
+  background: var(--sage);
+  color: #fffefb;
+  border-color: transparent;
+}
+[data-style='japandi'] .btt:hover {
+  color: #fffefb;
+}
+[data-style='brutal'] .btt {
+  border: 3px solid #111;
+  background: var(--accent);
+  color: #111;
+  box-shadow: 4px 4px 0 #111;
+}
+[data-style='brutal'] .btt:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #111;
+}
+[data-style='legacy'] .btt {
+  border: none;
+  border-radius: 999px;
+  background: var(--accent-gradient);
+  color: #fff;
+  box-shadow: 0 6px 24px var(--glow);
 }
 
-/* 移动端避开底部导航 */
 @media (max-width: 767px) {
   .btt {
     bottom: calc(var(--bottom-nav-h) + 16px + env(safe-area-inset-bottom, 0px));
@@ -83,12 +105,12 @@ onBeforeUnmount(() => window.removeEventListener('scroll', update))
 .btt-enter-active,
 .btt-leave-active {
   transition:
-    opacity var(--duration) var(--ease-out-quart),
-    transform var(--duration) var(--ease-spring);
+    opacity var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
 }
 .btt-enter-from,
 .btt-leave-to {
   opacity: 0;
-  transform: translateY(24px) scale(0.9);
+  transform: translateY(20px);
 }
 </style>

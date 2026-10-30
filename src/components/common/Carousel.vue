@@ -14,9 +14,11 @@ let timer: ReturnType<typeof setInterval> | null = null
 let touchStartX = 0
 
 function next() {
+  if (!props.slides.length) return
   current.value = (current.value + 1) % props.slides.length
 }
 function prev() {
+  if (!props.slides.length) return
   current.value = (current.value - 1 + props.slides.length) % props.slides.length
 }
 function go(i: number) {
@@ -28,7 +30,7 @@ function startAuto() {
   if (!settingsStore.settings.animations || props.slides.length < 2) return
   timer = setInterval(() => {
     if (!paused.value) next()
-  }, 5000)
+  }, 6000)
 }
 function stopAuto() {
   if (timer) clearInterval(timer)
@@ -75,25 +77,35 @@ function onKeydown(e: KeyboardEvent) {
             :src="slides[current]?.image || ''"
             :alt="slides[current]?.title || ''"
             aspect="16 / 6"
-            radius="var(--radius-lg)"
+            radius="0"
             eager
           />
           <div class="caption">
+            <p class="caption-index num">
+              {{ String(current + 1).padStart(2, '0') }} / {{ String(slides.length).padStart(2, '0') }}
+            </p>
             <h2>{{ slides[current]?.title }}</h2>
-            <p v-if="slides[current]?.subtitle">{{ slides[current]?.subtitle }}</p>
+            <p v-if="slides[current]?.subtitle" class="caption-sub">
+              {{ slides[current]?.subtitle }}
+            </p>
           </div>
         </RouterLink>
       </Transition>
 
       <template v-if="slides.length > 1">
-        <button class="arrow arrow--prev" aria-label="上一张" @click.prevent="prev">‹</button>
-        <button class="arrow arrow--next" aria-label="下一张" @click.prevent="next">›</button>
+        <button class="arrow arrow--prev" type="button" aria-label="上一张" @click.prevent="prev">
+          <span aria-hidden="true">‹</span>
+        </button>
+        <button class="arrow arrow--next" type="button" aria-label="下一张" @click.prevent="next">
+          <span aria-hidden="true">›</span>
+        </button>
 
         <div class="dots" role="tablist" aria-label="轮播切换">
           <button
             v-for="(slide, i) in slides"
             :key="slide.id"
             class="dot"
+            type="button"
             :class="{ active: i === current }"
             role="tab"
             :aria-selected="i === current"
@@ -109,25 +121,19 @@ function onKeydown(e: KeyboardEvent) {
 <style scoped>
 .carousel {
   position: relative;
-  border-radius: var(--radius-lg);
   outline: none;
-}
-.carousel:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 3px;
 }
 .viewport {
   position: relative;
-  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-2);
+  border: var(--card-bd-w) solid var(--line);
+  border-radius: var(--card-radius);
+  background: var(--surface);
+  box-shadow: var(--card-shadow);
 }
-/* 宽屏下限制高度：16/6 的图在超宽容器里会变成一整屏的大色块。
-   注意必须给 .viewport 确定高度（不能只给 max-height），
-   否则 .slide/.lazy-image 会按图片固有比例撑高，底部（含标题字幕）被 overflow 裁掉。 */
 @media (min-width: 1200px) {
   .viewport {
-    height: clamp(340px, 26vw, 430px);
+    height: clamp(360px, 27vw, 440px);
   }
   .slide {
     height: 100%;
@@ -141,47 +147,67 @@ function onKeydown(e: KeyboardEvent) {
   display: block;
   position: relative;
 }
+.slide::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--scrim);
+  pointer-events: none;
+}
 .caption {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  padding: clamp(16px, 4vw, 36px);
-  background: linear-gradient(transparent, rgba(8, 15, 30, 0.72));
+  z-index: 1;
+  padding: clamp(16px, 3.6vw, 36px);
   color: #fff;
+}
+.caption-index {
+  font-size: var(--fs-2xs);
+  letter-spacing: 3px;
+  opacity: 0.7;
+  margin-bottom: 8px;
 }
 .caption h2 {
   color: #fff;
-  font-size: clamp(1.2rem, 3.4vw, 2rem);
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  font-size: clamp(1.15rem, 3vw, 1.9rem);
+  font-weight: var(--display-weight);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 }
-.caption p {
+.caption-sub {
   margin-top: 4px;
-  opacity: 0.92;
-  font-size: clamp(0.85rem, 2vw, 1rem);
+  font-size: clamp(0.82rem, 1.8vw, 0.95rem);
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 56ch;
 }
 
 .arrow {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 42px;
-  height: 42px;
-  border: none;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.85);
-  color: #1e293b;
-  font-size: 1.5rem;
-  line-height: 1;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
-  box-shadow: var(--shadow-1);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-xs);
+  background: rgba(10, 14, 20, 0.28);
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
   opacity: 0;
-  transition: opacity var(--duration) var(--ease);
+  backdrop-filter: blur(4px);
+  transition:
+    opacity var(--dur) var(--ease),
+    background-color var(--dur-fast) var(--ease);
 }
 .carousel:hover .arrow,
 .carousel:focus-within .arrow {
   opacity: 1;
+}
+.arrow:hover {
+  background: rgba(10, 14, 20, 0.5);
 }
 .arrow--prev {
   left: var(--space-3);
@@ -194,26 +220,28 @@ function onKeydown(e: KeyboardEvent) {
   position: absolute;
   bottom: var(--space-3);
   right: var(--space-4);
+  z-index: 1;
   display: flex;
   gap: 6px;
 }
 .dot {
-  width: 9px;
-  height: 9px;
+  width: 16px;
+  height: 3px;
   padding: 0;
   border: none;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.5);
-  transition: all var(--duration) var(--ease);
+  background: rgba(255, 255, 255, 0.45);
+  transition:
+    width var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
 }
 .dot.active {
-  width: 24px;
+  width: 30px;
   background: #fff;
 }
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity var(--duration-slow) var(--ease);
+  transition: opacity var(--dur-slow) var(--ease);
 }
 .fade-enter-from,
 .fade-leave-to {
@@ -225,10 +253,6 @@ function onKeydown(e: KeyboardEvent) {
     opacity: 0.85;
   }
 }
-
-/* 窄屏横幅只有 134px 高，42px 的箭头居中后（y 46–88）正好压住标题第一行，
-   看起来像标题被糊了一块。触屏本来就能左右滑、右下角还有圆点，
-   所以窄屏直接收起箭头；同时给字幕留出右侧位置，免得被圆点盖住。 */
 @media (max-width: 600px) {
   .arrow {
     display: none;
@@ -236,5 +260,61 @@ function onKeydown(e: KeyboardEvent) {
   .caption {
     padding-right: 88px;
   }
+}
+
+/* ---- 风格 ---- */
+[data-style='japandi'] .viewport {
+  border-color: transparent;
+  box-shadow: var(--shadow-2);
+}
+[data-style='japandi'] .arrow {
+  border-radius: 50%;
+  background: rgba(255, 254, 251, 0.9);
+  color: var(--text);
+  border-color: transparent;
+}
+[data-style='japandi'] .dot {
+  border-radius: 999px;
+}
+
+[data-style='brutal'] .viewport {
+  border: 3px solid #111;
+  box-shadow: 8px 8px 0 #111;
+}
+[data-style='brutal'] .arrow {
+  border: 3px solid #111;
+  background: var(--accent);
+  color: #111;
+  font-weight: 900;
+  box-shadow: 3px 3px 0 #111;
+}
+[data-style='brutal'] .dot {
+  height: 10px;
+  width: 10px;
+  border: 2px solid #fff;
+  background: transparent;
+}
+[data-style='brutal'] .dot.active {
+  background: var(--accent);
+  width: 22px;
+}
+
+[data-style='legacy'] .viewport {
+  border: none;
+  box-shadow: var(--shadow-2);
+}
+[data-style='legacy'] .arrow {
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.85);
+  color: #1e293b;
+}
+[data-style='legacy'] .dot {
+  height: 8px;
+  width: 8px;
+  border-radius: 999px;
+}
+[data-style='legacy'] .dot.active {
+  width: 24px;
 }
 </style>

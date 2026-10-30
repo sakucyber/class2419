@@ -1,0 +1,171 @@
+/* ==========================================================================
+ * 风格 3 · 硬边杂志（Brutalist）
+ *
+ * 定位：3px 黑边、6px 无模糊投影、按钮按下去会物理位移的高饱和撞色。
+ * 有冲劲，适合「高三冲刺」的情绪。
+ * ========================================================================== */
+
+[data-style='brutal'] {
+  --bg: #f5f0e1;
+  --bg-soft: #efe7d2;
+  --surface: #fffdf7;
+  --surface-2: #f2ead6;
+  --surface-hover: #fffdf7;
+  --field-bg: #fffdf7;
+  --text: #111111;
+  --text-2: #3a3a3a;
+  --text-3: #5c5c5c;
+  --text-4: #7a7a7a;
+  --text-inverse: #fffdf7;
+  --line: #111111;
+  --line-2: #111111;
+  --line-hover: #111111;
+  --paper-rule: rgba(17, 17, 17, 0.05);
+
+  --accent: #ffd23f;
+  --accent-hover: #ffdc6b;
+  --accent-soft: #fff3c4;
+  --accent-soft-2: #ffe27a;
+  --accent-contrast: #111111;
+  /* 亮黄不能当正文色：文字一律用墨色，黄色只做底色 */
+  --accent-ink: #111111;
+  --accent-gradient: var(--accent);
+  --accent-2: #3b5bfd;
+  --glow: rgba(59, 91, 253, 0.28);
+
+  --danger: #e03a2b;
+  --warning: #b8641a;
+  --success: #147a45;
+  --info: #2a45cc;
+  --overlay: rgba(17, 17, 17, 0.66);
+  --scrim: linear-gradient(180deg, rgba(17, 17, 17, 0.04) 0%, rgba(17, 17, 17, 0.82) 100%);
+  --skeleton-a: #e6ddc6;
+  --skeleton-b: #f7f0dd;
+
+  --shadow-1: 3px 3px 0 #111111;
+  --shadow-2: 6px 6px 0 #111111;
+  --shadow-3: 8px 8px 0 #111111;
+  --card-shadow: 6px 6px 0 #111111;
+  --hover-shadow: 8px 8px 0 #111111;
+  --press-shadow: 1px 1px 0 #111111;
+
+  /* ---- 形态：锐利直角，统一 3px 黑边 ---- */
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-pill: 0;
+  --card-radius: 0;
+  --card-bd-w: 3px;
+  --surface-blur: none;
+  --btn-radius: 0;
+  --btn-bd-w: 3px;
+  --btn-bd: #111111;
+  --btn-bg: var(--accent);
+  --btn-bg-hover: var(--accent);
+  --btn-color: #111111;
+  --btn-weight: 900;
+  --btn-shadow: 4px 4px 0 #111111;
+  --btn-hover-shadow: 6px 6px 0 #111111;
+  --btn-hover-transform: translate(-2px, -2px);
+  --btn-active-transform: translate(3px, 3px);
+  --chip-radius: 0;
+  --chip-bd-w: 3px;
+  --chip-bg: var(--surface);
+  --chip-active-bg: var(--accent);
+  --chip-active-color: #111111;
+  --chip-active-bd: #111111;
+  --chip-marker: 0px;
+  --field-radius: 0;
+  --field-bd-w: 3px;
+  --progress-h: 14px;
+  --progress-radius: 0;
+  --progress-bd-w: 3px;
+  --progress-track: #fffdf7;
+  --progress-fill: #2fd67a;
+  --badge-size: 70px;
+  --badge-radius: 0;
+  --badge-bd-w: 3px;
+  --badge-bg: #111111;
+  --badge-color: #ffd23f;
+  --badge-shadow: 5px 5px 0 #3b5bfd;
+
+  --hover-transform: translate(-2px, -2px);
+  --press-transform: translate(3px, 3px);
+  --header-bg: #ffd23f;
+  --header-blur: none;
+  --header-bd-w: 3px;
+  --deco-opacity: 0.045;
+  --section-gap: 52px;
+
+  --font-display:
+    'Archivo Black', 'Arial Black', Impact, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  --font-quote: var(--font-sans);
+  --display-weight: 900;
+  --display-tracking: -0.5px;
+  --display-leading: 1.2;
+  --body-weight: 600;
+  --body-leading: 1.7;
+}
+
+[data-style='brutal'][data-theme='dark'] {
+  --bg: #141414;
+  --bg-soft: #1d1d1d;
+  --surface: #1c1c1c;
+  --surface-2: #242424;
+  --surface-hover: #242424;
+  --field-bg: #1c1c1c;
+  --text: #f5f0e1;
+  --text-2: #d2ccbd;
+  --text-3: #a8a293;
+  --text-4: #807b70;
+  --text-inverse: #111111;
+  --line: #f5f0e1;
+  --line-2: #f5f0e1;
+  --line-hover: #ffd23f;
+  --paper-rule: rgba(245, 240, 225, 0.055);
+
+  --accent: #ffd23f;
+  --accent-hover: #ffdc6b;
+  --accent-soft: rgba(255, 210, 63, 0.16);
+  --accent-soft-2: rgba(255, 210, 63, 0.3);
+  --accent-contrast: #111111;
+  --accent-ink: #ffd23f;
+  --accent-2: #6d86ff;
+  --glow: rgba(109, 134, 255, 0.3);
+
+  --danger: #ff6a59;
+  --warning: #ffb04d;
+  --success: #2fd67a;
+  --info: #8fa4ff;
+  --overlay: rgba(0, 0, 0, 0.76);
+  --scrim: linear-gradient(180deg, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.88) 100%);
+  --skeleton-a: #2a2a2a;
+  --skeleton-b: #363636;
+
+  /* 纯黑硬阴影在暗底不可见 → 改用规范允许的「撞色投影」 */
+  --shadow-1: 3px 3px 0 #3b5bfd;
+  --shadow-2: 6px 6px 0 #3b5bfd;
+  --shadow-3: 8px 8px 0 #3b5bfd;
+  --card-shadow: 6px 6px 0 #3b5bfd;
+  --hover-shadow: 8px 8px 0 #3b5bfd;
+  --press-shadow: 1px 1px 0 #3b5bfd;
+
+  --btn-bd: #111111;
+  --btn-bg: #ffd23f;
+  --btn-bg-hover: #ffd23f;
+  --btn-color: #111111;
+  --btn-shadow: 4px 4px 0 #3b5bfd;
+  --btn-hover-shadow: 6px 6px 0 #3b5bfd;
+  --chip-bg: #1c1c1c;
+  --chip-active-bg: #ffd23f;
+  --chip-active-color: #111111;
+  --chip-active-bd: #111111;
+  --progress-track: #1c1c1c;
+  --progress-fill: #2fd67a;
+  --badge-bg: #ffd23f;
+  --badge-color: #111111;
+  --badge-shadow: 5px 5px 0 #3b5bfd;
+  --header-bg: #1c1c1c;
+}

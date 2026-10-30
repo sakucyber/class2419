@@ -12,7 +12,6 @@ const ui = useUiStore()
 <template>
   <nav class="bottom-nav" aria-label="底部导航">
     <template v-for="item in bottomNav" :key="item.path">
-      <!-- 「更多」不再跳转 /about，而是打开右侧抽屉菜单 -->
       <button
         v-if="item.action === 'drawer'"
         type="button"
@@ -48,11 +47,15 @@ const ui = useUiStore()
   bottom: 0;
   z-index: var(--z-header);
   display: flex;
-  background: color-mix(in srgb, var(--bg) 72%, transparent);
-  backdrop-filter: blur(30px) saturate(1.8);
-  -webkit-backdrop-filter: blur(30px) saturate(1.8);
-  border-top: 1px solid var(--border);
+  background: var(--header-bg);
+  border-top: var(--header-bd-w) solid var(--line);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  backdrop-filter: var(--header-blur);
+  -webkit-backdrop-filter: var(--header-blur);
+}
+[data-style='brutal'] .bottom-nav {
+  border-top: 3px solid #111;
+  background: #fffdf7;
 }
 
 .bottom-link {
@@ -64,41 +67,58 @@ const ui = useUiStore()
   justify-content: center;
   gap: 3px;
   min-height: var(--bottom-nav-h);
-  color: var(--text-3);
-  font-size: 0.68rem;
-  font-weight: 600;
-  font-family: inherit;
-  /* button 复位 */
+  padding: 0;
   border: none;
   background: transparent;
-  padding: 0;
-  cursor: pointer;
+  color: var(--text-3);
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
   -webkit-tap-highlight-color: transparent;
-  transition: color var(--duration) var(--ease-out-quart);
+  transition: color var(--dur-fast) var(--ease);
 }
 .bottom-icon {
-  transition: transform var(--duration) var(--ease-spring);
+  transition: transform var(--dur) var(--ease);
 }
 .bottom-link::before {
   content: '';
   position: absolute;
   top: 0;
   left: 50%;
+  width: 26px;
+  height: 2px;
   transform: translateX(-50%) scaleX(0);
-  width: 28px;
-  height: 3px;
-  border-radius: 0 0 var(--radius-full) var(--radius-full);
-  background: var(--primary-gradient);
-  transition: transform var(--duration) var(--ease);
+  background: var(--accent);
+  transition: transform var(--dur) var(--ease);
 }
 .bottom-link.active {
-  color: var(--primary);
+  color: var(--accent-ink);
 }
 .bottom-link.active::before {
   transform: translateX(-50%) scaleX(1);
 }
 .bottom-link.active .bottom-icon {
-  transform: translateY(-2px) scale(1.12);
+  transform: translateY(-1px);
+}
+
+[data-style='japandi'] .bottom-link.active::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+[data-style='brutal'] .bottom-link.active {
+  background: var(--accent);
+  color: #111;
+  font-weight: 900;
+}
+[data-style='brutal'] .bottom-link::before {
+  display: none;
+}
+[data-style='legacy'] .bottom-link.active::before {
+  height: 3px;
+  width: 28px;
+  border-radius: 0 0 999px 999px;
 }
 
 @media (min-width: 768px) {
