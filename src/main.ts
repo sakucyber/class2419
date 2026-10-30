@@ -8,7 +8,6 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import { reveal } from './directives/reveal'
 import router from './router'
-import { useEffectsStore } from './store/effects'
 import { useSettingsStore } from './store/settings'
 import { applyBrowserClasses, detectBrowser } from './utils/browser'
 import './styles/index.css'
@@ -36,11 +35,6 @@ if (browser.isUnsupported || window.__blockApp === true) {
   const settingsStore = useSettingsStore()
   settingsStore.initThemeWatcher()
   settingsStore.applyAll()
-
-  // 设备性能探测：同步完成（<1ms），电池信息随后异步补齐。
-  // 放在挂载前是为了让首屏组件按正确等级渲染，避免先按 L2 渲染再回退造成闪烁。
-  const effectsStore = useEffectsStore()
-  effectsStore.probe()
 
   app.mount('#app')
 

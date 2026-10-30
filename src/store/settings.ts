@@ -1,9 +1,10 @@
 /**
  * 站点设置：风格 / 主题 / 强调色 / 字号 / 动效 / 玻璃质感
  *
- * 与 effects store 的分工不变：
- * - 本 store 管「外观偏好」；
- * - effects store 管「渲染负载」（特效等级、3D 开关、自动降级）。
+ * 只负责「外观偏好」这一件事：所有视觉差异都落成 <html> 上的 data-* 与两个
+ * 全局 class（no-animations / no-glass），组件层不各自记状态。
+ *
+ * （历史上还有一个 effects store 管「渲染负载」，随 3D 徽章一起删除了。）
  */
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'

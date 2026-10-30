@@ -101,19 +101,12 @@ function pwaPrecachePlugin(): Plugin {
       }
 
       // 2) 构建产物与图片（递归目录）
-      //
-      // 排除项说明：3D 徽章那一坨（three.js，约 640 KB）是**可选效果**，
-      // 只有首页 hero 在 WebGL 可用且用户没关 3D 时才会动态 import。
-      // 把它塞进预缓存等于让每个访客（包括从不进首页、或早就在设置里关掉 3D 的人）
-      // 都先下 640 KB —— 占整份预缓存预算的四成。离线时它加载失败会退回静态徽章，
-      // 而运行时它就是一次普通的 HTTP 请求（/assets/* 一年 immutable），并不吃亏。
-      const PRECACHE_SKIP = /^badgeScene-.*\.js$/
       const walk = (dir: string, relPrefix: string): void => {
         const abs = path.join(dist, dir)
         if (!fs.existsSync(abs)) return
         for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
           if (entry.isDirectory()) walk(path.join(dir, entry.name), relPrefix + entry.name + '/')
-          else if (!PRECACHE_SKIP.test(entry.name)) urls.add(b + relPrefix + entry.name)
+          else urls.add(b + relPrefix + entry.name)
         }
       }
       walk('assets', 'assets/')
@@ -212,13 +205,6 @@ export default defineConfig({
       output: {
         manualChunks(id: string) {
           if (!id.includes('node_modules')) return undefined
-
-          // ⚠️ three 及其周边必须排除在手动分包之外，交给 Rollup 按动态 import 自动切分。
-          // 否则会被下面的 catch-all 归进 vue-vendor，而 vue-vendor 是首屏同步加载的 chunk，
-          // 3D 代码就会阻塞 LCP。用路径片段匹配（[\\/]three[\\/]）而不是裸的 'three'，
-          // 避免误伤名字里含 three 的无关包。
-          if (/[\\/]node_modules[\\/]three[\\/]/.test(id)) return undefined
-
           if (id.includes('vue-router') || id.includes('pinia')) return 'vue-router-pinia'
           if (id.includes('marked') || id.includes('dompurify')) return 'markdown'
           return 'vue-vendor'

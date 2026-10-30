@@ -33,7 +33,7 @@ class2419 的**内容、路由、数据结构、本地存储键、部署配置�
 | `.stat` 数据卡 | `views/HomeView.vue` `.stats` | 黑板内一行粉笔数字，用虚线分隔 |
 | 深绿板报页脚 | `components/layout/AppFooter.vue` | 顶部 10px 木框 + 深绿底 + 浅色字，打卡按钮改粉笔描边 |
 | 黄色厚底边按钮 | `src/styles/skins/campus.css` | `--btn-shadow: 0 5px 0 #e8a23d`、按下 `translateY(3px)` |
-| 圆章式班徽 | `components/effects/HeroBadge.vue` | 3D 用 `disc` 变体（白面蓝字黄圈）；静态兜底为白底圆章 |
+| 圆章式班徽 | `components/effects/HeroBadge.vue` | 白底圆章 + 亮黄外圈 + 手账体「叁」（纯 CSS/SVG，3D 已移除） |
 | 手写体标题 / 批注 | `src/styles/skins/campus.css` | `--font-display` 圆体栈、`--font-hand` 楷体栈（不外链，见第 4 节） |
 
 **没有搬过来的东西**：示例里的「星辰中队 / 52 位同学 / 王老师 / 心愿墙表单 / 图书角 / 值日表」等全部内容，
@@ -178,4 +178,4 @@ npm run verify:build  # dist 齐全、图片引用 51 个全部存在
 - **手绘下划线不做滚动描边**：示例用 `IntersectionObserver` 在进入视口时描边；这里改成进场一次性动画，
   不引入额外观察器（关闭动效时直接显示为完整线条）。
 - **移动端底部导航是悬浮胶囊**：比通栏多占 8px，页脚已补 16px 内边距，但页面最底部滚动时内容仍会从胶囊两侧经过（与示例的悬浮导航一致）。
-- **3D 班徽**在 campus 下用圆牌变体；无 WebGL 时退回白底圆章，两者尺寸与位置一致。
+- **班徽是静态的**：3D 版本已整体移除，五套风格都只渲染 CSS/SVG 班徽（详见 `docs/REMOVE-3D.md`）。

@@ -173,12 +173,23 @@ async function shot(name, { full = false } = {}) {
     const size = metrics.cssContentSize
     clip = { x: 0, y: 0, width: Math.ceil(size.width), height: Math.ceil(size.height), scale: 1 }
   }
-  const { data } = await send(
-    'Page.captureScreenshot',
-    { format: 'png', captureBeyondViewport: full, ...(clip ? { clip } : {}) },
-    sessionId,
-  )
-  fs.writeFileSync(path.join(OUT, `${name}.png`), Buffer.from(data, 'base64'))
+  // Service Worker 首次接管时页面会被换掉一帧，此时截图会抛
+  // "Inspected target navigated or closed"。等一拍重试即可，不必让整轮跑挂。
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      const { data } = await send(
+        'Page.captureScreenshot',
+        { format: 'png', captureBeyondViewport: full, ...(clip ? { clip } : {}) },
+        sessionId,
+      )
+      fs.writeFileSync(path.join(OUT, `${name}.png`), Buffer.from(data, 'base64'))
+      return
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (attempt >= 3 || !/navigated or closed|Target closed/i.test(message)) throw err
+      await sleep(600)
+    }
+  }
 }
 
 /** 先滚一遍页面，让 IntersectionObserver 把懒加载图片放出来，再回到顶部 */

@@ -4,8 +4,9 @@
 > 主体提交：`f1f1143 feat(ui): 重写为四套可切换视觉风格的设计系统`（67 个文件，+7322 / −4261）
 > 依据：`风格要求.txt`（三套新风格的完整视觉规范）、`网站设计要求.txt`（背景分层 / SVG / 动效规范）
 >
-> 后续追加：在本文的设计系统上新增第 5 套风格「青春校园」，见 `docs/STYLE-CAMPUS.md`。
-> 文中"四套风格"「首屏 56.9 KB」等数字为当时快照，最新口径以 `docs/STYLE-CAMPUS.md` 为准。
+> 后续变更一：在设计系统上新增第 5 套风格「青春校园」，见 `docs/STYLE-CAMPUS.md`。
+> 后续变更二：3D 班徽与整套特效分级已移除，班徽改为纯 CSS/SVG，见 `docs/REMOVE-3D.md`。
+> 文中"四套风格""3D 徽章""首屏 56.9 KB"等为当时快照，最新口径以上述两份文档为准。
 
 ---
 
@@ -214,7 +215,7 @@ src/styles/
 行为保持不变，并用回归脚本在**两种服务器环境**下验证：支持 Range（dev server）与不支持 Range（自建 `qa-server.mjs`，
 故意忽略 `Range` 头）。后者断言播放器会把整段视频预载为 `blob:` 再播放——这正是原实现的降级路径。
 
-### 3.6 3D 班徽随风格换形态
+### 3.6 3D 班徽随风格换形态（已于后续提交整体移除，见 `docs/REMOVE-3D.md`）
 
 `components/effects/HeroBadge.vue` + `effects/three/badgeScene.ts`：
 

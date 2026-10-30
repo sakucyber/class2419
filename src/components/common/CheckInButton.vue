@@ -6,15 +6,16 @@
  * - 已打卡后渲染成 <span>（不是 disabled 的 button）——从结构上就不可能重复点击。
  * - 粒子层挂在容器上而不是按钮里，这样按钮被替换成文案时动画不会被掐断。
  * - 粒子形状与配色按风格切换（年鉴=纸屑、日式=圆点、粗野=方块、原版=圆点）。
+ * - 是否撒粒子只看「页面动效」开关（3D/特效分级已随 3D 徽章一并移除）。
  */
 import { onBeforeUnmount, ref } from 'vue'
 
 import AppIcon from '@/components/common/AppIcon.vue'
-import { useEffectsStore } from '@/store/effects'
 import { useInteractionStore } from '@/store/interaction'
+import { useSettingsStore } from '@/store/settings'
 
 const interaction = useInteractionStore()
-const effects = useEffectsStore()
+const settings = useSettingsStore()
 
 interface Spark {
   id: number
@@ -31,7 +32,7 @@ function onCheckIn(): void {
   if (!interaction.checkIn()) return
   notice.value = '今日打卡成功'
 
-  if (!effects.enhancedActive) return
+  if (!settings.settings.animations) return
 
   sparks.value = Array.from({ length: 12 }, () => {
     seq += 1
