@@ -17,3 +17,6 @@ install.log
 班级空间介绍/
 .slidep/
 .cache/
+
+# 本地 QA 截图与报告（scripts/qa-*.mjs 生成，体积大）
+.qa/
