@@ -199,4 +199,24 @@ const units = computed(() => [
 [data-style='legacy'] .sep {
   display: block;
 }
+
+/* ---- 校园：便签上的大号手账数字，冒号用棕色 ---- */
+[data-style='campus'] .units {
+  gap: 4px;
+}
+[data-style='campus'] .unit strong {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 3.6vw, 2.7rem);
+  font-weight: 400;
+  color: var(--campus-blue-d);
+}
+[data-style='campus'] .unit span {
+  color: var(--campus-sticky-brown);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+[data-style='campus'] .sep {
+  display: block;
+  color: rgba(110, 83, 0, 0.42);
+}
 </style>

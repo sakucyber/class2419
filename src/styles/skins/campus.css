@@ -1,0 +1,226 @@
+/* ==========================================================================
+ * 风格 0 · 青春校园（Campus / 黑板报手账）
+ *
+ * 定位：把「示例网页」那套校园手账语言接进本站设计系统。
+ * 天蓝→米白渐变底 + 云朵星星纸飞机 + 胶囊浮动导航 + 黄色虚线公告条
+ * + 黑板班级名片 + 软木板公告 + 彩纸便签 + 拍立得 + 深绿板报页脚。
+ *
+ * 本文件只声明令牌（配色 / 形态 / 字体），不写选择器样式；
+ * 组件级的外观覆盖写在各自组件的 [data-style='campus'] 块里。
+ * ========================================================================== */
+
+[data-style='campus'] {
+  /* ---- 纸面：天蓝过渡到米白 ---- */
+  --bg: #fdf9f0;
+  --bg-soft: #eaf5fd;
+  --surface: #ffffff;
+  --surface-2: #f7fbff;
+  --surface-hover: #ffffff;
+  --field-bg: #fbfdff;
+  --text: #33475b;
+  /* 示例里的 #6B7E90 在米白上约 4.2:1，正文级弱化文字压到 #5e7183（4.9:1） */
+  --text-2: #51687c;
+  --text-3: #5e7183;
+  --text-4: #8b9dab;
+  --text-inverse: #fdf9f0;
+  --line: #d9e8f3;
+  --line-2: #bfe0f5;
+  --line-hover: #a4d1ee;
+  --paper-rule: rgba(78, 155, 216, 0.07);
+
+  /* ---- 强调色：示例里的深天蓝（亮黄只做底色，不做文字）---- */
+  --accent: #2f6fa8;
+  --accent-hover: #245a8b;
+  --accent-soft: #eaf5fd;
+  --accent-soft-2: #cfe7f8;
+  --accent-contrast: #ffffff;
+  --accent-ink: #2f6fa8;
+  --accent-gradient: linear-gradient(135deg, #4e9bd8, #2f6fa8);
+  --accent-2: #e5735a;
+  --glow: rgba(78, 155, 216, 0.18);
+
+  --danger: #bf4a36;
+  --warning: #9a6a12;
+  --success: #2e6b45;
+  --info: #2f6fa8;
+  --overlay: rgba(51, 71, 91, 0.44);
+  --scrim: linear-gradient(180deg, rgba(51, 71, 91, 0.03) 0%, rgba(51, 71, 91, 0.72) 100%);
+  --skeleton-a: #e6f0f8;
+  --skeleton-b: #f4fafe;
+
+  --shadow-1: 0 4px 12px -8px rgba(47, 111, 168, 0.36);
+  --shadow-2: 0 10px 26px -16px rgba(47, 111, 168, 0.42);
+  --shadow-3: 0 18px 44px -22px rgba(47, 111, 168, 0.44);
+  --card-shadow: 0 8px 22px -14px rgba(47, 111, 168, 0.34);
+  --hover-shadow: 0 14px 32px -16px rgba(47, 111, 168, 0.46);
+  --press-shadow: 0 4px 12px -10px rgba(47, 111, 168, 0.36);
+
+  /* ---- 形态：卡片圆润、按钮与标签全胶囊 ---- */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+  --card-radius: 16px;
+  --card-bd-w: 1px;
+  --surface-blur: none;
+  --icon-btn-radius: 999px;
+  --btn-radius: 999px;
+  --btn-bd-w: 0px;
+  --btn-bd: transparent;
+  --btn-bg: #ffce54;
+  --btn-bg-hover: #ffd972;
+  --btn-color: #6e5300;
+  --btn-weight: 900;
+  /* 示例里的「贴上心愿」按钮：底部一条实色厚边，按下会缩回去 */
+  --btn-shadow: 0 5px 0 #e8a23d;
+  --btn-hover-shadow: 0 7px 0 #e8a23d;
+  --btn-hover-transform: translateY(-2px);
+  --btn-active-transform: translateY(3px);
+  --chip-radius: 999px;
+  --chip-bd-w: 1px;
+  --chip-bg: #ffffff;
+  --chip-active-bg: var(--accent);
+  --chip-active-color: #ffffff;
+  --chip-active-bd: var(--accent);
+  --chip-marker: 0px;
+  --field-radius: 12px;
+  --field-bd-w: 2px;
+  --progress-h: 8px;
+  --progress-radius: 999px;
+  --progress-bd-w: 0;
+  --progress-track: #e3f0f9;
+  --progress-fill: var(--accent);
+  --badge-size: 76px;
+  --badge-radius: 50%;
+  --badge-bd-w: 2.5px;
+  --badge-bg: #ffffff;
+  --badge-color: var(--accent);
+  --badge-shadow:
+    0 0 0 3px rgba(255, 206, 84, 0.4),
+    0 10px 20px -12px rgba(47, 111, 168, 0.5);
+
+  --hover-transform: translateY(-4px);
+  --press-transform: translateY(-1px) scale(0.99);
+  /* 顶栏本身透明，胶囊形状由 AppHeader 画 */
+  --header-bg: transparent;
+  --header-blur: none;
+  --header-bd-w: 0px;
+  --deco-opacity: 1;
+  --section-gap: 56px;
+
+  /* ---- 字体 ----
+   * 示例页用 Google Fonts 的 ZCOOL KuaiLe / Ma Shan Zheng。
+   * 本站 CSP 是 font-src 'self' data:，且要离线可用，因此不外链字体：
+   * 本机装了就用，没装退到圆体（标题）与楷体（手写批注），气质接近且零请求。 */
+  --font-display:
+    'ZCOOL KuaiLe', 'Yuanti SC', 'YouYuan', '幼圆', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-hand: 'Ma Shan Zheng', 'Kaiti SC', 'KaiTi', 'STKaiti', '楷体', 'Xingkai SC', cursive;
+  --font-quote: var(--font-hand);
+  --display-weight: 400;
+  --display-tracking: 0.5px;
+  --display-leading: 1.3;
+  --body-weight: 400;
+  --body-leading: 1.8;
+
+  /* ---- 校园风专用色（只在本风格里用）---- */
+  --campus-sky-1: #dff0fb;
+  --campus-sky-2: #fdf9f0;
+  --campus-sky-3: #f4f9f2;
+  --campus-blue: #4e9bd8;
+  --campus-blue-d: #2f6fa8;
+  --campus-blue-l: #bfe0f5;
+  --campus-sun: #ffce54;
+  --campus-sun-d: #e8a23d;
+  --campus-leaf: #8fcb9b;
+  --campus-leaf-d: #4e9b72;
+  --campus-pink: #f6a9b8;
+  --campus-coral: #e5735a;
+  --campus-board: #33604f;
+  --campus-board-d: #29503f;
+  --campus-wood: #c9a176;
+  --campus-wood-d: #a97f52;
+  --campus-cork: #f3e2c0;
+  --campus-sticky-y: #fff3c9;
+  --campus-sticky-b: #dceffb;
+  --campus-sticky-p: #fde4e9;
+  --campus-sticky-g: #e2f3e4;
+  /* 便签上的字：两种主题都用同一套墨色（便签始终是浅色彩纸） */
+  --campus-sticky-ink: #33475b;
+  --campus-sticky-ink-soft: #6b7e90;
+  --campus-sticky-brown: #6e5300;
+  --campus-chalk: #f2f8f2;
+  --campus-chalk-soft: rgba(242, 248, 242, 0.78);
+  --campus-chalk-line: rgba(242, 248, 242, 0.34);
+}
+
+/* ---- 暗色：夜空版。板报与便签仍是"实物"，只有天色变深 ---- */
+[data-style='campus'][data-theme='dark'] {
+  --bg: #111a24;
+  --bg-soft: #16232f;
+  --surface: #182430;
+  --surface-2: #1d2a37;
+  --surface-hover: #1f2d3a;
+  --field-bg: #16222e;
+  --text: #e9f2f9;
+  --text-2: #b6c8d6;
+  --text-3: #96aab9;
+  --text-4: #6f8493;
+  --text-inverse: #111a24;
+  --line: #26384a;
+  --line-2: #35506a;
+  --line-hover: #456481;
+  --paper-rule: rgba(233, 242, 249, 0.05);
+
+  --accent: #7cc4ee;
+  --accent-hover: #9ad4f5;
+  --accent-soft: rgba(124, 196, 238, 0.14);
+  --accent-soft-2: rgba(124, 196, 238, 0.28);
+  --accent-contrast: #0c1620;
+  --accent-ink: #9ad4f5;
+  --accent-2: #ffce54;
+  --glow: rgba(124, 196, 238, 0.2);
+
+  --danger: #f08a76;
+  --warning: #e5b45c;
+  --success: #7cc79a;
+  --info: #9ad4f5;
+  --overlay: rgba(4, 10, 16, 0.72);
+  --scrim: linear-gradient(180deg, rgba(4, 10, 16, 0.1) 0%, rgba(4, 10, 16, 0.85) 100%);
+  --skeleton-a: #22303e;
+  --skeleton-b: #2a3948;
+
+  --shadow-1: 0 4px 12px -8px rgba(0, 0, 0, 0.6);
+  --shadow-2: 0 10px 26px -16px rgba(0, 0, 0, 0.66);
+  --shadow-3: 0 18px 44px -22px rgba(0, 0, 0, 0.7);
+  --card-shadow: 0 8px 22px -14px rgba(0, 0, 0, 0.6);
+  --hover-shadow: 0 14px 32px -16px rgba(0, 0, 0, 0.7);
+  --press-shadow: 0 4px 12px -10px rgba(0, 0, 0, 0.6);
+
+  --btn-bg: #ffce54;
+  --btn-bg-hover: #ffd972;
+  --btn-color: #4a3700;
+  --btn-shadow: 0 5px 0 #b57c1c;
+  --btn-hover-shadow: 0 7px 0 #b57c1c;
+  --chip-bg: #182430;
+  --chip-active-bg: var(--accent);
+  --chip-active-color: #0c1620;
+  --chip-active-bd: var(--accent);
+  --progress-track: #22303e;
+  --progress-fill: var(--accent);
+  --badge-bg: #182430;
+  --badge-color: #ffce54;
+  --badge-shadow:
+    0 0 0 3px rgba(255, 206, 84, 0.26),
+    0 10px 20px -12px rgba(0, 0, 0, 0.7);
+
+  --campus-sky-1: #0f1a2a;
+  --campus-sky-2: #121b26;
+  --campus-sky-3: #101a18;
+  --campus-board: #1d3a32;
+  --campus-board-d: #16241e;
+  --campus-cork: #2a2418;
+  --campus-wood: #6f5940;
+  --campus-wood-d: #55422f;
+}

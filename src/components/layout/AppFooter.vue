@@ -97,10 +97,68 @@ const year = new Date().getFullYear()
   background: rgba(12, 12, 20, 0.62);
 }
 
+/* 校园：页脚是一块深绿板报，顶部压一条木框 */
+[data-style='campus'] .site-footer {
+  border-top: 10px solid var(--campus-wood);
+  background: var(--campus-board);
+  color: var(--campus-chalk-soft);
+}
+[data-style='campus'] .footer-brand strong {
+  color: var(--campus-chalk);
+  font-family: var(--font-hand);
+  font-size: 1.18rem;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+[data-style='campus'] .footer-brand p {
+  color: var(--campus-chalk-soft);
+  font-family: var(--font-hand);
+  font-size: var(--fs-sm);
+}
+[data-style='campus'] .footer-mark {
+  width: 40px;
+  height: 40px;
+  border: 2.5px solid var(--campus-sun);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--campus-sun);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+}
+[data-style='campus'] .footer-links a {
+  color: var(--campus-chalk-soft);
+  border-radius: 999px;
+}
+[data-style='campus'] .footer-links a:hover {
+  color: var(--campus-sun);
+  border-bottom-color: transparent;
+}
+[data-style='campus'] .footer-access-main {
+  color: var(--campus-sun);
+}
+[data-style='campus'] .footer-access-backup,
+[data-style='campus'] .footer-hint,
+[data-style='campus'] .footer-note,
+[data-style='campus'] .footer-style {
+  color: var(--campus-chalk-soft);
+}
+[data-style='campus'] .footer-access-sep {
+  color: rgba(242, 248, 242, 0.4);
+}
+[data-style='campus'] .footer-style {
+  border-left-color: rgba(242, 248, 242, 0.24);
+}
+
 /* 移动端：页脚在 <main> 之外，拿不到底部导航预留的 padding，必须自己补一份 */
 @media (max-width: 767px) {
   .site-footer {
     padding-bottom: calc(var(--space-8) + var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+  }
+  /* 校园的底栏是悬浮胶囊，离底边还有 8px */
+  [data-style='campus'] .site-footer {
+    padding-bottom: calc(
+      var(--space-8) + var(--bottom-nav-h) + 16px + env(safe-area-inset-bottom, 0px)
+    );
   }
 }
 

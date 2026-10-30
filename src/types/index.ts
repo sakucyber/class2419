@@ -129,7 +129,7 @@ export interface BackupPayload {
 
 export type ThemeMode = 'light' | 'dark' | 'auto'
 /** 视觉风格（皮肤）。四套共用同一份 DOM 与逻辑。 */
-export type StyleKey = 'annual' | 'japandi' | 'brutal' | 'legacy'
+export type StyleKey = 'campus' | 'annual' | 'japandi' | 'brutal' | 'legacy'
 /** auto = 跟随当前风格；其余为显式覆盖 */
 export type AccentKey = 'auto' | 'blue' | 'green' | 'orange' | 'pink'
 export type FontSizeKey = 'sm' | 'md' | 'lg'

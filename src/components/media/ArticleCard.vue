@@ -154,4 +154,20 @@ const interaction = useInteractionStore()
   padding: 0 4px;
   font-weight: 900;
 }
+
+/* 校园：白色卡片 + 一条黄色压边，标题用手账体 */
+[data-style='campus'] .cover {
+  border-bottom: 5px solid var(--campus-sun);
+}
+[data-style='campus'] .title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.3px;
+}
+[data-style='campus'] .tag {
+  background: var(--campus-sticky-b);
+  color: var(--campus-blue-d);
+  border-radius: 999px;
+  padding: 1px 9px;
+}
 </style>

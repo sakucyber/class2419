@@ -454,7 +454,7 @@ await navigate('/this-page-does-not-exist')
 check('404 页面', (await evalJs('document.querySelector("h1").innerText')).includes('走丢'))
 
 // 横向溢出检查（四种风格 × 四种视口）
-const styles = ['annual', 'japandi', 'brutal', 'legacy']
+const styles = ['campus', 'annual', 'japandi', 'brutal', 'legacy']
 const overflow = []
 for (const width of [360, 390, 768, 1440]) {
   await send(

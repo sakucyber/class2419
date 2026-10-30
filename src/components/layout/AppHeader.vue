@@ -322,6 +322,83 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   background: var(--accent);
 }
 
+/* ---------- 校园：悬浮胶囊导航（示例网页的 .nav）----------
+   顶栏自身透明，胶囊画在 .header-inner 上；这样滚动时内容从胶囊两侧穿过，
+   视觉上是「浮在页面上的一颗胶囊」，而不是一条压边的横条。 */
+[data-style='campus'] .site-header {
+  padding-top: 10px;
+  border-bottom: none;
+}
+[data-style='campus'] .header-inner {
+  height: 62px;
+  max-width: min(calc(var(--container-w) - 6px), 94%);
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1.5px solid var(--campus-blue-l);
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(63, 125, 187, 0.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  transition: box-shadow var(--dur) var(--ease);
+}
+[data-style='campus'][data-theme='dark'] .header-inner {
+  background: rgba(24, 36, 48, 0.9);
+  border-color: var(--line-2);
+  box-shadow: 0 8px 22px -12px rgba(0, 0, 0, 0.72);
+}
+[data-style='campus'] .brand-mark {
+  width: 40px;
+  height: 40px;
+  border-color: var(--campus-sun);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: 0;
+}
+[data-style='campus'] .brand-text strong {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+[data-style='campus'] .brand-text small {
+  letter-spacing: 1.1px;
+  color: var(--text-3);
+}
+[data-style='campus'] .nav-link {
+  border-radius: 999px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+[data-style='campus'] .nav-link:hover {
+  color: var(--campus-blue-d);
+  background: var(--campus-sky-1);
+  transform: translateY(-1px);
+}
+[data-style='campus'] .nav-link.active {
+  color: #fff;
+  background: var(--campus-blue);
+}
+[data-style='campus'] .nav-link.active::after {
+  display: none;
+}
+[data-style='campus'][data-theme='dark'] .nav-link:hover {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+[data-style='campus'][data-theme='dark'] .nav-link.active {
+  background: var(--accent);
+  color: #0c1620;
+}
+[data-style='campus'] :deep(.icon-btn) {
+  background: var(--surface);
+  border-color: var(--campus-blue-l);
+  color: var(--text-2);
+}
+[data-style='campus'] :deep(.icon-btn:hover) {
+  background: var(--accent-soft);
+  border-color: var(--campus-blue);
+  color: var(--campus-blue-d);
+}
+
 @media (max-width: 420px) {
   .brand-mark {
     width: 34px;
@@ -354,6 +431,23 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   }
   .brand-text strong {
     font-size: 1.02rem;
+  }
+}
+
+/* 校园的胶囊比通栏顶栏更吃水平空间：窄屏收紧内边距与字号，避免班名被省略号截断 */
+@media (max-width: 520px) {
+  [data-style='campus'] .header-inner {
+    padding: 0 10px;
+    gap: 6px;
+  }
+  [data-style='campus'] .brand-mark {
+    width: 34px;
+    height: 34px;
+    font-size: 0.95rem;
+  }
+  [data-style='campus'] .brand-text strong {
+    font-size: 0.92rem;
+    letter-spacing: 0;
   }
 }
 </style>

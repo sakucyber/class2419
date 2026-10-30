@@ -94,6 +94,34 @@ withDefaults(
   color: #111;
 }
 
+/* ---------- 校园：纸条标签 + 手绘下划线 ----------
+   下划线的形状与动画在 base.css（与 PageHeader 共用），这里只管页面级的排布。 */
+[data-style='campus'] .section-header {
+  align-items: flex-end;
+}
+[data-style='campus'] .subtitle {
+  font-size: var(--fs-sm);
+}
+[data-style='campus'] .more {
+  padding: 5px 12px;
+  border: 1px solid var(--campus-blue-l);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--campus-blue-d);
+  font-weight: 700;
+  box-shadow: 0 3px 0 rgba(51, 71, 91, 0.08);
+}
+[data-style='campus'] .more:hover {
+  border-color: var(--campus-blue);
+  background: var(--accent-soft);
+  color: var(--campus-blue-d);
+}
+[data-style='campus'][data-theme='dark'] .more {
+  border-color: var(--line-2);
+  color: var(--accent-ink);
+  box-shadow: none;
+}
+
 @media (max-width: 560px) {
   .section-header {
     flex-direction: column;

@@ -130,6 +130,28 @@ onBeforeUnmount(() => window.clearTimeout(clearTimer))
   box-shadow: 4px 4px 0 #111;
 }
 
+/* 校园：按钮在深绿页脚上，改成粉笔描边 + 浅色字，否则正文灰字会沉进板面 */
+[data-style='campus'] .checkin-btn,
+[data-style='campus'] .checkin-done {
+  border-color: rgba(242, 248, 242, 0.42);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--campus-chalk);
+}
+[data-style='campus'] .checkin-btn:hover {
+  border-color: var(--campus-sun);
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--campus-sun);
+}
+[data-style='campus'] .checkin-done {
+  color: var(--campus-chalk-soft);
+}
+[data-style='campus'] .sparks i {
+  background: var(--campus-sun);
+}
+[data-style='campus'] .sparks .spark-1 {
+  background: var(--campus-pink);
+}
+
 .sparks {
   position: absolute;
   inset: 0;

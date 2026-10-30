@@ -26,7 +26,7 @@ const BASE = getArg('base', 'http://localhost:5173')
 const OUT = path.resolve(getArg('out', '.qa/shots'))
 const CHROME = getArg('chrome', 'C:/Program Files/Google/Chrome/Application/chrome.exe')
 const PORT = Number(getArg('port', '9333'))
-const STYLES = getArg('styles', 'annual,japandi,brutal,legacy').split(',')
+const STYLES = getArg('styles', 'campus,annual,japandi,brutal,legacy').split(',')
 const PAGE_FILTER = getArg('pages', '').split(',').filter(Boolean)
 
 fs.mkdirSync(OUT, { recursive: true })

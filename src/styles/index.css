@@ -9,6 +9,7 @@
  * ========================================================================== */
 
 @import './tokens.css';
+@import './skins/campus.css';
 @import './skins/annual.css';
 @import './skins/japandi.css';
 @import './skins/brutal.css';
@@ -73,4 +74,30 @@ html.no-glass *::after {
     linear-gradient(var(--paper-rule) 1px, transparent 1px),
     linear-gradient(90deg, var(--paper-rule) 1px, transparent 1px);
   background-size: 40px 40px;
+}
+
+/* 校园：天蓝 → 米白 → 浅绿的三段渐变，叠一层极淡的圆点纸纹。
+   这是页面级底层（示例网页里 body 的那两层），组件层不再各自画背景。 */
+[data-style='campus'] body {
+  background:
+    radial-gradient(rgba(78, 155, 216, 0.08) 1.5px, transparent 1.6px) 0 0 / 26px 26px fixed,
+    linear-gradient(
+        180deg,
+        var(--campus-sky-1) 0%,
+        var(--campus-sky-2) 55%,
+        var(--campus-sky-3) 100%
+      )
+      fixed;
+}
+/* 暗色主题的圆点换成淡星光，避免深底上出现一圈圈脏点 */
+[data-style='campus'][data-theme='dark'] body {
+  background:
+    radial-gradient(rgba(233, 242, 249, 0.055) 1.4px, transparent 1.5px) 0 0 / 26px 26px fixed,
+    linear-gradient(
+        180deg,
+        var(--campus-sky-1) 0%,
+        var(--campus-sky-2) 60%,
+        var(--campus-sky-3) 100%
+      )
+      fixed;
 }

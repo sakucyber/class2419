@@ -38,16 +38,17 @@ const sub = computed(() => (style.value === 'brutal' ? 'CLASS OF 2027' : 'EST. 2
 
 /** 3D 场景的材质配色；与静态徽章同源，切换风格时重建 */
 const PALETTES = {
+  campus: { paper: 0xffffff, ink: 0x2f6fa8, line: 0xffce54, accent: 0xe5735a, side: 0x2f6fa8 },
   annual: { paper: 0xfaf9f6, ink: 0x16283d, line: 0xcfcabd, accent: 0xab5c19, side: 0x16283d },
   japandi: { paper: 0x9caf88, ink: 0xfffefb, line: 0xf5e6dd, accent: 0xf5e6dd, side: 0x6f8a6a },
   brutal: { paper: 0xffd23f, ink: 0x111111, line: 0x111111, accent: 0x111111, side: 0x111111 },
   legacy: { paper: 0x151223, ink: 0xe8b84b, line: 0xe8b84b, accent: 0xe879b0, side: 0x241f38 },
 } as const
 
-/** 几何体随风格：原版星章 / Japandi 圆牌 / 年鉴与粗野方形牌 */
+/** 几何体随风格：原版星章 / 校园与 Japandi 圆牌 / 年鉴与粗野方形牌 */
 const variant = computed<'star' | 'plaque' | 'disc'>(() => {
   if (style.value === 'legacy') return 'star'
-  return style.value === 'japandi' ? 'disc' : 'plaque'
+  return style.value === 'japandi' || style.value === 'campus' ? 'disc' : 'plaque'
 })
 
 let scene: SceneHandle | null = null
@@ -423,6 +424,31 @@ watch(style, () => {
   font-weight: 700;
   letter-spacing: 0.5px;
   color: #f5f0e1;
+}
+
+/* 校园：白底圆章 + 亮黄描边，班号用蓝色手账字 */
+[data-style='campus'] .plate {
+  border-color: var(--campus-sun);
+  background: #fff;
+  color: var(--campus-blue-d);
+  box-shadow:
+    0 0 0 3px rgba(255, 206, 84, 0.4),
+    0 10px 20px -12px rgba(47, 111, 168, 0.5);
+}
+[data-style='campus'] .plate-glyph {
+  font-family: var(--font-hand);
+  font-size: 2.3rem;
+  font-weight: 400;
+}
+[data-style='campus'] .plate-sub {
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--campus-sun-d);
+  opacity: 1;
+}
+[data-style='campus'][data-theme='dark'] .plate {
+  background: #1d2a37;
+  color: var(--campus-sun);
 }
 
 /* L2：静态徽章淡出、canvas 淡入，时长一致避免闪烁 */

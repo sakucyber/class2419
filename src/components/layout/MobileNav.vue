@@ -121,6 +121,44 @@ const ui = useUiStore()
   border-radius: 0 0 999px 999px;
 }
 
+/* 校园：悬浮胶囊底栏，当前项是一块浅蓝圆角块 */
+[data-style='campus'] .bottom-nav {
+  left: 10px;
+  right: 10px;
+  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 0;
+  border: 1.5px solid var(--campus-blue-l);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 24px -12px rgba(47, 111, 168, 0.5);
+  backdrop-filter: blur(10px) saturate(1.1);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  overflow: hidden;
+}
+[data-style='campus'][data-theme='dark'] .bottom-nav {
+  border-color: var(--line-2);
+  background: rgba(24, 36, 48, 0.94);
+  box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.7);
+}
+[data-style='campus'] .bottom-link {
+  margin: 6px 3px;
+  min-height: calc(var(--bottom-nav-h) - 12px);
+  border-radius: 999px;
+  font-weight: 500;
+}
+[data-style='campus'] .bottom-link.active {
+  background: var(--accent-soft);
+  color: var(--campus-blue-d);
+  font-weight: 700;
+}
+[data-style='campus'] .bottom-link.active::before {
+  display: none;
+}
+[data-style='campus'][data-theme='dark'] .bottom-link.active {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
 @media (min-width: 768px) {
   .bottom-nav {
     display: none;

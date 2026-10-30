@@ -156,4 +156,63 @@ const interaction = useInteractionStore()
   border-radius: 0;
   border: 2px solid #111;
 }
+
+/* ---------- 校园：一张拍立得 ----------
+   卡片本身就是相纸：白边 + 底部留白放标题；胶带用 ::before 画在卡片内侧顶部，
+   避免超出 overflow: hidden 被裁掉。 */
+[data-style='campus'] .album-card {
+  padding: 10px 10px 4px;
+  border: none;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 14px 26px -18px rgba(51, 71, 91, 0.55);
+  transform: rotate(-1.2deg);
+}
+[data-style='campus'] .album-card:nth-child(even) {
+  transform: rotate(1.2deg);
+}
+[data-style='campus'] .album-card::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  z-index: 3;
+  width: 74px;
+  height: 17px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: rgba(255, 224, 130, 0.85);
+  border: 1px solid rgba(232, 162, 61, 0.35);
+}
+[data-style='campus'] .album-card:hover {
+  transform: rotate(0) translateY(-6px) scale(1.02);
+}
+[data-style='campus'] .cover {
+  border-bottom: none;
+  border-radius: 3px;
+  overflow: hidden;
+}
+[data-style='campus'] .body {
+  padding: 8px 4px 4px;
+}
+[data-style='campus'] .title {
+  font-family: var(--font-hand);
+  font-size: 1.3rem;
+  font-weight: 400;
+  line-height: 1.35;
+}
+[data-style='campus'] .foot {
+  border-top: 1px dashed rgba(51, 71, 91, 0.16);
+}
+[data-style='campus'] .meta-row .chip {
+  background: var(--campus-sticky-b);
+  color: var(--campus-blue-d);
+  border-color: transparent;
+}
+[data-style='campus'] .fav {
+  border-radius: 999px;
+  border-color: var(--campus-sun);
+}
+[data-style='campus'] .desc {
+  color: var(--text-2);
+}
 </style>

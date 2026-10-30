@@ -747,4 +747,230 @@ onBeforeUnmount(() => {
 [data-style='legacy'] .count {
   background: var(--surface);
 }
+
+/* ==========================================================================
+ * 校园：黑板名片 + 便签倒计时 + 软木板公告
+ * 挖空心思的地方只有两处：
+ *   1) 照片用白框当「贴上去的相片」，胶带用 ::before 画，不加 DOM；
+ *   2) 黑板上的字全部走 --campus-chalk 系列，避免误用正文色。
+ * ========================================================================== */
+[data-style='campus'] .hero {
+  border: 11px solid var(--campus-wood);
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 90% at 28% 0%, rgba(255, 255, 255, 0.07), transparent 62%),
+    var(--campus-board);
+  box-shadow:
+    0 20px 40px -20px rgba(41, 80, 63, 0.5),
+    inset 0 0 46px rgba(0, 0, 0, 0.28);
+  color: var(--campus-chalk);
+}
+[data-style='campus'] .hero-body {
+  padding: clamp(20px, 3vw, 36px);
+}
+[data-style='campus'] .hero-title {
+  font-family: var(--font-hand);
+  font-size: clamp(2.2rem, 5.4vw, 3.6rem);
+  font-weight: 400;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.22);
+}
+[data-style='campus'] .hero-title .name,
+[data-style='campus'] .hero-title .pre {
+  color: var(--campus-chalk);
+}
+[data-style='campus'] .hero-title .pre {
+  letter-spacing: 0.35em;
+  opacity: 0.8;
+}
+[data-style='campus'] .hero-head-text .kicker {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  color: var(--campus-chalk);
+  font-size: 0.72rem;
+  letter-spacing: 0.35em;
+  opacity: 0.8;
+}
+[data-style='campus'] .eyebrow {
+  color: var(--campus-chalk-soft);
+  letter-spacing: 0.2em;
+}
+[data-style='campus'] .slogan {
+  align-self: flex-start;
+  padding-bottom: 2px;
+  border-bottom: 2px dashed var(--campus-chalk-line);
+  color: var(--campus-sun);
+  font-family: var(--font-hand);
+  font-style: normal;
+  font-size: 1.18rem;
+  letter-spacing: 0.5px;
+}
+[data-style='campus'] .intro {
+  color: var(--campus-chalk-soft);
+  line-height: 1.9;
+}
+[data-style='campus'] .stats {
+  border-top-color: var(--campus-chalk-line);
+}
+[data-style='campus'] .stat {
+  border-right-color: var(--campus-chalk-line);
+}
+[data-style='campus'] .stat strong {
+  color: var(--campus-chalk);
+  font-family: var(--font-display);
+  font-weight: 400;
+}
+[data-style='campus'] .stat span {
+  color: var(--campus-chalk-soft);
+}
+/* 黑板上的次按钮：透明底 + 白色虚线边，像粉笔描的框 */
+[data-style='campus'] .hero .btn--ghost {
+  border-width: 1.5px;
+  border-color: var(--campus-chalk-line);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--campus-chalk);
+}
+[data-style='campus'] .hero .btn--ghost:hover {
+  border-color: var(--campus-chalk);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+/* 相片：白框 + 胶带，贴在黑板右下角 */
+[data-style='campus'] .hero-media {
+  padding: 9px;
+  border-bottom: none;
+  background: #fff;
+}
+[data-style='campus'] .hero-media :deep(.lazy-image) {
+  border-radius: 3px;
+}
+[data-style='campus'] .hero-media::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  z-index: 2;
+  width: 76px;
+  height: 18px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: rgba(255, 224, 130, 0.85);
+  border: 1px solid rgba(232, 162, 61, 0.35);
+}
+[data-style='campus'] .hero-media :deep(.img) {
+  filter: saturate(1.05);
+}
+[data-style='campus'] .hero-caption {
+  right: 14px;
+  bottom: 12px;
+  background: none;
+  color: var(--campus-sticky-brown);
+  font-family: var(--font-hand);
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+  text-transform: none;
+}
+@media (min-width: 900px) {
+  [data-style='campus'] .hero-media {
+    border-left: none;
+  }
+}
+
+/* 倒计时：一张浅黄便签，顶端贴胶带。
+   便签会被拉到与黑板同高，空白处用极淡的横线填成"信纸"，不至于是一大片空黄。 */
+[data-style='campus'] .count {
+  justify-content: flex-start;
+  gap: var(--space-5);
+  border: none;
+  border-radius: 6px 6px 18px 6px;
+  background-color: var(--campus-sticky-y);
+  background-image: repeating-linear-gradient(
+    180deg,
+    transparent 0 31px,
+    rgba(110, 83, 0, 0.075) 31px 32px
+  );
+  box-shadow: 0 14px 26px -14px rgba(90, 64, 32, 0.5);
+  color: var(--campus-sticky-ink);
+  transform: rotate(-1deg);
+}
+[data-style='campus'] .count::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 84px;
+  height: 20px;
+  transform: translateX(-50%) rotate(-2deg);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(51, 71, 91, 0.08);
+}
+[data-style='campus'] .count-label {
+  color: var(--campus-sticky-ink);
+}
+[data-style='campus'] .count-date {
+  color: var(--campus-sticky-brown);
+  font-weight: 700;
+}
+[data-style='campus'] .journey-head {
+  color: var(--campus-sticky-ink-soft);
+}
+[data-style='campus'] .count-note {
+  color: #7a5b1e;
+  font-family: var(--font-hand);
+  font-size: 1.02rem;
+  font-style: normal;
+  line-height: 1.7;
+}
+[data-style='campus'] .count :deep(.progress) {
+  background: rgba(110, 83, 0, 0.14);
+}
+
+/* 公告：整组贴在一块软木板上（示例网页的 .cork），每张卡是一枚图钉卡片 */
+[data-style='campus'] .notice-list {
+  gap: 14px;
+  padding: 24px;
+  border: 10px solid var(--campus-wood);
+  border-radius: 22px;
+  background-color: var(--campus-cork);
+  background-image: radial-gradient(rgba(169, 127, 82, 0.18) 1.6px, transparent 1.7px);
+  background-size: 18px 18px;
+  box-shadow:
+    inset 0 0 0 3px var(--campus-wood-d),
+    0 22px 44px -28px rgba(169, 127, 82, 0.7);
+}
+[data-style='campus'] .notice {
+  border-left-width: 5px;
+  border-radius: 6px 6px 16px 6px;
+  box-shadow: 0 10px 20px -14px rgba(90, 64, 32, 0.6);
+}
+[data-style='campus'] .notice::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 13px;
+  height: 13px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.75), var(--campus-coral));
+  box-shadow: 0 2px 4px rgba(60, 40, 20, 0.35);
+}
+[data-style='campus'] .notice:nth-child(even)::before {
+  background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.75), var(--campus-blue));
+}
+[data-style='campus'] .notice:nth-child(odd) {
+  transform: rotate(-0.5deg);
+}
+[data-style='campus'] .notice-badge {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-weight: 700;
+}
+[data-style='campus'] .notice-head strong {
+  font-family: var(--font-display);
+  font-weight: 400;
+}
 </style>

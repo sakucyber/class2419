@@ -156,7 +156,7 @@ async function onBackupFile(event: Event): Promise<void> {
     <section class="card block" aria-labelledby="style-title">
       <div class="block-head">
         <h2 id="style-title">视觉风格</h2>
-        <span class="block-note">四种风格共用同一份内容与功能</span>
+        <span class="block-note">{{ STYLE_OPTIONS.length }} 种风格共用同一份内容与功能</span>
       </div>
 
       <div class="style-grid" role="radiogroup" aria-label="视觉风格">
@@ -417,7 +417,10 @@ async function onBackupFile(event: Event): Promise<void> {
         <li><strong>技术栈：</strong>Vue 3 + Vite + TypeScript + Vue Router + Pinia</li>
         <li><strong>部署：</strong>纯静态产物，当前托管于 Cloudflare Pages 与阿里云 ESA</li>
         <li><strong>数据来源：</strong>内容以静态 JSON / Markdown 形式随仓库一起发布</li>
-        <li><strong>视觉：</strong>内置纸质年鉴 / Japandi / 硬边杂志 / 原版四套风格，可随时切换</li>
+        <li>
+          <strong>视觉：</strong>内置
+          {{ STYLE_OPTIONS.map((s) => s.label).join(' / ') }}，共 {{ STYLE_OPTIONS.length }} 套风格，可随时切换
+        </li>
       </ul>
     </section>
   </div>

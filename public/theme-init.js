@@ -8,12 +8,16 @@
  * - 必须是 ES5：老浏览器也要能跑（与 compat.js 同一套约束）。
  * - 不能内联：生产 CSP 是 script-src 'self'，内联脚本会被拦截。
  * - 判定逻辑要与 store/settings.ts 的迁移规则保持一致：
- *   没有 style 字段 = 老存档，按 annual 处理，并把旧的默认蓝强调色归为 auto。
+ *   没有 style 字段 = 老存档，按默认风格（campus）处理，并把旧的默认蓝强调色归为 auto。
  */
 ;(function () {
   var root = document.documentElement
 
+  var DEFAULT_STYLE = 'campus'
+  var STYLES = { campus: 1, annual: 1, japandi: 1, brutal: 1, legacy: 1 }
+
   var THEME_COLOR = {
+    campus: { light: '#dff0fb', dark: '#111a24' },
     annual: { light: '#faf9f6', dark: '#14161a' },
     japandi: { light: '#f7f5f0', dark: '#1f231f' },
     brutal: { light: '#ffd23f', dark: '#1c1c1c' },
@@ -26,7 +30,7 @@
     orange: '#ea580c',
   }
 
-  var style = 'annual'
+  var style = DEFAULT_STYLE
   var theme = 'light'
   var accent = 'auto'
   var fontSize = 'md'
@@ -37,7 +41,7 @@
     var raw = localStorage.getItem('cls2419:settings')
     if (raw) {
       var s = JSON.parse(raw) || {}
-      if (s.style === 'annual' || s.style === 'japandi' || s.style === 'brutal' || s.style === 'legacy') {
+      if (s.style && STYLES[s.style]) {
         style = s.style
       }
       if (!s.style && (!s.accent || s.accent === 'blue')) accent = 'auto'

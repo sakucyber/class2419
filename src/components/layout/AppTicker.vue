@@ -241,4 +241,32 @@ html.no-animations .ticker__group[aria-hidden='true'] {
   font-weight: 600;
   letter-spacing: 0.5px;
 }
+
+/* ---- 风格：校园亮黄条 + 上下白色虚线（示例网页的 .ticker）---- */
+[data-style='campus'] .ticker {
+  height: 32px;
+  background: var(--campus-sun);
+  color: var(--campus-sticky-brown);
+  border-top: 2px dashed rgba(255, 255, 255, 0.9);
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.9);
+}
+[data-style='campus'] .ticker__label {
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--campus-sticky-brown);
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+[data-style='campus'] .ticker__item {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  opacity: 1;
+}
+[data-style='campus'] .ticker__dot {
+  opacity: 0.55;
+}
+[data-style='campus'][data-theme='dark'] .ticker {
+  color: #4a3700;
+  border-top-color: rgba(0, 0, 0, 0.35);
+  border-bottom-color: rgba(0, 0, 0, 0.35);
+}
 </style>

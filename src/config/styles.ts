@@ -12,6 +12,13 @@ export interface StyleOption {
 
 export const STYLE_OPTIONS: StyleOption[] = [
   {
+    key: 'campus',
+    label: '青春校园',
+    en: 'Campus',
+    desc: '天空渐变、黑板与软木板，彩纸便签、拍立得和手绘下划线，像一本热闹的班级手账。',
+    swatches: ['#dff0fb', '#fff9ec', '#ffce54', '#33475b'],
+  },
+  {
     key: 'annual',
     label: '纸质年鉴',
     en: 'Almanac',
@@ -42,6 +49,7 @@ export const STYLE_OPTIONS: StyleOption[] = [
 ]
 
 export const STYLE_LABEL: Record<StyleKey, string> = {
+  campus: '青春校园',
   annual: '纸质年鉴',
   japandi: 'Japandi',
   brutal: '硬边杂志',

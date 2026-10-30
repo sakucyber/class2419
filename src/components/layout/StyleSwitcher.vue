@@ -2,7 +2,7 @@
 /**
  * 风格切换器：顶栏右侧的调色板按钮 + 浮层。
  *
- * 四种风格共用同一份组件树，切换只改 <html data-style>，
+ * 所有风格共用同一份组件树，切换只改 <html data-style>，
  * 不触发路由或数据层的任何变化 —— 所以切换是瞬时的、无副作用的。
  */
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
@@ -118,6 +118,9 @@ onBeforeUnmount(() => {
   right: 0;
   z-index: var(--z-overlay);
   width: min(310px, calc(100vw - 24px));
+  /* 风格从 4 套增至 5 套后，矮屏（横屏手机）里面板会顶出视口，允许它自己滚 */
+  max-height: min(70vh, 460px);
+  overflow-y: auto;
   padding: var(--space-3);
   background: var(--surface);
   border: var(--card-bd-w) solid var(--line);

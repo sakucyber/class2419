@@ -142,4 +142,19 @@ defineProps<{ video: VideoItem }>()
   border-radius: 0;
   border: 2px solid #111;
 }
+
+/* 校园：白色卡片 + 一条天蓝压边，标题用手账体 */
+[data-style='campus'] .cover {
+  border-bottom: 5px solid var(--campus-blue-l);
+}
+[data-style='campus'] .title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.3px;
+}
+[data-style='campus'] .play {
+  border: 3px solid #fff;
+  background: var(--campus-blue);
+  box-shadow: 0 6px 16px -6px rgba(47, 111, 168, 0.7);
+}
 </style>

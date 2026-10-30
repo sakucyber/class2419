@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 环境背景：按风格切换的四套装饰层。
+ * 环境背景：按风格切换的装饰层（每套风格一层，互不共用）。
  *
  * 约束（来自设计规范）：装饰不能遮挡内容、不能影响阅读；
  * 所有元素 pointer-events: none，且层级固定为 0（内容层为 1）。
@@ -73,6 +73,43 @@ const particles = ref<Particle[]>(
       <span class="bword bword--a">19</span>
       <span class="bword bword--b">2027</span>
       <span class="bword bword--c">GO!</span>
+    </template>
+
+    <!-- 校园：云朵 / 星星 / 纸飞机（示例网页的 .sky 装饰层） -->
+    <template v-else-if="settings.settings.style === 'campus'">
+      <svg class="sky-cloud sky-cloud--1" viewBox="0 0 100 60">
+        <circle cx="28" cy="40" r="16" />
+        <circle cx="50" cy="29" r="20" />
+        <circle cx="72" cy="42" r="13" />
+        <rect x="20" y="36" width="64" height="20" rx="10" />
+      </svg>
+      <svg class="sky-cloud sky-cloud--2" viewBox="0 0 100 60">
+        <circle cx="28" cy="40" r="16" />
+        <circle cx="50" cy="29" r="20" />
+        <circle cx="72" cy="42" r="13" />
+        <rect x="20" y="36" width="64" height="20" rx="10" />
+      </svg>
+      <svg class="sky-cloud sky-cloud--3" viewBox="0 0 100 60">
+        <circle cx="28" cy="40" r="16" />
+        <circle cx="50" cy="29" r="20" />
+        <circle cx="72" cy="42" r="13" />
+        <rect x="20" y="36" width="64" height="20" rx="10" />
+      </svg>
+      <svg
+        v-for="n in 4"
+        :key="`st-${n}`"
+        class="sky-star"
+        :class="`sky-star--${n}`"
+        viewBox="-12 -12 24 24"
+      >
+        <path
+          d="M0,-10 L2.35,-3.24 L9.51,-3.09 L3.8,1.24 L5.88,8.09 L0,4 L-5.88,8.09 L-3.8,1.24 L-9.51,-3.09 L-2.35,-3.24 Z"
+        />
+      </svg>
+      <svg class="sky-plane" viewBox="0 0 64 64">
+        <path d="M4 30 L60 8 L40 56 L30 38 Z" />
+        <path d="M30 38 L60 8 L34 46 Z" opacity="0.45" />
+      </svg>
     </template>
 
     <!-- 原版：极光光斑 + 噪点 + 上浮粒子 -->
@@ -247,6 +284,117 @@ html.no-animations .shape {
   }
 }
 
+/* ---------------- 校园 ---------------- */
+.sky-cloud {
+  position: absolute;
+  fill: #fff;
+  opacity: 0.72;
+  filter: drop-shadow(0 6px 10px rgba(78, 155, 216, 0.1));
+}
+.sky-cloud--1 {
+  width: clamp(120px, 14vw, 190px);
+  top: 9%;
+  left: -2%;
+  animation: sky-drift 26s ease-in-out infinite alternate;
+}
+.sky-cloud--2 {
+  width: clamp(90px, 10vw, 132px);
+  top: 24%;
+  right: 3%;
+  opacity: 0.55;
+  animation: sky-drift 34s ease-in-out infinite alternate-reverse;
+}
+.sky-cloud--3 {
+  width: clamp(70px, 8vw, 102px);
+  top: 62%;
+  left: 3%;
+  opacity: 0.4;
+  animation: sky-drift 30s ease-in-out infinite alternate;
+}
+.sky-star {
+  position: absolute;
+  fill: var(--campus-sun);
+  animation: sky-twinkle 4.2s ease-in-out infinite;
+}
+.sky-star--1 {
+  width: 20px;
+  top: 16%;
+  left: 38%;
+}
+.sky-star--2 {
+  width: 13px;
+  top: 34%;
+  right: 14%;
+  animation-delay: 1.2s;
+}
+.sky-star--3 {
+  width: 17px;
+  top: 68%;
+  right: 7%;
+  animation-delay: 0.5s;
+}
+.sky-star--4 {
+  width: 11px;
+  top: 82%;
+  left: 11%;
+  animation-delay: 2s;
+}
+.sky-plane {
+  position: absolute;
+  width: clamp(36px, 3.6vw, 50px);
+  top: 13%;
+  right: 6%;
+  fill: #fff;
+  stroke: var(--campus-blue);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  opacity: 0.9;
+  animation: sky-fly 22s ease-in-out infinite alternate;
+}
+@keyframes sky-drift {
+  to {
+    transform: translateX(56px);
+  }
+}
+@keyframes sky-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.82) rotate(0deg);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.08) rotate(12deg);
+  }
+}
+@keyframes sky-fly {
+  from {
+    transform: translate(0, 0) rotate(-4deg);
+  }
+  to {
+    transform: translate(-34vw, 26vh) rotate(8deg);
+  }
+}
+/* 暗色：云与飞机压暗，星星稍微收一点，避免夜里发白 */
+[data-style='campus'][data-theme='dark'] .sky-cloud {
+  opacity: 0.16;
+  filter: none;
+}
+[data-style='campus'][data-theme='dark'] .sky-plane {
+  fill: transparent;
+  stroke: var(--campus-blue-l);
+  opacity: 0.3;
+}
+[data-style='campus'][data-theme='dark'] .sky-star {
+  opacity: 0.8;
+}
+@media (max-width: 640px) {
+  .sky-cloud--3,
+  .sky-plane {
+    display: none;
+  }
+}
+
 /* ---------------- 原版 ---------------- */
 .aurora {
   position: absolute;
@@ -329,8 +477,16 @@ html.no-animations .shape {
 @media (prefers-reduced-motion: reduce) {
   .aurora,
   .particle,
-  .shape {
+  .shape,
+  .sky-cloud,
+  .sky-star,
+  .sky-plane {
     animation: none !important;
   }
+}
+html.no-animations .sky-cloud,
+html.no-animations .sky-star,
+html.no-animations .sky-plane {
+  animation: none;
 }
 </style>

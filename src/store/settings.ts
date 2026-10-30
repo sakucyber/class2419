@@ -13,6 +13,8 @@ import { getJSON, setJSON } from '@/utils/storage'
 
 /** 浏览器 UI 着色（theme-color）：按风格 + 明暗取一个与页面顶部一致的颜色 */
 const THEME_COLOR: Record<StyleKey, { light: string; dark: string }> = {
+  // 校园风页面顶部是天蓝渐变，状态栏取渐变起始色
+  campus: { light: '#dff0fb', dark: '#111a24' },
   annual: { light: '#faf9f6', dark: '#14161a' },
   japandi: { light: '#f7f5f0', dark: '#1f231f' },
   // 粗野风的顶栏是一整块亮黄，状态栏跟着顶栏走
@@ -29,7 +31,8 @@ const LEGACY_ACCENT_HEX: Record<Exclude<AccentKey, 'auto'>, string> = {
 }
 
 const DEFAULTS: SiteSettings = {
-  style: 'annual',
+  // 默认风格：青春校园（示例网页定下的视觉方向）。想换回纸质年鉴改成 'annual' 即可。
+  style: 'campus',
   theme: 'auto',
   accent: 'auto',
   fontSize: 'md',
@@ -37,12 +40,15 @@ const DEFAULTS: SiteSettings = {
   glass: true,
 }
 
+const STYLE_KEYS: StyleKey[] = ['campus', 'annual', 'japandi', 'brutal', 'legacy']
+
 /**
  * 读取本地设置。
  *
- * 迁移规则（老用户）：`style` 字段是这次重写才有的，缺失说明是旧版本存档。
- * 此时把旧默认强调色 `blue` 一并归为 `auto`，让年鉴风展示自己的铁锈橙；
+ * 迁移规则（老用户）：`style` 字段是重写时才有的，缺失说明是更早的存档。
+ * 此时把旧默认强调色 `blue` 一并归为 `auto`，让皮肤展示自己的强调色；
  * 若用户明确选过粉/绿/橙，则原样保留。
+ * 另外把无法识别的 style 归位到默认值，避免脏存档把页面顶到无皮肤的裸样式。
  */
 function loadSettings(): SiteSettings {
   const raw = getJSON<Partial<SiteSettings>>('settings', {})
@@ -50,6 +56,8 @@ function loadSettings(): SiteSettings {
   if (!raw.style) {
     merged.style = DEFAULTS.style
     if (!raw.accent || raw.accent === 'blue') merged.accent = 'auto'
+  } else if (!STYLE_KEYS.includes(merged.style)) {
+    merged.style = DEFAULTS.style
   }
   return merged
 }
