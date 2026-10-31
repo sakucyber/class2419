@@ -66,7 +66,7 @@ const { keyword, category, categories, filtered, visible, hasMore, remaining, lo
       </EmptyState>
 
       <div v-else class="grid-cards">
-        <VideoCard v-for="v in visible" :key="v.id" :video="v" />
+        <VideoCard v-for="v in visible" :key="v.id" :video="v" :heading-level="2" />
       </div>
 
       <div v-if="hasMore" class="load-more">

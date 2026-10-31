@@ -127,6 +127,58 @@ if (missingRefs.length) {
   )
 }
 
+// 9. 图片尺寸表必须与 dist 里的实际文件对齐
+//
+// 为什么要查：`src/data/image-dims.json` 由 `scripts/gen-image-dims.py` 扫描
+// public/images 生成。换了素材却忘了重跑脚本，尺寸表就会与实际文件脱节 ——
+// <img> 的 width/height 与真实比例不符，浏览器预留的空间是错的，反而制造了
+// 本来不存在的布局跳动。这里比对「表里的键」与「dist 里存在的图片」，
+// 少一个说明脚本没重跑。
+const dimsPath = path.resolve('src/data/image-dims.json')
+if (fs.existsSync(dimsPath)) {
+  const dims = JSON.parse(fs.readFileSync(dimsPath, 'utf8'))
+  const distImages = []
+  const walkImages = (dir) => {
+    if (!fs.existsSync(dir)) return
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const abs = path.join(dir, entry.name)
+      if (entry.isDirectory()) walkImages(abs)
+      else if (/\.(svg|png|jpe?g|webp|avif)$/i.test(entry.name)) distImages.push(abs)
+    }
+  }
+  walkImages(path.join(dist, 'images'))
+
+  const stale = []
+  for (const [key, value] of Object.entries(dims)) {
+    const file = path.join(dist, key.replace(/^\//, ''))
+    if (!fs.existsSync(file)) {
+      stale.push(`${key}（文件已不存在）`)
+      continue
+    }
+    if (!Array.isArray(value) || value.length !== 2 || !value[0] || !value[1]) {
+      stale.push(`${key}（尺寸记录不合法）`)
+    }
+  }
+  // dist 里存在、但尺寸表里没有的位图（SVG 有 viewBox 兜底，不强制要求）
+  const missingInTable = distImages
+    .filter((f) => /\.(png|jpe?g|webp|avif)$/i.test(f))
+    .map((f) => '/' + path.relative(dist, f).replace(/\\/g, '/'))
+    .filter((key) => !(key in dims))
+
+  if (stale.length) {
+    failures.push(
+      `图片尺寸表与实际文件不一致：${stale.slice(0, 5).join(', ')}` +
+        ' —— 跑一次 python scripts/gen-image-dims.py',
+    )
+  }
+  if (missingInTable.length) {
+    failures.push(
+      `dist 里的位图没有尺寸记录：${missingInTable.slice(0, 5).join(', ')}` +
+        ' —— 跑一次 python scripts/gen-image-dims.py',
+    )
+  }
+}
+
 const report = [
   `dist 文件：${fs.existsSync(path.join(dist, 'index.html')) ? 'ok' : 'missing'}`,
   `预缓存条目：${precacheEntries.length}（缺失 ${missing.length}）`,

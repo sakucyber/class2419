@@ -64,6 +64,79 @@ function cspPlugin(): Plugin {
 }
 
 /**
+ * 注入关键资源的 preload 提示。
+ *
+ * 为什么需要：浏览器的 preload scanner 只看 HTML 里已知的 URL。首屏真正需要的
+ * 三样东西里，有两样没法手写进 index.html：
+ * - 主 CSS 与字体子集的文件名带内容哈希（`index-XXXX.css`、`campus-display-XXXX.woff2`），
+ *   构建前不知道叫什么；
+ * - 字体子集是**由 CSS 触发的**（@font-face），浏览器要等 CSS 下载解析完
+ *   才知道要这个字体 —— 这一段串行等待就是字体闪烁的来源。
+ *
+ * 所以在构建后扫描 dist，把真实文件名写回 HTML：
+ * - 主 CSS：<link rel="preload" as="style">
+ * - 字体子集：<link rel="preload" as="font" type="font/woff2" crossorigin>
+ *   （字体必须 crossorigin，否则会因 CORS 不匹配被丢弃，反而多一次请求）
+ * - 首屏 hero 图（LCP 元素）：<link rel="preload" as="image">
+ *
+ * 只 preload 真正在首屏用到的，别把预缓存变成"下载一切"。
+ */
+function preloadPlugin(): Plugin {
+  let outDir = ''
+  let base = '/'
+  return {
+    name: 'inject-preload',
+    apply: 'build',
+    configResolved(config) {
+      outDir = path.resolve(config.root, config.build.outDir)
+      base = process.env.VITE_BASE || '/'
+    },
+    closeBundle() {
+      const dist = outDir
+      const indexPath = path.join(dist, 'index.html')
+      if (!fs.existsSync(indexPath)) return
+
+      const b = base.endsWith('/') ? base : base + '/'
+      const assetsDir = path.join(dist, 'assets')
+      const tags: string[] = []
+
+      // 1) 主 CSS：index-*.css（不含按页面拆分的 chunk CSS，那些是懒加载的）
+      if (fs.existsSync(assetsDir)) {
+        for (const name of fs.readdirSync(assetsDir)) {
+          if (/^index-.*\.css$/.test(name)) {
+            tags.push(`<link rel="preload" as="style" href="${b}assets/${name}" />`)
+          }
+        }
+      }
+
+      // 2) 字体子集：campus-display-*.woff2
+      const fontDir = path.join(dist, 'assets')
+      if (fs.existsSync(fontDir)) {
+        for (const name of fs.readdirSync(fontDir)) {
+          if (/^campus-display-.*\.woff2$/.test(name)) {
+            tags.push(
+              `<link rel="preload" as="font" type="font/woff2" href="${b}assets/${name}" crossorigin />`,
+            )
+          }
+        }
+      }
+
+      // 3) 首屏 hero 图（首页 LCP 元素）
+      const hero = 'images/misc/class-card-bg.svg'
+      if (fs.existsSync(path.join(dist, hero))) {
+        tags.push(`<link rel="preload" as="image" href="${b}${hero}" />`)
+      }
+
+      if (!tags.length) return
+      let html = fs.readFileSync(indexPath, 'utf8')
+      html = html.replace('</head>', `  ${tags.join('\n  ')}\n  </head>`)
+      fs.writeFileSync(indexPath, html, 'utf8')
+      console.warn(`[preload] 注入 ${tags.length} 条 preload 提示`)
+    },
+  }
+}
+
+/**
  * 给 Service Worker 注入预缓存清单 & 构建哈希。
  *
  * 为什么必须在构建期做：SW 要缓存 index.html 和所有带哈希的构建产物，清单只能在
@@ -166,7 +239,7 @@ function pwaPrecachePlugin(): Plugin {
 export default defineConfig({
   // 部署到 GitHub Pages 子路径时设置环境变量 VITE_BASE=/仓库名/
   base: process.env.VITE_BASE || '/',
-  plugins: [vue(), cspPlugin(), spaFallbackPlugin(), pwaPrecachePlugin()],
+  plugins: [vue(), cspPlugin(), spaFallbackPlugin(), preloadPlugin(), pwaPrecachePlugin()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

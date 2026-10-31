@@ -4,7 +4,13 @@ import LazyImage from '@/components/common/LazyImage.vue'
 import type { VideoItem } from '@/types'
 import { formatDate } from '@/utils/format'
 
-defineProps<{ video: VideoItem }>()
+/**
+ * `headingLevel`：标题标签的层级。
+ * 首页里卡片在 SectionHeader（h2）之下 → h3；
+ * 列表页（视频）里卡片直接跟在 PageHeader（h1）之下 → h2。
+ * 标题层级不能跳级，所以按上下文由调用方决定。
+ */
+withDefaults(defineProps<{ video: VideoItem; headingLevel?: 2 | 3 }>(), { headingLevel: 3 })
 </script>
 
 <template>
@@ -22,7 +28,7 @@ defineProps<{ video: VideoItem }>()
         <span class="chip">{{ video.category }}</span>
         <time class="num" :datetime="video.createdAt">{{ formatDate(video.createdAt) }}</time>
       </div>
-      <h3 class="title">{{ video.title }}</h3>
+      <component :is="`h${headingLevel}`" class="title">{{ video.title }}</component>
       <p class="desc">{{ video.description }}</p>
     </div>
   </RouterLink>

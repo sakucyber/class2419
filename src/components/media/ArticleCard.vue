@@ -5,7 +5,16 @@ import { useInteractionStore } from '@/store/interaction'
 import type { Article } from '@/types'
 import { formatDate } from '@/utils/format'
 
-withDefaults(defineProps<{ article: Article; featured?: boolean }>(), { featured: false })
+/**
+ * `headingLevel`：标题标签的层级。
+ * 首页里卡片在 SectionHeader（h2）之下 → h3；
+ * 列表页（文章）里卡片直接跟在 PageHeader（h1）之下 → h2。
+ * 标题层级不能跳级，所以按上下文由调用方决定。
+ */
+withDefaults(defineProps<{ article: Article; featured?: boolean; headingLevel?: 2 | 3 }>(), {
+  featured: false,
+  headingLevel: 3,
+})
 const interaction = useInteractionStore()
 </script>
 
@@ -24,7 +33,7 @@ const interaction = useInteractionStore()
         <time class="num" :datetime="article.createdAt">{{ formatDate(article.createdAt) }}</time>
         <span class="read">约 {{ article.readingMinutes }} 分钟</span>
       </div>
-      <h3 class="title">
+      <component :is="`h${headingLevel}`" class="title">
         {{ article.title }}
         <AppIcon
           v-if="interaction.isFavorite('article', article.id)"
@@ -33,7 +42,7 @@ const interaction = useInteractionStore()
           filled
           aria-label="已收藏"
         />
-      </h3>
+      </component>
       <p class="excerpt">{{ article.excerpt }}</p>
       <div class="foot">
         <div class="tags">

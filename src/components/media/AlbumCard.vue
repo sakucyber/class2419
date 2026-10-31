@@ -5,7 +5,16 @@ import { useInteractionStore } from '@/store/interaction'
 import type { Album } from '@/types'
 import { formatDate } from '@/utils/format'
 
-defineProps<{ album: Album }>()
+/**
+ * `headingLevel`：标题标签的层级。
+ *
+ * 语义要求标题层级不能跳级（h1 → h3 会让屏幕阅读器「丢失」一层结构）：
+ * - 首页里卡片在 SectionHeader（h2）之下 → h3；
+ * - 列表页（相册 / 视频 / 文章）里卡片直接跟在 PageHeader（h1）之下 → h2。
+ * 所以这里做成可配，由调用方按上下文决定。
+ */
+withDefaults(defineProps<{ album: Album; headingLevel?: 2 | 3 }>(), { headingLevel: 3 })
+
 const interaction = useInteractionStore()
 </script>
 
@@ -30,7 +39,7 @@ const interaction = useInteractionStore()
         <span class="chip chip--primary">{{ album.category }}</span>
         <time class="num" :datetime="album.createdAt">{{ formatDate(album.createdAt) }}</time>
       </div>
-      <h3 class="title">{{ album.title }}</h3>
+      <component :is="`h${headingLevel}`" class="title">{{ album.title }}</component>
       <p class="desc">{{ album.description }}</p>
       <div class="foot">
         <span>{{ album.author }}</span>

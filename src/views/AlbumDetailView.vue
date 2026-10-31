@@ -106,6 +106,8 @@ async function downloadAll() {
             :src="photo.src"
             :srcset="photo.srcset"
             :sizes="photo.sizes"
+            :width="photo.width"
+            :height="photo.height"
             :alt="photo.caption || album.title"
             aspect="1 / 1"
             radius="0"

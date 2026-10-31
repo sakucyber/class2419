@@ -5,9 +5,10 @@
  * 观察的是**容器**而不是 <img>：图片在加载完成前是 display:none，
  * 而 display:none 的元素没有盒子，观察器永远不会判定它进入视口 —— 会死锁。
  */
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import AppIcon from '@/components/common/AppIcon.vue'
+import { getImageSize } from '@/utils/image'
 
 const props = withDefaults(
   defineProps<{
@@ -20,8 +21,20 @@ const props = withDefaults(
     eager?: boolean
     /** LCP 图：加 fetchpriority="high"，让浏览器优先排这个请求 */
     priority?: boolean
+    /** 固有宽高（px）：给 <img> 带上 width/height 属性。
+     *  浏览器据此在图片解码前就预留好位置，避免加载完成时的布局跳动。 */
+    width?: number
+    height?: number
   }>(),
-  { alt: '', aspect: '4 / 3', radius: 'var(--radius-sm)', srcset: '', sizes: '' },
+  {
+    alt: '',
+    aspect: '4 / 3',
+    radius: 'var(--radius-sm)',
+    srcset: '',
+    sizes: '',
+    width: undefined,
+    height: undefined,
+  },
 )
 
 const el = ref<HTMLImageElement | null>(null)
@@ -30,6 +43,18 @@ const loaded = ref(false)
 const failed = ref(false)
 let entered = false
 let observer: IntersectionObserver | null = null
+
+/**
+ * 固有尺寸：显式传入优先，否则查尺寸表。
+ *
+ * 有了 width/height，浏览器在图片解码前就能按比例预留空间，
+ * 图片加载完成时容器不会跳动（CLS）。
+ */
+const intrinsic = computed(() => {
+  if (props.width && props.height) return { width: props.width, height: props.height }
+  const found = getImageSize(props.src)
+  return found ?? { width: undefined, height: undefined }
+})
 
 function applySrc(target: HTMLImageElement) {
   if (props.srcset) target.srcset = props.srcset
@@ -107,6 +132,8 @@ onBeforeUnmount(() => observer?.disconnect())
       ref="el"
       class="img"
       :alt="alt"
+      :width="intrinsic.width"
+      :height="intrinsic.height"
       decoding="async"
       :fetchpriority="priority ? 'high' : undefined"
       @load="onImgLoad"

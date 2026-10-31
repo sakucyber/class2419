@@ -110,7 +110,7 @@ const { keyword, category, sort, categories, filtered, visible, hasMore, remaini
       </EmptyState>
 
       <div v-else :class="layout === 'masonry' ? 'masonry' : 'grid-cards'">
-        <AlbumCard v-for="a in visible" :key="a.id" :album="a" />
+        <AlbumCard v-for="a in visible" :key="a.id" :album="a" :heading-level="2" />
       </div>
 
       <div v-if="hasMore" class="load-more">

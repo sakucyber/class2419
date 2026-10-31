@@ -119,7 +119,7 @@ function toggleTag(tag: string) {
       </EmptyState>
 
       <div v-else class="grid-cards">
-        <ArticleCard v-for="a in visible" :key="a.id" :article="a" featured />
+        <ArticleCard v-for="a in visible" :key="a.id" :article="a" featured :heading-level="2" />
       </div>
 
       <div v-if="hasMore" class="load-more">
