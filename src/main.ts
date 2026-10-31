@@ -10,6 +10,7 @@ import { reveal } from './directives/reveal'
 import router from './router'
 import { useSettingsStore } from './store/settings'
 import { applyBrowserClasses, detectBrowser } from './utils/browser'
+import { setupServiceWorker } from './utils/swUpdate'
 import './styles/index.css'
 
 /*
@@ -39,11 +40,9 @@ if (browser.isUnsupported || window.__blockApp === true) {
   app.mount('#app')
 
   // PWA：仅生产环境注册 Service Worker
+  // 更新提示（"网站有新版本"）由 setupServiceWorker 统一接管：
+  // 新版本不再静默接管，而是等用户点确认后再切换。
   if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {
-        /* 用户拒绝或不支持时静默降级 */
-      })
-    })
+    setupServiceWorker(`${import.meta.env.BASE_URL}sw.js`)
   }
 }

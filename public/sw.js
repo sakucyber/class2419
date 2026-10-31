@@ -21,12 +21,27 @@
  * - 导航：网络优先，失败时回退缓存的 index.html
  * - 媒体请求 / 带 Range 的请求：完全绕过（Cache API 只能存整份 200，
  *   经手一遍反而会让浏览器认为「不可分段」）
+ *
+ * ── 更新策略：让用户决定，而不是静默接管 ──
+ * 旧写法是 install 完就 skipWaiting() + activate 时 clients.claim()：
+ * 新版本会立刻接管，用户正在看的内容突然被换掉，而且往往不知道发生了什么。
+ * 现在改成：
+ *   1. install 完成后**不** skipWaiting，先把新版本装好（预缓存写进新缓存）；
+ *   2. 通过 message 通道通知页面「有新版本」，由页面弹提示；
+ *   3. 用户点「立即更新」→ 页面发 SKIP_WAITING → 这里才 skipWaiting()；
+ *   4. activate 时 clients.claim()，页面收到 controllerchange 后 reload。
+ * 没有页面在线时（首个标签页就关闭了）自动接管，避免用户错过更新。
  */
 const CACHE_PREFIX = 'cls2419-v2-'
 // 构建时由 pwaPrecachePlugin 替换成构建哈希；开发/未注入时用 dev 占位
 const CACHE = CACHE_PREFIX + '__SW_BUILD_ID__'
 // PRECACHE_INJECT
 const PRECACHE = []
+
+/** 新版本就绪时发给页面的消息类型 */
+const MSG_UPDATE_READY = 'SW_UPDATE_READY'
+/** 页面确认更新后发给 SW 的消息类型 */
+const MSG_SKIP_WAITING = 'SKIP_WAITING'
 
 /** 部署 base（'/' 或 '/仓库名/'）。SW 自身 URL 就带 base，从它推出来最可靠。 */
 const BASE = new URL('./', self.location).pathname
@@ -75,9 +90,38 @@ self.addEventListener('install', (event) => {
     (async () => {
       const cache = await caches.open(CACHE)
       await Promise.all(PRECACHE.map((url) => precacheOne(cache, url)))
-      self.skipWaiting()
+
+      // 已经有旧版本在控制页面 → 这是「更新」，不自动接管，等用户点确认。
+      if (self.registration.active) {
+        await notifyClients({ type: MSG_UPDATE_READY })
+        return
+      }
+      // 首次安装：没有旧版本，直接接管（否则要等所有标签页关闭才生效）
+      await self.skipWaiting()
     })(),
   )
+})
+
+/**
+ * 广播消息给所有受控页面。
+ * 用 clients.matchAll({ includeUncontrolled: true })：新 SW 刚装好时还没接管，
+ * 但页面已经是「uncontrolled」状态，不带上这个选项就一条都发不出去。
+ */
+async function notifyClients(message) {
+  const list = await self.clients.matchAll({
+    includeUncontrolled: true,
+    type: 'window',
+  })
+  for (const client of list) client.postMessage(message)
+}
+
+self.addEventListener('message', (event) => {
+  const data = event.data
+  if (!data || typeof data !== 'object') return
+  if (data.type === MSG_SKIP_WAITING) {
+    // 用户确认了更新：立刻接管，页面会在 controllerchange 后自行 reload
+    self.skipWaiting()
+  }
 })
 
 self.addEventListener('activate', (event) => {

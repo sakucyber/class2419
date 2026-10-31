@@ -6,10 +6,15 @@
 - 但校园风的「手账标题感」依赖本机圆体/楷体，安卓机大多没有。
 - 解法：用 Google Fonts 的 text= 参数按本站字符动态子集，只打包用到的字。
 
+⚠️ 扫描范围必须覆盖**界面文案**，不只是数据：
+   界面文字写在 .vue 模板与 .ts 字符串里（设置项、按钮、提示语…），
+   只扫 src/data 会漏掉七成汉字 —— 那些字在浏览器里没有字形，
+   会静默回退成系统黑体，「手账标题感」只在数据标题上生效。
+   所以这里扫 src/** 下所有 .vue / .ts / .json / .md。
+
 用法：python scripts/make-font-subset.py
 输出：src/assets/fonts/campus-display.woff2（同时打印字符数与体积）
 """
-import json
 import pathlib
 import re
 import urllib.parse
@@ -19,44 +24,87 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "src" / "assets" / "fonts" / "campus-display.woff2"
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
 
+# 扫描的源码后缀
+SCAN_SUFFIXES = (".vue", ".ts", ".json", ".md")
+SKIP_DIRS = {"node_modules", "dist", ".git", ".qa", "promo", "assets"}
+
+# 只保留这些标点与符号：界面里真正会出现的（中英标点、箭头、圈号…）
+PUNCTUATION = "，。、；：？！“”‘’（）《》〈〉【】—…·～￥%+-×÷=/\\|&@#*.,:;!?()<>[]{}'\"`^_$"
+
+# 界面固定文案：不是从源码里抓的（可能是动态拼接、或只在运行时出现），
+# 显式列出来兜底，保证不漏。
+UI_TEXT = (
+    "新屋岭初级中学班级空间首页相册视频文章关于搜索收藏设置我的打卡公告荣誉墙"
+    "中考倒计时天时分秒初中三年进度了解我们逛逛随机回忆查看最新全部最新最早标题"
+    "分类网格瀑布流加载更多没有找到相关内容换个关键词试试或前往列表看看全部相册视频文章标签"
+    "分钟约作者返回首页去看看页面走丢了这份地址不存在你可以回到首页或去逛逛继续浏览本站"
+    "数据管理导出备份导入重置本地数据清除浏览器数据会导致这些内容全部丢失建议定期"
+    "安装到桌面已安装当前已是安装状态已取消安装安装指南关于本站项目技术栈部署数据来源视觉"
+    "主题亮暗跟随系统强调色字号标准大中小动效与质感启用页面液态玻璃关闭后减少动画"
+    "风格明暗可自由组合设置会保存在本机当前风格原版青春校园纸质年鉴Japandi硬边杂志"
+    "操作失败请重试加载中上一篇下一篇相关推荐更多推荐全部下载收藏已收藏分享复制链接"
+    "链接已复制播放速度画中画全屏音量播放暂停重新加载视频源暂不可用本地媒体可能已被清理"
+    "整段加载转码中请稍候正在缓冲只能边下边看跳过预载直接播放加载用时打开浏览器不支持视频"
+    "今日打卡点击留下今日脚印累计天您今日已打卡第次空还没有任何内容去添加"
+    "访问地址说明打不开时先切换网络备用地址可能失效请优先保存永久地址纯前端静态站点"
+    "数据仅保存在本地浏览器ClassofEST我们是班聚是一团火散是满天星"
+    "笔锋所至皆是心之所向稳住咔嚓把时光存档动态记录声临其境笔尖下叁NoClassPlate"
+    # 第二轮体检补：更新提示与 PWA 相关文案
+    "新版本已就绪刷新后即可看到最新内容稍后再说立即更新网站有新版本"
+)
+
+
+def strip_noise(text: str) -> str:
+    """去掉注释与代码符号，只留下可能的展示用字符。
+
+    .vue 文件里 60% 以上是 CSS 与脚本，界面文案只是模板里的文本节点；
+    不过这里**不做精确的模板解析**——多收几个字最多让子集大几 KB，
+    漏收一个字则是界面上一个缺字形的汉字。宁可多收，不可漏收。
+    """
+    # 块注释与行注释
+    text = re.sub(r"/\*.*?\*/", " ", text, flags=re.S)
+    text = re.sub(r"<!--.*?-->", " ", text, flags=re.S)
+    # 只剥离「整行都是注释」的行。行内的 //（URL、正则、字符串里的）不碰 ——
+    # 误伤一次就是界面上一个缺字形的汉字，比多收几个字亏得多。
+    text = re.sub(r"(?m)^[ \t]*//.*$", " ", text)
+    return text
+
 
 def collect_text() -> str:
-    """收集站点的真实用字：数据 JSON + 文章 Markdown + 常用 UI 文案。"""
-    parts: list[str] = []
-    for p in (ROOT / "src" / "data").rglob("*.json"):
-        parts.append(p.read_text(encoding="utf-8"))
-    for p in (ROOT / "src" / "data" / "articles").rglob("*.md"):
-        parts.append(p.read_text(encoding="utf-8"))
-    # UI 固定文案（标题、按钮、设置项等，保证界面字全覆盖）
-    parts.append(
-        "新屋岭初级中学班级空间首页相册视频文章关于搜索收藏设置我的打卡公告荣誉墙"
-        "中考倒计时天时分秒初中三年进度了解我们逛逛随机回忆查看最新全部最新最早标题"
-        "分类网格瀑布流加载更多没有找到相关内容换个关键词试试或前往列表看看全部相册视频文章标签"
-        "分钟约作者返回首页去看看页面走丢了这份地址不存在你可以回到首页或去逛逛继续浏览本站"
-        "数据管理导出备份导入重置本地数据清除浏览器数据会导致这些内容全部丢失建议定期"
-        "安装到桌面已安装当前已是安装状态已取消安装安装指南关于本站项目技术栈部署数据来源视觉"
-        "主题亮暗跟随系统强调色字号标准大中小动效与质感启用页面液态玻璃关闭后减少动画"
-        "风格明暗可自由组合设置会保存在本机当前风格原版青春校园纸质年鉴 Japandi 硬边杂志"
-        "操作失败请重试加载中上一篇下一篇相关推荐更多推荐全部下载收藏已收藏分享复制链接"
-        "链接已复制播放速度画中画全屏音量播放暂停重新加载视频源暂不可用本地媒体可能已被清理"
-        "整段加载转码中请稍候正在缓冲只能边下边看跳过预载直接播放加载用时打开浏览器不支持视频"
-        "今日打卡点击留下今日脚印累计天您今日已打卡第次空还没有任何内容去添加"
-        "访问地址说明打不开时先切换网络备用地址可能失效请优先保存永久地址纯前端静态站点"
-        "数据仅保存在本地浏览器Class of 2027 EST 2024我们是班聚是一团火散是满天星"
-        "笔锋所至皆是心之所向稳住咔嚓把时光存档动态记录声临其境笔尖下叁No.Class Plate"
-    )
+    """收集站点的真实用字：全部源码里的中文 + 标点 + 数字字母。"""
+    parts: list[str] = [UI_TEXT]
+
+    for path in sorted((ROOT / "src").rglob("*")):
+        if not path.is_file():
+            continue
+        if path.suffix not in SCAN_SUFFIXES:
+            continue
+        if any(part in SKIP_DIRS for part in path.parts):
+            continue
+        try:
+            raw = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        parts.append(strip_noise(raw))
+
     text = "".join(parts)
-    # 去重并保持稳定顺序（标点数字字母都要，字体子集越小越好，先过滤非展示用字符）
+
+    # 去重并保持稳定顺序
     seen: dict[str, None] = {}
     for ch in text:
-        if ch.strip() or ch in "，。：；·！？…—":
+        if "\u4e00" <= ch <= "\u9fff":
+            seen.setdefault(ch)
+        elif ch in PUNCTUATION:
+            seen.setdefault(ch)
+        elif ch.isascii() and (ch.isalnum() or ch.isspace()):
             seen.setdefault(ch)
     return "".join(seen)
 
 
 def main() -> None:
     text = collect_text()
-    print(f"用字 {len(text)} 个")
+    cn = sum(1 for ch in text if "\u4e00" <= ch <= "\u9fff")
+    print(f"用字 {len(text)} 个（其中汉字 {cn} 个）")
     url = (
         "https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap&text="
         + urllib.parse.quote(text)

@@ -4,6 +4,7 @@ import { onMounted } from 'vue'
 import AppBackground from '@/components/common/AppBackground.vue'
 import BackToTop from '@/components/common/BackToTop.vue'
 import InstallPrompt from '@/components/common/InstallPrompt.vue'
+import UpdatePrompt from '@/components/common/UpdatePrompt.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppTicker from '@/components/layout/AppTicker.vue'
@@ -32,4 +33,5 @@ onMounted(() => {
   <MobileNav />
   <BackToTop />
   <InstallPrompt />
+  <UpdatePrompt />
 </template>
