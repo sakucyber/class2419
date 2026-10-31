@@ -995,3 +995,57 @@ button.chip:active {
   background: var(--accent-soft);
   font-style: normal;
 }
+
+/* ==========================================================================
+ * 美化打磨（2026-10-31）：触控目标 / 移动端节奏 / 一致交互
+ *
+ * 只补交互与间距，不动配色令牌与结构，所以五套风格同时受益。
+ * ========================================================================== */
+
+/* ---- 粗指针（手机 / 平板）下的触控目标 ----
+   桌面 38px 的按钮与 28px 的 chip 在触屏上偏小，统一抬到指尖舒适区。 */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+  }
+  .chip {
+    min-height: 34px;
+  }
+  .toolbar .chips .chip {
+    min-height: 36px;
+  }
+  .action-btn {
+    min-height: 40px;
+  }
+  .select {
+    min-height: 42px;
+  }
+  .switch {
+    width: 48px;
+    height: 28px;
+  }
+  .switch::after {
+    top: 2px;
+    width: 22px;
+    height: 22px;
+  }
+  .switch:checked::after {
+    transform: translateX(20px);
+  }
+}
+
+/* ---- 移动端节奏：收窄间距与工具栏，把空间还给内容 ---- */
+@media (max-width: 767px) {
+  /* 五套风格各自定义的 --section-gap 是桌面值；小屏统一收紧。
+     放在 base.css（skins 之后导入），与皮肤同优先级且顺序更靠后，必然生效。 */
+  :root {
+    --section-gap: 40px;
+  }
+  .toolbar {
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+  .page {
+    padding-top: var(--space-4);
+  }
+}

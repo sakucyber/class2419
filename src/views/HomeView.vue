@@ -877,6 +877,16 @@ onBeforeUnmount(() => {
     border-left: none;
   }
 }
+/* 窄屏黑板：11px 木框在 390px 上吃掉太多有效宽度，缩到 8px */
+@media (max-width: 640px) {
+  [data-style='campus'] .hero {
+    border-width: 8px;
+    border-radius: 12px;
+  }
+  [data-style='campus'] .hero-media {
+    padding: 7px;
+  }
+}
 
 /* 倒计时：一张浅黄便签，顶端贴胶带。
    便签会被拉到与黑板同高，空白处用极淡的横线填成"信纸"，不至于是一大片空黄。 */

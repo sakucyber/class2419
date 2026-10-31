@@ -539,6 +539,16 @@ async function onBackupFile(event: Event): Promise<void> {
   color: var(--accent-contrast);
 }
 
+/* 触屏上把设置页的选项抬高到指尖舒适区（桌面保持紧凑） */
+@media (pointer: coarse) {
+  .option {
+    min-height: 44px;
+  }
+  .seg-btn {
+    min-height: 42px;
+  }
+}
+
 .switch-row {
   display: flex;
   align-items: center;

@@ -14,6 +14,8 @@ export default tseslint.config(
       // wrangler pages dev 会在本地生成临时 worker 产物，不属于源码
       '.wrangler/**',
       '.tmp-fn/**',
+      // 一次性宣传视频工程：不提交，也不用源码规范管
+      'promo/**',
     ],
   },
   js.configs.recommended,

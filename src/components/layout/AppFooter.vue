@@ -237,6 +237,12 @@ const year = new Date().getFullYear()
   color: var(--accent-ink);
   border-bottom-color: var(--accent-ink);
 }
+/* 触屏上把页脚链接的点按区域放大到指尖舒适区 */
+@media (pointer: coarse) {
+  .footer-links a {
+    padding: 10px 14px;
+  }
+}
 
 .footer-access {
   display: flex;
