@@ -215,4 +215,16 @@ const interaction = useInteractionStore()
 [data-style='campus'] .desc {
   color: var(--text-2);
 }
+/* 暗色下相纸换成深色纸面 + 细描边：一排纯白卡片压在深底上太刺眼 */
+[data-style='campus'][data-theme='dark'] .album-card {
+  background: #1d2a37;
+  border: 1px solid var(--line-2);
+  box-shadow: 0 16px 30px -20px rgba(0, 0, 0, 0.75);
+}
+[data-style='campus'][data-theme='dark'] .album-card:hover {
+  border-color: var(--campus-blue-l);
+}
+[data-style='campus'][data-theme='dark'] .meta-row .chip {
+  background: var(--campus-sticky-b);
+}
 </style>

@@ -164,3 +164,15 @@
   --badge-color: #ece7dd;
   --header-bg: rgba(20, 22, 26, 0.94);
 }
+
+/* 年刊目录式的双细线：区块标题下加一条眉线，纸感更「装帧」 */
+[data-style='annual'] .section-header .title::after {
+  content: '';
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  height: 5px;
+  margin-top: 8px;
+  border-top: 1px solid var(--line-2);
+  border-bottom: 1px solid var(--line);
+}

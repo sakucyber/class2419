@@ -240,6 +240,29 @@ const searchDebug = await evalJs(`(() => {
 })()`)
 const searchCount = searchDebug.count
 check('搜索有结果', searchCount >= 3, `count=${searchCount} value=${JSON.stringify(searchDebug.value)}`)
+// 键盘导航：↓ 高亮第一条，Enter 直达并关闭浮层
+await send(
+  'Input.dispatchKeyEvent',
+  { type: 'keyDown', key: 'ArrowDown', code: 'ArrowDown', windowsVirtualKeyCode: 40 },
+  sessionId,
+)
+await sleep(180)
+check('搜索方向键高亮', await evalJs('!!document.querySelector(".search-overlay .item.is-active")'))
+await send(
+  'Input.dispatchKeyEvent',
+  { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 },
+  sessionId,
+)
+await sleep(500)
+check(
+  '搜索 Enter 直达',
+  (await evalJs('location.pathname')) !== '/' &&
+    !(await evalJs('!!document.querySelector(".search-overlay")')),
+  await evalJs('location.pathname'),
+)
+// 重新打开浮层，验证 Esc 关闭
+await evalJs('document.querySelector(\'button[aria-label="全站搜索"]\')?.click()')
+await sleep(300)
 await send(
   'Input.dispatchKeyEvent',
   { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 },

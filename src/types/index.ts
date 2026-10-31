@@ -9,6 +9,10 @@ export interface Photo {
   caption?: string
   width?: number
   height?: number
+  /** 多尺寸描述（"img-800.webp 800w, img-1600.webp 1600w"），配 sizes 使用；
+   *  占位图阶段为空，真实照片上线后在数据层补上，组件会自动透传 */
+  srcset?: string
+  sizes?: string
 }
 
 export interface Album {

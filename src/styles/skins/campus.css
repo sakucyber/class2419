@@ -9,6 +9,17 @@
  * 组件级的外观覆盖写在各自组件的 [data-style='campus'] 块里。
  * ========================================================================== */
 
+/* 自托管标题字体子集：校园手账感的来源。全量中文字体几 MB 进不了 1MB 的
+ * 预缓存预算，用 scripts/make-font-subset.py 按本站实际用字切了 559 字（53KB）。
+ * 名字保持 'ZCOOL KuaiLe'，下面 --font-display 栈会优先命中本地文件，
+ * 加载失败或未覆盖的生僻字再退系统圆体/黑体。内容大改后记得重跑子集脚本。 */
+@font-face {
+  font-family: 'ZCOOL KuaiLe';
+  src: url('../../assets/fonts/campus-display.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
 [data-style='campus'] {
   /* ---- 纸面：天蓝过渡到米白 ---- */
   --bg: #fdf9f0;

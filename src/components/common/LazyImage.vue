@@ -18,6 +18,8 @@ const props = withDefaults(
     aspect?: string
     radius?: string
     eager?: boolean
+    /** LCP 图：加 fetchpriority="high"，让浏览器优先排这个请求 */
+    priority?: boolean
   }>(),
   { alt: '', aspect: '4 / 3', radius: 'var(--radius-sm)', srcset: '', sizes: '' },
 )
@@ -29,22 +31,41 @@ const failed = ref(false)
 let entered = false
 let observer: IntersectionObserver | null = null
 
+function applySrc(target: HTMLImageElement) {
+  if (props.srcset) target.srcset = props.srcset
+  target.src = props.src
+  if (props.sizes) target.sizes = props.sizes
+}
+
+/**
+ * eager 图不走「探测 → 再赋真 src」的绕路：直接把 URL 交给 <img>，
+ * 浏览器立刻知道请求目标与优先级（配 priority 时 fetchpriority=high），
+ * LCP 不必等探测图转一圈。懒加载仍走探测，避免不可见元素抢带宽。
+ */
 function load() {
   if (loaded.value || failed.value) return
+  if (props.eager && el.value) {
+    applySrc(el.value)
+    return
+  }
   const probe = new Image()
   if (props.srcset) probe.srcset = props.srcset
   probe.src = props.src
   probe.onload = () => {
     loaded.value = true
-    if (el.value) {
-      el.value.src = props.src
-      if (props.srcset) el.value.srcset = props.srcset
-      if (props.sizes) el.value.sizes = props.sizes
-    }
+    if (el.value) applySrc(el.value)
   }
   probe.onerror = () => {
     failed.value = true
   }
+}
+
+/** eager 路径：真 <img> 的 load / error 事件负责翻转状态 */
+function onImgLoad() {
+  loaded.value = true
+}
+function onImgError() {
+  if (props.eager) failed.value = true
 }
 
 onMounted(() => {
@@ -81,7 +102,16 @@ onBeforeUnmount(() => observer?.disconnect())
 
 <template>
   <div ref="root" class="lazy-image" :style="{ aspectRatio: aspect, borderRadius: radius }">
-    <img v-show="loaded && !failed" ref="el" class="img" :alt="alt" decoding="async" />
+    <img
+      v-show="loaded && !failed"
+      ref="el"
+      class="img"
+      :alt="alt"
+      decoding="async"
+      :fetchpriority="priority ? 'high' : undefined"
+      @load="onImgLoad"
+      @error="onImgError"
+    />
     <div v-if="!loaded && !failed" class="lazy-skeleton skeleton" aria-hidden="true"></div>
     <div v-if="failed" class="lazy-fail" role="img" :aria-label="`${alt || '图片'}加载失败`">
       <AppIcon name="image" :size="24" :stroke-width="1.35" />

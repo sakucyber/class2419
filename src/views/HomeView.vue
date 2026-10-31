@@ -11,7 +11,7 @@ import PolaroidModal from '@/components/common/PolaroidModal.vue'
 import ProgressBar from '@/components/common/ProgressBar.vue'
 import SectionHeader from '@/components/common/SectionHeader.vue'
 import SkeletonBlock from '@/components/common/SkeletonBlock.vue'
-import HeroBadge from '@/components/effects/HeroBadge.vue'
+import HeroBadge from '@/components/common/HeroBadge.vue'
 import AlbumCard from '@/components/media/AlbumCard.vue'
 import ArticleCard from '@/components/media/ArticleCard.vue'
 import VideoCard from '@/components/media/VideoCard.vue'
@@ -143,7 +143,7 @@ onBeforeUnmount(() => {
               transform: `translateY(${Math.min(parallax * 0.06, 18)}px) scale(1.02)`,
             }"
           >
-            <LazyImage :src="heroBg" alt="" aspect="16 / 10" radius="0" eager />
+            <LazyImage :src="heroBg" alt="" aspect="16 / 10" radius="0" eager priority />
             <span class="hero-caption" aria-hidden="true">Plate I · 2024—2027</span>
           </div>
         </article>

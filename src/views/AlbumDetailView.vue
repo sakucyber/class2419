@@ -102,7 +102,14 @@ async function downloadAll() {
           :aria-label="`预览 ${photo.caption || `第 ${i + 1} 张照片`}`"
           @click="openLightbox(i)"
         >
-          <LazyImage :src="photo.src" :alt="photo.caption || album.title" aspect="1 / 1" radius="0" />
+          <LazyImage
+            :src="photo.src"
+            :srcset="photo.srcset"
+            :sizes="photo.sizes"
+            :alt="photo.caption || album.title"
+            aspect="1 / 1"
+            radius="0"
+          />
           <span class="photo-index num" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
           <span v-if="photo.caption" class="photo-cap">{{ photo.caption }}</span>
         </button>

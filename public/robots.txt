@@ -1,2 +1,3 @@
 User-agent: *
 Allow: /
+Sitemap: https://class2419.pages.dev/sitemap.xml

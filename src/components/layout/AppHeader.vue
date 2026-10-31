@@ -450,4 +450,10 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
     letter-spacing: 0;
   }
 }
+/* 320px 级小屏（iPhone SE 一代等）：胶囊里实在放不下班名，只留「叁」徽章 */
+@media (max-width: 340px) {
+  [data-style='campus'] .brand-text {
+    display: none;
+  }
+}
 </style>

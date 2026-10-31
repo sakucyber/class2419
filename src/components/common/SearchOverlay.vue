@@ -15,13 +15,22 @@ const content = useContentStore()
 const keyword = ref('')
 const overlayEl = ref<HTMLElement | null>(null)
 const results = computed(() => content.search(keyword.value))
+/** 键盘高亮的行：-1 表示未选择（Enter 走整词搜索） */
+const activeIndex = ref(-1)
+
+watch(keyword, () => {
+  activeIndex.value = -1
+})
 
 const close = () => emit('update:open', false)
 
 watch(
   () => props.open,
   (open) => {
-    if (!open) keyword.value = ''
+    if (!open) {
+      keyword.value = ''
+      activeIndex.value = -1
+    }
   },
 )
 
@@ -36,6 +45,23 @@ function submit() {
   if (!keyword.value.trim()) return
   close()
   router.push({ path: '/search', query: { q: keyword.value.trim() } })
+}
+
+/** 结果列表的键盘导航：↑↓ 移动高亮，Enter 直达高亮项（未选中则整词搜索） */
+function onListKeydown(e: KeyboardEvent) {
+  const list = results.value
+  if (!list.length) return
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault()
+    const step = e.key === 'ArrowDown' ? 1 : -1
+    activeIndex.value = (activeIndex.value + step + list.length) % list.length
+    overlayEl.value
+      ?.querySelector('.item.is-active')
+      ?.scrollIntoView({ block: 'nearest' })
+  } else if (e.key === 'Enter' && activeIndex.value >= 0) {
+    e.preventDefault()
+    go(list[activeIndex.value])
+  }
 }
 
 const typeLabel: Record<string, string> = {
@@ -58,7 +84,7 @@ const typeLabel: Record<string, string> = {
     >
       <div class="mask" @click="close"></div>
       <div class="panel">
-        <form class="bar" role="search" @submit.prevent="submit">
+        <form class="bar" role="search" @submit.prevent="submit" @keydown="onListKeydown">
           <AppIcon class="icon" name="search" :size="18" :stroke-width="1.9" />
           <input
             v-model="keyword"
@@ -77,8 +103,13 @@ const typeLabel: Record<string, string> = {
           <template v-else>
             <p class="count">找到 {{ results.length }} 条结果</p>
             <ul v-if="results.length" class="list">
-              <li v-for="hit in results" :key="hit.type + hit.id">
-                <button type="button" class="item" @click="go(hit)">
+              <li v-for="(hit, i) in results" :key="hit.type + hit.id">
+                <button
+                  type="button"
+                  class="item"
+                  :class="{ 'is-active': i === activeIndex }"
+                  @click="go(hit)"
+                >
                   <img v-if="hit.cover" :src="hit.cover" alt="" class="cover" loading="lazy" />
                   <span v-else class="cover cover--tag" aria-hidden="true">#</span>
                   <span class="meta">
@@ -188,7 +219,8 @@ const typeLabel: Record<string, string> = {
     background-color var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease);
 }
-.item:hover {
+.item:hover,
+.item.is-active {
   background: var(--accent-soft);
   border-color: var(--accent-soft-2);
 }

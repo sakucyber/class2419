@@ -1049,3 +1049,14 @@ button.chip:active {
     padding-top: var(--space-4);
   }
 }
+
+/* ---- 列表渲染兜底：内容多起来后，屏外卡片跳过渲染，首屏不塌 ----
+   contain-intrinsic-size 给跳过渲染的元素一个占位高度，避免滚动条跳动。
+   只用于 grid 布局；瀑布流是 CSS 多列，跳列渲染会打乱平衡，不启用。 */
+@media (min-width: 640px) {
+  .grid-cards > *,
+  .article-list > * {
+    content-visibility: auto;
+    contain-intrinsic-size: 360px;
+  }
+}

@@ -15,11 +15,11 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
-# 图片 / 视频：一周缓存。视频在 Pages 上不支持 Range，靠 VideoDetailView
-# 整段预载成 Blob；缓存命中能让第二次播放免去重新下载。
-# ⚠️ 替换同名图片/视频时记得换文件名（或清缓存），否则最长可能一周后才更新。
+# 图片 / 视频：一天新鲜度 + 一周兜底。真实素材常由老师同学手工替换同名文件，
+# 一周强缓存会让「换了封面却一周后才变」很难排查；SWR 让二次访问依旧秒开。
+# 更稳的做法是素材文件名带内容哈希（那时可以改回长缓存）。
 /images/*
-  Cache-Control: public, max-age=604800
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 
 /videos/*
-  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
