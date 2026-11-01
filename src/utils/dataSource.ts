@@ -27,6 +27,8 @@ export interface DataSource {
   removeAnnouncement(id: string): Promise<void>
   exportAll(): Promise<BackupPayload>
   importAll(payload: unknown): Promise<UserContentBundle>
+  /** 用备份内容**整份替换**本地内容（恢复预览里的「覆盖」模式） */
+  replaceAll(payload: unknown): Promise<UserContentBundle>
   resetAll(): Promise<void>
 }
 
@@ -148,6 +150,13 @@ export class LocalDataSource implements DataSource {
     }
     this.write(merged)
     return merged
+  }
+
+  async replaceAll(payload: unknown): Promise<UserContentBundle> {
+    const parsed = parseBackupPayload(payload)
+    // 整份替换：不做任何合并，备份里有什么就是什么
+    this.write(parsed.data)
+    return parsed.data
   }
 
   async resetAll(): Promise<void> {

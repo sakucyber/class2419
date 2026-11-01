@@ -1,12 +1,17 @@
 /** 导入数据校验：防御性解析外部 JSON，避免脏数据 / 恶意结构进入应用 */
+import { ACCENT_KEYS, FONT_SIZE_KEYS, STYLE_KEYS, THEME_KEYS } from '@/config/styles'
 import type {
   Album,
   Announcement,
   Article,
   BackupPayload,
+  CheckinState,
+  InteractionSnapshot,
   Photo,
+  SiteSettings,
   UserContentBundle,
   VideoItem,
+  VideoProgress,
 } from '@/types'
 
 class ValidationError extends Error {}
@@ -17,6 +22,11 @@ function assert(cond: unknown, msg: string): asserts cond {
 
 function isStr(v: unknown): v is string {
   return typeof v === 'string'
+}
+
+/** 值是否落在白名单里（用于枚举型设置项，避免脏值把页面顶到无皮肤状态） */
+function oneOf<T extends string>(v: unknown, allowed: readonly T[]): v is T {
+  return isStr(v) && (allowed as readonly string[]).includes(v)
 }
 
 function str(v: unknown, fallback = ''): string {
@@ -62,10 +72,12 @@ function parsePhotos(v: unknown): Photo[] {
   if (!Array.isArray(v)) return []
   return v.slice(0, 200).map((p, i) => {
     const obj = (p || {}) as Record<string, unknown>
+    const takenAt = str(obj.takenAt)
     return {
       id: cap(obj.id, 64, `p${i}`),
       src: mediaUrl(obj.src),
       caption: cap(obj.caption, 200),
+      ...(takenAt ? { takenAt } : {}),
       width: typeof obj.width === 'number' ? obj.width : undefined,
       height: typeof obj.height === 'number' ? obj.height : undefined,
     }
@@ -170,10 +182,90 @@ export function parseBackupPayload(input: unknown): BackupPayload {
       .map(parseAnnouncement)
       .filter((x): x is Announcement => !!x),
   }
+  const version = Number(obj.version)
   return {
-    version: 1,
+    version: Number.isFinite(version) && version >= 1 ? Math.floor(version) : 1,
     exportedAt: str(obj.exportedAt, new Date().toISOString()),
     app: 'xinwuling-class-2419',
     data: bundle,
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 互动数据 / 外观设置                                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 解析备份里的互动数据（收藏 / 观看进度 / 阅读位置 / 打卡）。
+ *
+ * 纯函数：只做校验与裁剪，不写 store —— 备份预览要能在「不落地」的前提下
+ * 先算清「会恢复多少条」。非法项一律丢弃，不因一条脏数据整份失败。
+ * 入参不是对象时返回 null（表示这份备份没有互动数据段）。
+ */
+export function parseInteractionSnapshot(input: unknown): InteractionSnapshot | null {
+  if (!input || typeof input !== 'object') return null
+  const raw = input as Record<string, unknown>
+
+  const favorites: Record<string, boolean> = {}
+  if (raw.favorites && typeof raw.favorites === 'object') {
+    for (const [key, value] of Object.entries(raw.favorites as Record<string, unknown>)) {
+      if (value === true && /^(album|video|article):/.test(key)) favorites[key] = true
+    }
+  }
+
+  const videoProgress: Record<string, VideoProgress> = {}
+  if (raw.videoProgress && typeof raw.videoProgress === 'object') {
+    for (const [key, value] of Object.entries(raw.videoProgress as Record<string, unknown>)) {
+      if (!value || typeof value !== 'object') continue
+      const item = value as Record<string, unknown>
+      const time = Number(item.time)
+      const duration = Number(item.duration)
+      if (!Number.isFinite(time) || !Number.isFinite(duration) || duration <= 0) continue
+      videoProgress[key] = {
+        time: Math.min(Math.max(time, 0), duration),
+        duration,
+        updatedAt: typeof item.updatedAt === 'string' ? item.updatedAt : new Date().toISOString(),
+      }
+    }
+  }
+
+  const articleScroll: Record<string, number> = {}
+  if (raw.articleScroll && typeof raw.articleScroll === 'object') {
+    for (const [key, value] of Object.entries(raw.articleScroll as Record<string, unknown>)) {
+      const y = Number(value)
+      if (Number.isFinite(y) && y >= 0) articleScroll[key] = Math.round(y)
+    }
+  }
+
+  const rawCheckin = (raw.checkin ?? {}) as Record<string, unknown>
+  const lastDate =
+    typeof rawCheckin.lastDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawCheckin.lastDate)
+      ? rawCheckin.lastDate
+      : ''
+  const total = Number(rawCheckin.total)
+  const checkin: CheckinState = {
+    lastDate,
+    total: Number.isFinite(total) && total >= 0 ? Math.floor(total) : 0,
+  }
+
+  return { favorites, videoProgress, articleScroll, checkin }
+}
+
+/**
+ * 解析备份里的外观设置。
+ * 风格不认识就整份放弃（半套设置会让页面停在「无皮肤」状态）；
+ * 其余字段逐个回退到安全默认值。
+ */
+export function parseSettings(input: unknown): SiteSettings | null {
+  if (!input || typeof input !== 'object') return null
+  const o = input as Record<string, unknown>
+  if (!oneOf(o.style, STYLE_KEYS)) return null
+  return {
+    style: o.style,
+    theme: oneOf(o.theme, THEME_KEYS) ? o.theme : 'auto',
+    accent: oneOf(o.accent, ACCENT_KEYS) ? o.accent : 'auto',
+    fontSize: oneOf(o.fontSize, FONT_SIZE_KEYS) ? o.fontSize : 'md',
+    animations: o.animations !== false,
+    glass: o.glass !== false,
   }
 }

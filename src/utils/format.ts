@@ -13,6 +13,31 @@ export function formatDate(iso: string, withTime = false): string {
   return `${date} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
 }
 
+/** 本地时区的「年-月」，用于按年月归档（相册时间轴） */
+export function monthKey(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '0000-00'
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`
+}
+
+/** '2025-10' → '2025 年 10 月'；解析失败时原样返回 */
+export function monthLabel(key: string): string {
+  const [year, month] = key.split('-')
+  const m = Number(month)
+  if (!year || !Number.isFinite(m)) return key
+  return `${year} 年 ${m} 月`
+}
+
+/** 人类可读的字节数（备份大小、缓存体积） */
+export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B'
+  const units = ['B', 'KB', 'MB', 'GB']
+  const index = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)))
+  const value = bytes / 1024 ** index
+  // 个位数保留一位小数（1.2 MB），三位数取整（120 KB）
+  return `${value >= 100 || index === 0 ? Math.round(value) : value.toFixed(1)} ${units[index]}`
+}
+
 export function formatRelative(iso: string): string {
   const t = new Date(iso).getTime()
   if (Number.isNaN(t)) return iso

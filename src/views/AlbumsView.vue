@@ -46,6 +46,10 @@ const {
       :subtitle="`共 ${content.publicAlbums.length} 个相册 · 点击照片可放大预览`"
     >
       <template #actions>
+        <RouterLink to="/albums/timeline" class="btn btn--ghost btn--sm">
+          <AppIcon name="clock" :size="15" :stroke-width="1.9" />
+          时间轴
+        </RouterLink>
         <div class="view-toggle" role="group" aria-label="布局切换">
           <button
             class="chip"

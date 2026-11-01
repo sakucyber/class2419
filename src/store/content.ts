@@ -163,6 +163,11 @@ export const useContentStore = defineStore('content', () => {
     await dataSource.importAll(payload)
     await reloadUser()
   }
+  /** 整份替换（备份中心的「覆盖恢复」）；与 importAll 的合并语义相反 */
+  async function replaceAll(payload: unknown) {
+    await dataSource.replaceAll(payload)
+    await reloadUser()
+  }
   async function resetUserData() {
     await dataSource.resetAll()
     await reloadUser()
@@ -256,6 +261,7 @@ export const useContentStore = defineStore('content', () => {
     removeAnnouncement,
     exportAll,
     importAll,
+    replaceAll,
     resetUserData,
     search,
   }

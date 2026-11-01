@@ -5,26 +5,10 @@ import AppIcon from '@/components/common/AppIcon.vue'
 import InstallGuide from '@/components/common/InstallGuide.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import { ACCENT_OPTIONS, FONT_SIZE_OPTIONS, STYLE_OPTIONS, THEME_OPTIONS } from '@/config/styles'
-import { useContentStore } from '@/store/content'
-import { useInteractionStore } from '@/store/interaction'
 import { useSettingsStore } from '@/store/settings'
-import { pad2 } from '@/utils/format'
 import { canInstall, promptInstall, pwaState } from '@/utils/pwa'
 
 const settingsStore = useSettingsStore()
-const content = useContentStore()
-const interaction = useInteractionStore()
-
-const confirmReset = ref(false)
-/** 数据管理区的反馈消息：成功与失败用不同色调，不再一律绿色 */
-const message = ref('')
-const messageTone = ref<'ok' | 'error'>('ok')
-const importInput = ref<HTMLInputElement | null>(null)
-
-function notify(text: string, tone: 'ok' | 'error' = 'ok'): void {
-  message.value = text
-  messageTone.value = tone
-}
 
 const guideOpen = ref(false)
 const guideVariant = ref<'ios' | 'other'>('ios')
@@ -50,70 +34,6 @@ async function onInstall(): Promise<void> {
 const themes = THEME_OPTIONS
 const accents = ACCENT_OPTIONS
 const fontSizes = FONT_SIZE_OPTIONS
-
-async function doReset() {
-  try {
-    await content.resetUserData()
-    interaction.resetAll()
-    notify('已恢复为默认内容，本地收藏与观看进度已清空。')
-    confirmReset.value = false
-  } catch (e) {
-    notify(e instanceof Error ? e.message : '重置失败', 'error')
-  }
-}
-
-function backupFileName(): string {
-  const d = new Date()
-  const day = `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}`
-  const clock = `${pad2(d.getHours())}${pad2(d.getMinutes())}`
-  return `class2419-backup-${day}-${clock}.json`
-}
-
-async function exportBackup(): Promise<void> {
-  try {
-    const exported = await content.exportAll()
-    const payload = {
-      ...exported,
-      version: 2,
-      interaction: interaction.exportState(),
-    }
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = backupFileName()
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-    notify('备份已导出：包含本地内容、收藏、观看进度与阅读位置。')
-  } catch (e) {
-    notify(e instanceof Error ? e.message : '导出失败', 'error')
-  }
-}
-
-function pickBackup(): void {
-  importInput.value?.click()
-}
-
-async function onBackupFile(event: Event): Promise<void> {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  input.value = ''
-  if (!file) return
-  try {
-    const payload = JSON.parse(await file.text()) as Record<string, unknown>
-    const data = (payload.data ?? payload) as Record<string, unknown>
-    const count = (key: string) => (Array.isArray(data[key]) ? (data[key] as unknown[]).length : 0)
-    await content.importAll(payload)
-    if (payload.interaction) interaction.importState(payload.interaction)
-    notify(
-      `导入完成：相册 ${count('albums')}、视频 ${count('videos')}、文章 ${count('articles')}、公告 ${count('announcements')}；收藏/进度等互动数据已合并。`,
-    )
-  } catch (e) {
-    notify(e instanceof Error ? e.message : '导入失败：文件不是有效的备份 JSON', 'error')
-  }
-}
 </script>
 
 <template>
@@ -270,49 +190,25 @@ async function onBackupFile(event: Event): Promise<void> {
     <section class="card block" aria-labelledby="data-title">
       <div class="block-head">
         <h2 id="data-title">数据管理</h2>
+        <span class="block-note">导出 / 恢复 / 历史版本</span>
       </div>
       <p class="block-desc">
-        本站在浏览器本地（localStorage / IndexedDB）保存你的收藏、观看进度与阅读位置。
-        清除浏览器数据会导致这些内容全部丢失，建议定期「导出备份」（一个 JSON 文件）。
-        导入会与现有数据合并，同 id 覆盖；旧版备份也兼容。
+        内容、收藏与进度、外观设置都保存在当前浏览器里，清除浏览器数据会全部丢失。
+        需要搬家或留底时，去备份中心导出一份完整备份（一个 JSON 文件），
+        恢复前还能先预览、再决定合并还是覆盖。
       </p>
       <div class="btn-row">
-        <button class="btn btn--soft" type="button" @click="exportBackup">
-          <AppIcon name="download" :size="15" />
-          导出备份
-        </button>
-        <button class="btn btn--soft" type="button" @click="pickBackup">
-          <AppIcon name="upload" :size="15" />
-          导入备份
-        </button>
-        <button
-          class="btn btn--danger"
-          type="button"
-          :disabled="confirmReset"
-          @click="confirmReset = true"
-        >
-          重置全部本地数据
-        </button>
-        <template v-if="confirmReset">
-          <button class="btn btn--danger" type="button" @click="doReset">确认重置？</button>
-          <button class="btn btn--ghost" type="button" @click="confirmReset = false">取消</button>
-        </template>
+        <RouterLink to="/backup" class="btn">
+          <AppIcon name="archive" :size="15" />
+          打开备份中心
+        </RouterLink>
+        <RouterLink to="/offline" class="btn btn--ghost">
+          <AppIcon name="wifiOff" :size="15" />
+          查看离线状态
+        </RouterLink>
       </div>
-      <input
-        ref="importInput"
-        class="visually-hidden"
-        type="file"
-        accept="application/json,.json"
-        aria-label="选择备份文件"
-        @change="onBackupFile"
-      />
-      <p
-        v-if="message"
-        class="message"
-        :class="`message--${messageTone}`"
-        :role="messageTone === 'error' ? 'alert' : 'status'"
-      >
-        {{ message }}
+      <p class="hint-line">
+        重置本地数据也移到了备份中心：那里会先自动留一份快照，再清空内容与互动数据。
       </p>
     </section>
 
@@ -579,15 +475,6 @@ async function onBackupFile(event: Event): Promise<void> {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
-}
-.message {
-  margin-top: var(--space-3);
-  color: var(--success);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-}
-.message--error {
-  color: var(--danger);
 }
 
 .about-list {

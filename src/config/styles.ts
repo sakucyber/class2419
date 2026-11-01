@@ -62,6 +62,9 @@ export const STYLE_LABEL: Record<StyleKey, string> = Object.fromEntries(
   STYLE_OPTIONS.map((option) => [option.key, option.label]),
 ) as Record<StyleKey, string>
 
+/** 白名单：存档还原时用来挡住脏值 */
+export const STYLE_KEYS: StyleKey[] = STYLE_OPTIONS.map((option) => option.key)
+
 /** 顶栏 / 抽屉 / 页脚上的班号徽标：不同风格用不同的字形 */
 export function classMark(style: StyleKey): string {
   if (style === 'brutal') return '19'
@@ -96,6 +99,8 @@ export const THEME_BY_KEY = Object.fromEntries(
   THEME_OPTIONS.map((option) => [option.key, option]),
 ) as Record<ThemeMode, ThemeOption>
 
+export const THEME_KEYS: ThemeMode[] = THEME_OPTIONS.map((option) => option.key)
+
 export interface AccentOption {
   key: AccentKey
   label: string
@@ -111,6 +116,8 @@ export const ACCENT_OPTIONS: AccentOption[] = [
   { key: 'pink', label: '樱花粉', color: '#b04a80' },
 ]
 
+export const ACCENT_KEYS: AccentKey[] = ACCENT_OPTIONS.map((option) => option.key)
+
 export interface FontSizeOption {
   key: FontSizeKey
   label: string
@@ -121,3 +128,5 @@ export const FONT_SIZE_OPTIONS: FontSizeOption[] = [
   { key: 'md', label: '标准' },
   { key: 'lg', label: '大' },
 ]
+
+export const FONT_SIZE_KEYS: FontSizeKey[] = FONT_SIZE_OPTIONS.map((option) => option.key)

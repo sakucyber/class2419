@@ -42,6 +42,9 @@ const PRECACHE = []
 const MSG_UPDATE_READY = 'SW_UPDATE_READY'
 /** 页面确认更新后发给 SW 的消息类型 */
 const MSG_SKIP_WAITING = 'SKIP_WAITING'
+/** 页面查询当前缓存版本（离线状态中心用） */
+const MSG_GET_VERSION = 'GET_VERSION'
+const MSG_VERSION = 'SW_VERSION'
 
 /** 部署 base（'/' 或 '/仓库名/'）。SW 自身 URL 就带 base，从它推出来最可靠。 */
 const BASE = new URL('./', self.location).pathname
@@ -121,6 +124,15 @@ self.addEventListener('message', (event) => {
   if (data.type === MSG_SKIP_WAITING) {
     // 用户确认了更新：立刻接管，页面会在 controllerchange 后自行 reload
     self.skipWaiting()
+    return
+  }
+  // 离线状态中心问「你用的是哪个缓存」：回一个 MessageChannel 端口，
+  // 页面据此显示当前版本号（缓存名末尾就是构建哈希）
+  if (data.type === MSG_GET_VERSION && event.ports && event.ports[0]) {
+    event.ports[0].postMessage({
+      type: MSG_VERSION,
+      build: CACHE.slice(CACHE_PREFIX.length),
+    })
   }
 })
 

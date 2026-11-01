@@ -33,6 +33,8 @@ export const bottomNav: NavItem[] = [
 /** 抽屉「更多」分组 */
 export const moreNav: NavItem[] = [
   { path: '/favorites', title: '我的收藏', icon: 'star' },
+  { path: '/backup', title: '备份中心', icon: 'archive' },
+  { path: '/offline', title: '离线状态', icon: 'wifiOff' },
   { path: '/settings', title: '设置', icon: 'gear' },
 ]
 
@@ -74,6 +76,13 @@ const routes: RouteRecordRaw[] = [
     name: 'albums',
     component: () => import('@/views/AlbumsView.vue'),
     meta: { title: '相册', nav: '/albums' },
+  },
+  {
+    // ⚠️ 必须排在 /albums/:id 之前，否则 timeline 会被当成相册 id
+    path: '/albums/timeline',
+    name: 'album-timeline',
+    component: () => import('@/views/AlbumsTimelineView.vue'),
+    meta: { title: '照片时间轴', nav: '/albums' },
   },
   {
     path: '/albums/:id',
@@ -122,6 +131,18 @@ const routes: RouteRecordRaw[] = [
     name: 'favorites',
     component: () => import('@/views/FavoritesView.vue'),
     meta: { title: '我的收藏', nav: '/favorites' },
+  },
+  {
+    path: '/backup',
+    name: 'backup',
+    component: () => import('@/views/BackupView.vue'),
+    meta: { title: '备份中心', nav: '/backup' },
+  },
+  {
+    path: '/offline',
+    name: 'offline',
+    component: () => import('@/views/OfflineView.vue'),
+    meta: { title: '离线状态', nav: '/offline' },
   },
   {
     path: '/settings',

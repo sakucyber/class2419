@@ -2,29 +2,10 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
+import type { CheckinState, InteractionSnapshot, VideoProgress } from '@/types'
 import { pad2 } from '@/utils/format'
 import { getJSON, setJSON } from '@/utils/storage'
-
-export interface VideoProgress {
-  time: number
-  duration: number
-  updatedAt: string
-}
-
-/** 今日打卡：只存最后一次打卡日期与累计天数 */
-export interface CheckinState {
-  /** 本地时区的 YYYY-MM-DD；空字符串表示从未打卡 */
-  lastDate: string
-  total: number
-}
-
-/** 备份文件里的互动数据（收藏 / 视频进度 / 阅读位置 / 打卡） */
-export interface InteractionSnapshot {
-  favorites: Record<string, boolean>
-  videoProgress: Record<string, VideoProgress>
-  articleScroll: Record<string, number>
-  checkin: CheckinState
-}
+import { parseInteractionSnapshot } from '@/utils/validate'
 
 export type Kind = 'album' | 'video' | 'article'
 
@@ -111,58 +92,59 @@ export const useInteractionStore = defineStore('interaction', () => {
     }
   }
 
-  /** 备份用：导入互动数据（防御性解析，非法项丢弃；旧备份没有这一段则跳过） */
-  function importState(input: unknown): void {
-    if (!input || typeof input !== 'object') return
-    const raw = input as Record<string, unknown>
-
-    const fav: Record<string, boolean> = {}
-    if (raw.favorites && typeof raw.favorites === 'object') {
-      for (const [key, value] of Object.entries(raw.favorites as Record<string, unknown>)) {
-        if (value === true && /^(album|video|article):/.test(key)) fav[key] = true
-      }
-    }
-
-    const progress: Record<string, VideoProgress> = {}
-    if (raw.videoProgress && typeof raw.videoProgress === 'object') {
-      for (const [key, value] of Object.entries(raw.videoProgress as Record<string, unknown>)) {
-        if (!value || typeof value !== 'object') continue
-        const item = value as Record<string, unknown>
-        const time = Number(item.time)
-        const duration = Number(item.duration)
-        if (!Number.isFinite(time) || !Number.isFinite(duration) || duration <= 0) continue
-        progress[key] = {
-          time: Math.min(Math.max(time, 0), duration),
-          duration,
-          updatedAt: typeof item.updatedAt === 'string' ? item.updatedAt : new Date().toISOString(),
-        }
-      }
-    }
-
-    const scroll: Record<string, number> = {}
-    if (raw.articleScroll && typeof raw.articleScroll === 'object') {
-      for (const [key, value] of Object.entries(raw.articleScroll as Record<string, unknown>)) {
-        const y = Number(value)
-        if (Number.isFinite(y) && y >= 0) scroll[key] = Math.round(y)
-      }
-    }
-
-    const rawCheckin = (raw.checkin ?? {}) as Record<string, unknown>
-    const lastDate =
-      typeof rawCheckin.lastDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawCheckin.lastDate)
-        ? rawCheckin.lastDate
-        : ''
-    const total = Number(rawCheckin.total)
-    const totalSafe = Number.isFinite(total) && total >= 0 ? Math.floor(total) : 0
-
-    favorites.value = fav
-    videoProgress.value = progress
-    articleScroll.value = scroll
-    checkin.value = { lastDate, total: totalSafe }
+  /** 写入一份互动数据（整合并覆盖两种恢复方式共用） */
+  function applyState(snapshot: InteractionSnapshot): void {
+    favorites.value = snapshot.favorites
+    videoProgress.value = snapshot.videoProgress
+    articleScroll.value = snapshot.articleScroll
+    checkin.value = snapshot.checkin
     setJSON('favorites', favorites.value)
     setJSON('videoProgress', videoProgress.value)
     setJSON('articleScroll', articleScroll.value)
     setJSON('checkin', checkin.value)
+  }
+
+  /** 备份用：导入互动数据（整份替换；旧备份没有这一段时跳过） */
+  function importState(input: unknown): void {
+    const snapshot = parseInteractionSnapshot(input)
+    if (!snapshot) return
+    applyState(snapshot)
+  }
+
+  /**
+   * 备份用：合并互动数据。
+   * 收藏取并集；观看进度按 updatedAt 取较新的一条；阅读位置取更靠后的；
+   * 打卡取更晚的日期与更大的累计值 —— 任何时候都不该因为恢复而丢进度。
+   */
+  function mergeState(input: unknown): void {
+    const snapshot = parseInteractionSnapshot(input)
+    if (!snapshot) return
+
+    const favoritesNext = { ...favorites.value, ...snapshot.favorites }
+
+    const videoProgressMap = { ...videoProgress.value }
+    for (const [id, item] of Object.entries(snapshot.videoProgress)) {
+      const current = videoProgressMap[id]
+      if (!current || item.updatedAt >= current.updatedAt) videoProgressMap[id] = item
+    }
+
+    const articleScrollMap = { ...articleScroll.value }
+    for (const [id, y] of Object.entries(snapshot.articleScroll)) {
+      articleScrollMap[id] = Math.max(articleScrollMap[id] ?? 0, y)
+    }
+
+    const later = snapshot.checkin.lastDate >= checkin.value.lastDate
+    const checkinNext = {
+      lastDate: later ? snapshot.checkin.lastDate : checkin.value.lastDate,
+      total: Math.max(checkin.value.total, snapshot.checkin.total),
+    }
+
+    applyState({
+      favorites: favoritesNext,
+      videoProgress: videoProgressMap,
+      articleScroll: articleScrollMap,
+      checkin: checkinNext,
+    })
   }
 
   function resetAll() {
@@ -192,5 +174,6 @@ export const useInteractionStore = defineStore('interaction', () => {
     resetAll,
     exportState,
     importState,
+    mergeState,
   }
 })

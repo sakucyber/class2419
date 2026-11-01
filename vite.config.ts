@@ -226,6 +226,21 @@ function pwaPrecachePlugin(): Plugin {
         digest.update('\0')
       }
       const buildId = digest.digest('hex').slice(0, 10)
+
+      // 版本清单：离线状态中心用它判断「本地缓存是否落后于线上」。
+      // 它由 buildId 派生，不能参与上面的摘要计算（否则每次构建都会自指、缓存名永远在变）。
+      const versionFile = path.join(dist, 'version.json')
+      fs.writeFileSync(
+        versionFile,
+        JSON.stringify(
+          { buildId, builtAt: new Date().toISOString(), assets: list.length },
+          null,
+          2,
+        ) + '\n',
+        'utf8',
+      )
+      list.push(b + 'version.json')
+
       let sw = fs.readFileSync(swPath, 'utf8')
       const before = sw
       sw = sw.replace(
