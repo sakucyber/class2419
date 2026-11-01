@@ -61,10 +61,17 @@ const content = useContentStore()
 
     <!-- 荣誉墙 -->
     <section v-reveal class="section">
-      <SectionHeader tag="Honor" title="荣誉墙" subtitle="每一座奖杯背后，都有一群拼命的我们" :linkable="false" />
+      <SectionHeader
+        tag="Honor"
+        title="荣誉墙"
+        subtitle="每一座奖杯背后，都有一群拼命的我们"
+        :linkable="false"
+      />
       <ul class="honor-grid">
         <li v-for="(h, i) in content.honors" :key="h.id" class="honor card card-hover">
-          <span class="honor-index num" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
+          <span class="honor-index num" aria-hidden="true">{{
+            String(i + 1).padStart(2, '0')
+          }}</span>
           <span class="honor-icon" aria-hidden="true">
             <AppIcon :name="h.icon" :size="22" :stroke-width="1.5" />
           </span>
@@ -83,9 +90,6 @@ const content = useContentStore()
 </template>
 
 <style scoped>
-.page {
-  padding-top: var(--space-6);
-}
 .section {
   margin-top: var(--space-12);
 }

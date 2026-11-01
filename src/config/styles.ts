@@ -1,5 +1,15 @@
-/** 风格元数据：切换器、设置页与文档共用同一份定义，避免两处写死四份文案 */
-import type { StyleKey } from '@/types'
+/**
+ * 外观元数据（单一事实来源）。
+ *
+ * 风格切换器、抽屉、设置页与页脚都从这里取文案与图标，
+ * 避免同一份「主题 / 强调色 / 字号」定义在四个组件里各写一遍。
+ */
+import type { IconName } from '@/components/common/icons'
+import type { AccentKey, FontSizeKey, StyleKey, ThemeMode } from '@/types'
+
+/* ------------------------------------------------------------------ */
+/* 视觉风格                                                            */
+/* ------------------------------------------------------------------ */
 
 export interface StyleOption {
   key: StyleKey
@@ -48,10 +58,66 @@ export const STYLE_OPTIONS: StyleOption[] = [
   },
 ]
 
-export const STYLE_LABEL: Record<StyleKey, string> = {
-  campus: '青春校园',
-  annual: '纸质年鉴',
-  japandi: 'Japandi',
-  brutal: '硬边杂志',
-  legacy: '原版',
+export const STYLE_LABEL: Record<StyleKey, string> = Object.fromEntries(
+  STYLE_OPTIONS.map((option) => [option.key, option.label]),
+) as Record<StyleKey, string>
+
+/** 顶栏 / 抽屉 / 页脚上的班号徽标：不同风格用不同的字形 */
+export function classMark(style: StyleKey): string {
+  if (style === 'brutal') return '19'
+  if (style === 'legacy') return '2419'
+  return '叁'
 }
+
+/* ------------------------------------------------------------------ */
+/* 主题 / 强调色 / 字号                                                */
+/* ------------------------------------------------------------------ */
+
+export interface ThemeOption {
+  key: ThemeMode
+  /** 按钮上的短标签 */
+  label: string
+  /** 悬浮提示与无障碍名称 */
+  title: string
+  icon: IconName
+}
+
+/**
+ * 顺序即设置页的展示顺序（亮 → 暗 → 跟随）。
+ * 头部按钮的循环顺序由 settings store 决定，与此无关。
+ */
+export const THEME_OPTIONS: ThemeOption[] = [
+  { key: 'light', label: '亮色', title: '主题：亮色', icon: 'sun' },
+  { key: 'dark', label: '暗色', title: '主题：暗色', icon: 'moon' },
+  { key: 'auto', label: '跟随系统', title: '主题：跟随系统', icon: 'monitor' },
+]
+
+export const THEME_BY_KEY = Object.fromEntries(
+  THEME_OPTIONS.map((option) => [option.key, option]),
+) as Record<ThemeMode, ThemeOption>
+
+export interface AccentOption {
+  key: AccentKey
+  label: string
+  /** 色板圆点；「随风格」没有固定颜色，用四色小方块代替 */
+  color: string
+}
+
+export const ACCENT_OPTIONS: AccentOption[] = [
+  { key: 'auto', label: '随风格', color: '' },
+  { key: 'blue', label: '晴空蓝', color: '#1f56d6' },
+  { key: 'green', label: '常青绿', color: '#0d7a6f' },
+  { key: 'orange', label: '活力橙', color: '#b8560f' },
+  { key: 'pink', label: '樱花粉', color: '#b04a80' },
+]
+
+export interface FontSizeOption {
+  key: FontSizeKey
+  label: string
+}
+
+export const FONT_SIZE_OPTIONS: FontSizeOption[] = [
+  { key: 'sm', label: '小' },
+  { key: 'md', label: '标准' },
+  { key: 'lg', label: '大' },
+]

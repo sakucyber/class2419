@@ -23,6 +23,16 @@ function str(v: unknown, fallback = ''): string {
   return isStr(v) ? v.slice(0, 20000) : fallback
 }
 
+/** 取字符串并截断到上限（字段级长度约束都走这里，读起来比 str(...).slice(...) 清楚） */
+function cap(v: unknown, max: number, fallback = ''): string {
+  return str(v, fallback).slice(0, max)
+}
+
+/** 四类内容共有的身份字段：缺 id 或 title 一律视为无效记录 */
+function hasIdentity(o: Record<string, unknown>): boolean {
+  return isStr(o.id) && isStr(o.title)
+}
+
 function strArray(v: unknown, max = 20): string[] {
   if (!Array.isArray(v)) return []
   return v
@@ -53,9 +63,9 @@ function parsePhotos(v: unknown): Photo[] {
   return v.slice(0, 200).map((p, i) => {
     const obj = (p || {}) as Record<string, unknown>
     return {
-      id: str(obj.id, `p${i}`),
+      id: cap(obj.id, 64, `p${i}`),
       src: mediaUrl(obj.src),
-      caption: str(obj.caption).slice(0, 200),
+      caption: cap(obj.caption, 200),
       width: typeof obj.width === 'number' ? obj.width : undefined,
       height: typeof obj.height === 'number' ? obj.height : undefined,
     }
@@ -64,16 +74,16 @@ function parsePhotos(v: unknown): Photo[] {
 
 function parseAlbum(v: unknown): Album | null {
   const o = (v || {}) as Record<string, unknown>
-  if (!isStr(o.id) || !isStr(o.title)) return null
+  if (!hasIdentity(o)) return null
   return {
-    id: str(o.id).slice(0, 64),
-    title: str(o.title).slice(0, 100),
-    description: str(o.description).slice(0, 1000),
+    id: cap(o.id, 64),
+    title: cap(o.title, 100),
+    description: cap(o.description, 1000),
     cover: mediaUrl(o.cover),
-    category: str(o.category, '其他').slice(0, 30),
+    category: cap(o.category, 30, '其他'),
     tags: strArray(o.tags),
     photos: parsePhotos(o.photos),
-    author: str(o.author, '匿名').slice(0, 30),
+    author: cap(o.author, 30, '匿名'),
     createdAt: str(o.createdAt, new Date().toISOString()),
     source: 'user',
     draft: o.draft === true,
@@ -82,25 +92,23 @@ function parseAlbum(v: unknown): Album | null {
 
 function parseVideo(v: unknown): VideoItem | null {
   const o = (v || {}) as Record<string, unknown>
-  if (!isStr(o.id) || !isStr(o.title)) return null
-  const embedUrl = isStr(o.embedUrl) ? o.embedUrl : undefined
-  const externalUrl = isStr(o.externalUrl) ? o.externalUrl : undefined
+  if (!hasIdentity(o)) return null
   // 外链只允许 http(s)，防止 javascript: 注入
-  const safeEmbed = embedUrl && /^https:\/\//i.test(embedUrl) ? embedUrl : undefined
-  const safeExternal = externalUrl && /^https:\/\//i.test(externalUrl) ? externalUrl : undefined
+  const safeUrl = (value: unknown) =>
+    isStr(value) && /^https:\/\//i.test(value) ? value : undefined
   return {
-    id: str(o.id).slice(0, 64),
-    title: str(o.title).slice(0, 100),
-    description: str(o.description).slice(0, 1000),
+    id: cap(o.id, 64),
+    title: cap(o.title, 100),
+    description: cap(o.description, 1000),
     cover: mediaUrl(o.cover),
-    category: str(o.category, '其他').slice(0, 30),
+    category: cap(o.category, 30, '其他'),
     tags: strArray(o.tags),
-    author: str(o.author, '匿名').slice(0, 30),
+    author: cap(o.author, 30, '匿名'),
     createdAt: str(o.createdAt, new Date().toISOString()),
     src: mediaUrl(o.src) || undefined,
-    embedUrl: safeEmbed,
-    externalUrl: safeExternal,
-    duration: str(o.duration).slice(0, 20),
+    embedUrl: safeUrl(o.embedUrl),
+    externalUrl: safeUrl(o.externalUrl),
+    duration: cap(o.duration, 20),
     source: 'user',
     draft: o.draft === true,
   }
@@ -108,19 +116,19 @@ function parseVideo(v: unknown): VideoItem | null {
 
 function parseArticle(v: unknown): Article | null {
   const o = (v || {}) as Record<string, unknown>
-  if (!isStr(o.id) || !isStr(o.title)) return null
+  if (!hasIdentity(o)) return null
   return {
-    id: str(o.id).slice(0, 64),
-    title: str(o.title).slice(0, 100),
-    excerpt: str(o.excerpt).slice(0, 500),
+    id: cap(o.id, 64),
+    title: cap(o.title, 100),
+    excerpt: cap(o.excerpt, 500),
     cover: mediaUrl(o.cover),
-    category: str(o.category, '随笔').slice(0, 30),
+    category: cap(o.category, 30, '随笔'),
     tags: strArray(o.tags),
-    author: str(o.author, '匿名').slice(0, 30),
+    author: cap(o.author, 30, '匿名'),
     createdAt: str(o.createdAt, new Date().toISOString()),
     updatedAt: isStr(o.updatedAt) ? str(o.updatedAt) : undefined,
     readingMinutes: typeof o.readingMinutes === 'number' ? Math.max(1, o.readingMinutes) : 3,
-    content: str(o.content).slice(0, 200_000),
+    content: cap(o.content, 200_000),
     source: 'user',
     draft: o.draft === true,
   }
@@ -128,12 +136,12 @@ function parseArticle(v: unknown): Article | null {
 
 function parseAnnouncement(v: unknown): Announcement | null {
   const o = (v || {}) as Record<string, unknown>
-  if (!isStr(o.id) || !isStr(o.title)) return null
+  if (!hasIdentity(o)) return null
   const level = o.level
   return {
-    id: str(o.id).slice(0, 64),
-    title: str(o.title).slice(0, 100),
-    content: str(o.content).slice(0, 2000),
+    id: cap(o.id, 64),
+    title: cap(o.title, 100),
+    content: cap(o.content, 2000),
     createdAt: str(o.createdAt, new Date().toISOString()),
     pinned: o.pinned === true,
     level: level === 'success' || level === 'warning' ? level : 'info',

@@ -1,15 +1,16 @@
-/** 通用格式化与节流/防抖工具 */
+/** 通用格式化与节流 / 防抖工具 */
+
+/** 两位补零：日期、时长、备份文件名共用 */
+export function pad2(n: number): string {
+  return String(n).padStart(2, '0')
+}
 
 export function formatDate(iso: string, withTime = false): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  if (!withTime) return `${y}-${m}-${day}`
-  const hh = String(d.getHours()).padStart(2, '0')
-  const mm = String(d.getMinutes()).padStart(2, '0')
-  return `${y}-${m}-${day} ${hh}:${mm}`
+  const date = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+  if (!withTime) return date
+  return `${date} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
 }
 
 export function formatRelative(iso: string): string {
@@ -26,28 +27,30 @@ export function formatRelative(iso: string): string {
   return formatDate(iso)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function debounce<T extends (...args: any[]) => void>(fn: T, wait = 250) {
+/** 参数元组从原函数推导，调用方不丢类型，也不需要 any */
+export function debounce<A extends unknown[]>(fn: (...args: A) => void, wait = 250) {
   let timer: ReturnType<typeof setTimeout> | null = null
-  const debounced = (...args: Parameters<T>) => {
-    if (timer) clearTimeout(timer)
-    timer = setTimeout(() => {
-      timer = null
-      fn(...args)
-    }, wait)
-  }
-  debounced.cancel = () => {
-    if (timer) clearTimeout(timer)
-    timer = null
-  }
-  return debounced
+  return Object.assign(
+    (...args: A) => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => {
+        timer = null
+        fn(...args)
+      }, wait)
+    },
+    {
+      cancel() {
+        if (timer) clearTimeout(timer)
+        timer = null
+      },
+    },
+  )
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function throttle<T extends (...args: any[]) => void>(fn: T, wait = 100) {
+export function throttle<A extends unknown[]>(fn: (...args: A) => void, wait = 100) {
   let last = 0
   let timer: ReturnType<typeof setTimeout> | null = null
-  return (...args: Parameters<T>) => {
+  return (...args: A) => {
     const now = Date.now()
     const remaining = wait - (now - last)
     if (remaining <= 0) {
@@ -71,8 +74,4 @@ export function throttle<T extends (...args: any[]) => void>(fn: T, wait = 100) 
 export function estimateReadingMinutes(text: string): number {
   const words = text.replace(/\s+/g, '').length
   return Math.max(1, Math.round(words / 400))
-}
-
-export function clamp(n: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, n))
 }

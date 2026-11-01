@@ -3,6 +3,8 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import AppIcon from '@/components/common/AppIcon.vue'
+import HighlightText from '@/components/common/HighlightText.vue'
+import { SEARCH_TYPE_LABEL } from '@/config/content'
 import { useContentStore } from '@/store/content'
 import { useFocusTrap } from '@/utils/overlay'
 
@@ -63,13 +65,6 @@ function onListKeydown(e: KeyboardEvent) {
     go(list[activeIndex.value])
   }
 }
-
-const typeLabel: Record<string, string> = {
-  album: '相册',
-  video: '视频',
-  article: '文章',
-  tag: '标签',
-}
 </script>
 
 <template>
@@ -101,7 +96,7 @@ const typeLabel: Record<string, string> = {
             试试搜索「运动会」「研学」「合唱」，或点按标签浏览。
           </p>
           <template v-else>
-            <p class="count">找到 {{ results.length }} 条结果</p>
+            <p class="count" role="status">找到 {{ results.length }} 条结果</p>
             <ul v-if="results.length" class="list">
               <li v-for="(hit, i) in results" :key="hit.type + hit.id">
                 <button
@@ -113,10 +108,10 @@ const typeLabel: Record<string, string> = {
                   <img v-if="hit.cover" :src="hit.cover" alt="" class="cover" loading="lazy" />
                   <span v-else class="cover cover--tag" aria-hidden="true">#</span>
                   <span class="meta">
-                    <strong>{{ hit.title }}</strong>
-                    <small>{{ hit.subtitle }}</small>
+                    <strong><HighlightText :text="hit.title" :keyword="keyword" /></strong>
+                    <small><HighlightText :text="hit.subtitle || ''" :keyword="keyword" /></small>
                   </span>
-                  <span class="type">{{ typeLabel[hit.type] }}</span>
+                  <span class="type">{{ SEARCH_TYPE_LABEL[hit.type] }}</span>
                 </button>
               </li>
             </ul>

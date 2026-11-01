@@ -1,26 +1,22 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import AppIcon from '@/components/common/AppIcon.vue'
-import type { IconName } from '@/components/common/icons'
+import { THEME_BY_KEY } from '@/config/styles'
 import { useSettingsStore } from '@/store/settings'
 
 const settingsStore = useSettingsStore()
-
-const ICONS: Record<string, IconName> = { auto: 'monitor', light: 'sun', dark: 'moon' }
-const LABELS: Record<string, string> = {
-  auto: '主题：跟随系统',
-  light: '主题：亮色',
-  dark: '主题：暗色',
-}
+const current = computed(() => THEME_BY_KEY[settingsStore.settings.theme])
 </script>
 
 <template>
   <button
     class="icon-btn"
     type="button"
-    :aria-label="LABELS[settingsStore.settings.theme]"
-    :title="LABELS[settingsStore.settings.theme]"
+    :aria-label="current.title"
+    :title="current.title"
     @click="settingsStore.cycleTheme()"
   >
-    <AppIcon :name="ICONS[settingsStore.settings.theme]" :size="17" :stroke-width="1.9" />
+    <AppIcon :name="current.icon" :size="17" :stroke-width="1.9" />
   </button>
 </template>

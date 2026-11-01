@@ -42,6 +42,12 @@ function upsert<T extends { id: string }>(list: T[], item: T): T[] {
   return next
 }
 
+/** 以导入内容为准合并：同 id 用新数据，其余保留现有 */
+function mergeById<T extends { id: string }>(incoming: T[], current: T[]): T[] {
+  const ids = new Set(incoming.map((x) => x.id))
+  return [...incoming, ...current.filter((c) => !ids.has(c.id))]
+}
+
 export class LocalDataSource implements DataSource {
   private read(): UserContentBundle {
     const saved = getJSON<UserContentBundle>(STORAGE_KEY, EMPTY)
@@ -58,33 +64,40 @@ export class LocalDataSource implements DataSource {
     if (!ok) throw new Error('本地存储空间不足：请删除部分大图片/视频后再保存')
   }
 
+  /** 读 → 改 → 写：四个集合的增删都走这一条路径，避免各写一遍读写样板 */
+  private mutate(change: (bundle: UserContentBundle) => void): void {
+    const bundle = this.read()
+    change(bundle)
+    this.write(bundle)
+  }
+
   async loadUserContent(): Promise<UserContentBundle> {
     return this.read()
   }
 
   async saveAlbum(album: Album): Promise<void> {
-    const bundle = this.read()
-    bundle.albums = upsert(bundle.albums, { ...album, source: 'user' })
-    this.write(bundle)
+    this.mutate((b) => {
+      b.albums = upsert(b.albums, { ...album, source: 'user' })
+    })
   }
 
   async removeAlbum(id: string): Promise<void> {
-    const bundle = this.read()
-    bundle.albums = bundle.albums.filter((a) => a.id !== id)
-    this.write(bundle)
+    this.mutate((b) => {
+      b.albums = b.albums.filter((a) => a.id !== id)
+    })
   }
 
   async saveVideo(video: VideoItem): Promise<void> {
-    const bundle = this.read()
-    bundle.videos = upsert(bundle.videos, { ...video, source: 'user' })
-    this.write(bundle)
+    this.mutate((b) => {
+      b.videos = upsert(b.videos, { ...video, source: 'user' })
+    })
   }
 
   async removeVideo(id: string): Promise<void> {
-    const bundle = this.read()
-    const target = bundle.videos.find((v) => v.id === id)
-    bundle.videos = bundle.videos.filter((v) => v.id !== id)
-    this.write(bundle)
+    const target = this.read().videos.find((v) => v.id === id)
+    this.mutate((b) => {
+      b.videos = b.videos.filter((v) => v.id !== id)
+    })
     if (target?.src?.startsWith('idb:')) {
       revokeMediaUrl(target.src)
       await deleteBlob(target.src.slice(4)).catch(() => undefined)
@@ -92,27 +105,27 @@ export class LocalDataSource implements DataSource {
   }
 
   async saveArticle(article: Article): Promise<void> {
-    const bundle = this.read()
-    bundle.articles = upsert(bundle.articles, { ...article, source: 'user' })
-    this.write(bundle)
+    this.mutate((b) => {
+      b.articles = upsert(b.articles, { ...article, source: 'user' })
+    })
   }
 
   async removeArticle(id: string): Promise<void> {
-    const bundle = this.read()
-    bundle.articles = bundle.articles.filter((a) => a.id !== id)
-    this.write(bundle)
+    this.mutate((b) => {
+      b.articles = b.articles.filter((a) => a.id !== id)
+    })
   }
 
   async saveAnnouncement(item: Announcement): Promise<void> {
-    const bundle = this.read()
-    bundle.announcements = upsert(bundle.announcements, { ...item, source: 'user' })
-    this.write(bundle)
+    this.mutate((b) => {
+      b.announcements = upsert(b.announcements, { ...item, source: 'user' })
+    })
   }
 
   async removeAnnouncement(id: string): Promise<void> {
-    const bundle = this.read()
-    bundle.announcements = bundle.announcements.filter((a) => a.id !== id)
-    this.write(bundle)
+    this.mutate((b) => {
+      b.announcements = b.announcements.filter((a) => a.id !== id)
+    })
   }
 
   async exportAll(): Promise<BackupPayload> {
@@ -128,24 +141,10 @@ export class LocalDataSource implements DataSource {
     const parsed = parseBackupPayload(payload)
     const current = this.read()
     const merged: UserContentBundle = {
-      albums: [
-        ...parsed.data.albums,
-        ...current.albums.filter((c) => !parsed.data.albums.some((p) => p.id === c.id)),
-      ],
-      videos: [
-        ...parsed.data.videos,
-        ...current.videos.filter((c) => !parsed.data.videos.some((p) => p.id === c.id)),
-      ],
-      articles: [
-        ...parsed.data.articles,
-        ...current.articles.filter((c) => !parsed.data.articles.some((p) => p.id === c.id)),
-      ],
-      announcements: [
-        ...parsed.data.announcements,
-        ...current.announcements.filter(
-          (c) => !parsed.data.announcements.some((p) => p.id === c.id),
-        ),
-      ],
+      albums: mergeById(parsed.data.albums, current.albums),
+      videos: mergeById(parsed.data.videos, current.videos),
+      articles: mergeById(parsed.data.articles, current.articles),
+      announcements: mergeById(parsed.data.announcements, current.announcements),
     }
     this.write(merged)
     return merged

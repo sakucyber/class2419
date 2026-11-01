@@ -5,6 +5,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
+import { KIND_META, type SearchType, SEARCH_TYPE_LABEL } from '@/config/content'
 import type { Album, Announcement, Article, Honor, UserContentBundle, VideoItem } from '@/types'
 import { dataSource } from '@/utils/dataSource'
 import { seedAlbums, seedAnnouncements, seedArticles, seedSlides, seedVideos } from '@/utils/seed'
@@ -14,13 +15,33 @@ import timelineSeed from '@/data/timeline.json'
 
 const EMPTY: UserContentBundle = { albums: [], videos: [], articles: [], announcements: [] }
 
+/** 时间倒序比较器（ISO 字符串可直接比较） */
+function newestFirst(a: { createdAt: string }, b: { createdAt: string }): number {
+  return a.createdAt < b.createdAt ? 1 : -1
+}
+
+/** 对外展示的列表：排除草稿 + 按时间倒序 */
+function published<T extends { draft?: boolean; createdAt: string }>(list: T[]): T[] {
+  return list.filter((item) => !item.draft).sort(newestFirst)
+}
+
+/** 搜索命中项（搜索页与搜索浮层共用） */
+export interface SearchHit {
+  type: SearchType
+  id: string
+  title: string
+  subtitle?: string
+  cover?: string
+  to: string
+}
+
 export const useContentStore = defineStore('content', () => {
   const loading = ref(true)
   const error = ref('')
 
   const user = ref<UserContentBundle>({ ...EMPTY })
 
-  // 静态展示数据
+  /** 静态展示数据（随仓库发布，不参与本地读写） */
   const classInfo = classInfoSeed
   const honors = honorsSeed as unknown as Honor[]
   const timeline = timelineSeed
@@ -52,20 +73,14 @@ export const useContentStore = defineStore('content', () => {
     merge<Announcement>(seedAnnouncements, user.value.announcements),
   )
 
-  /** 对外展示（不含草稿、按时间倒序） */
-  const publicAlbums = computed(() =>
-    albums.value.filter((a) => !a.draft).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
-  )
-  const publicVideos = computed(() =>
-    videos.value.filter((v) => !v.draft).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
-  )
-  const publicArticles = computed(() =>
-    articles.value.filter((a) => !a.draft).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
-  )
+  const publicAlbums = computed(() => published(albums.value))
+  const publicVideos = computed(() => published(videos.value))
+  const publicArticles = computed(() => published(articles.value))
   const publicAnnouncements = computed(() =>
     [...announcements.value].sort((a, b) => {
+      // 置顶优先，其次按时间倒序
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-      return a.createdAt < b.createdAt ? 1 : -1
+      return newestFirst(a, b)
     }),
   )
 
@@ -81,14 +96,6 @@ export const useContentStore = defineStore('content', () => {
     publicArticles.value.forEach((a) => a.tags.forEach((t) => set.add(t)))
     return [...set].sort((a, b) => a.localeCompare(b, 'zh-CN'))
   })
-
-  /** 用户内容统计（管理页展示用） */
-  const userCounts = computed(() => ({
-    albums: user.value.albums.length,
-    videos: user.value.videos.length,
-    articles: user.value.articles.length,
-    announcements: user.value.announcements.length,
-  }))
 
   // ---- 详情查询 ----
   // 注意过滤 draft：列表/搜索/首页都排除了草稿，但详情页以前能通过直链打开草稿内容。
@@ -107,7 +114,7 @@ export const useContentStore = defineStore('content', () => {
     await reloadUser()
   }
   async function removeAlbum(id: string) {
-    assertNotBuiltin(seedAlbums, id)
+    assertNotBuiltin(seedAlbums, user.value.albums, id)
     await dataSource.removeAlbum(id)
     await reloadUser()
   }
@@ -116,7 +123,7 @@ export const useContentStore = defineStore('content', () => {
     await reloadUser()
   }
   async function removeVideo(id: string) {
-    assertNotBuiltin(seedVideos, id)
+    assertNotBuiltin(seedVideos, user.value.videos, id)
     await dataSource.removeVideo(id)
     await reloadUser()
   }
@@ -125,7 +132,7 @@ export const useContentStore = defineStore('content', () => {
     await reloadUser()
   }
   async function removeArticle(id: string) {
-    assertNotBuiltin(seedArticles, id)
+    assertNotBuiltin(seedArticles, user.value.articles, id)
     await dataSource.removeArticle(id)
     await reloadUser()
   }
@@ -134,20 +141,16 @@ export const useContentStore = defineStore('content', () => {
     await reloadUser()
   }
   async function removeAnnouncement(id: string) {
-    assertNotBuiltin(seedAnnouncements, id)
+    assertNotBuiltin(seedAnnouncements, user.value.announcements, id)
     await dataSource.removeAnnouncement(id)
     await reloadUser()
   }
 
-  function assertNotBuiltin(seed: { id: string }[], id: string) {
+  /** 内置内容只有在「已被本地副本覆盖」时才允许删除 */
+  function assertNotBuiltin(seed: { id: string }[], overrides: { id: string }[], id: string) {
     const isBuiltin = seed.some((s) => s.id === id)
-    const overrideIds = new Set<string>([
-      ...user.value.albums.map((x) => x.id),
-      ...user.value.videos.map((x) => x.id),
-      ...user.value.articles.map((x) => x.id),
-      ...user.value.announcements.map((x) => x.id),
-    ])
-    if (isBuiltin && !overrideIds.has(id)) {
+    const isOverridden = overrides.some((o) => o.id === id)
+    if (isBuiltin && !isOverridden) {
       throw new Error('内置示例数据不可删除（可先编辑并另存为本地内容）')
     }
   }
@@ -166,54 +169,44 @@ export const useContentStore = defineStore('content', () => {
   }
 
   // ---- 全站搜索 ----
-  interface SearchHit {
-    type: 'album' | 'video' | 'article' | 'tag'
-    id: string
-    title: string
-    subtitle?: string
-    cover?: string
-    to: string
-  }
   function search(q: string): SearchHit[] {
     const keyword = q.trim().toLowerCase()
     if (!keyword) return []
     const hits: SearchHit[] = []
     const match = (...fields: string[]) => fields.some((f) => f.toLowerCase().includes(keyword))
 
+    /** 统一拼装命中项，省掉每类各写一遍 subtitle/to */
+    const hit = (
+      type: SearchType,
+      id: string,
+      title: string,
+      category: string | undefined,
+      cover: string,
+      to: string,
+    ) => {
+      hits.push({
+        type,
+        id,
+        title,
+        subtitle: category ? `${SEARCH_TYPE_LABEL[type]} · ${category}` : SEARCH_TYPE_LABEL[type],
+        cover,
+        to,
+      })
+    }
+
     publicAlbums.value.forEach((a) => {
       if (match(a.title, a.description, a.category, ...a.tags)) {
-        hits.push({
-          type: 'album',
-          id: a.id,
-          title: a.title,
-          subtitle: `相册 · ${a.category}`,
-          cover: a.cover,
-          to: `/albums/${a.id}`,
-        })
+        hit('album', a.id, a.title, a.category, a.cover, `${KIND_META.album.route}/${a.id}`)
       }
     })
     publicVideos.value.forEach((v) => {
       if (match(v.title, v.description, v.category, ...v.tags)) {
-        hits.push({
-          type: 'video',
-          id: v.id,
-          title: v.title,
-          subtitle: `视频 · ${v.category}`,
-          cover: v.cover,
-          to: `/videos/${v.id}`,
-        })
+        hit('video', v.id, v.title, v.category, v.cover, `${KIND_META.video.route}/${v.id}`)
       }
     })
     publicArticles.value.forEach((a) => {
       if (match(a.title, a.excerpt, a.category, a.content, ...a.tags)) {
-        hits.push({
-          type: 'article',
-          id: a.id,
-          title: a.title,
-          subtitle: `文章 · ${a.category}`,
-          cover: a.cover,
-          to: `/articles/${a.id}`,
-        })
+        hit('article', a.id, a.title, a.category, a.cover, `${KIND_META.article.route}/${a.id}`)
       }
     })
     allTags.value.forEach((t) => {
@@ -222,7 +215,7 @@ export const useContentStore = defineStore('content', () => {
           type: 'tag',
           id: t,
           title: `#${t}`,
-          subtitle: '标签',
+          subtitle: SEARCH_TYPE_LABEL.tag,
           to: `/search?q=${encodeURIComponent(t)}`,
         })
       }
@@ -249,7 +242,6 @@ export const useContentStore = defineStore('content', () => {
     videoCategories,
     articleCategories,
     allTags,
-    userCounts,
     getAlbum,
     getVideo,
     getArticle,

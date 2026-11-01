@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 import AppIcon from '@/components/common/AppIcon.vue'
 import { downloadMedia } from '@/utils/image'
-import { lockBodyScroll, unlockBodyScroll, useFocusTrap } from '@/utils/overlay'
+import { useFocusTrap, useScrollLock } from '@/utils/overlay'
 
 export interface LightboxItem {
   src: string
@@ -18,6 +18,7 @@ const props = defineProps<{
 const emit = defineEmits<{ 'update:index': [i: number]; 'update:open': [v: boolean] }>()
 
 const current = computed(() => props.items[props.index])
+const dialogEl = ref<HTMLElement | null>(null)
 
 function close() {
   emit('update:open', false)
@@ -31,11 +32,11 @@ function prev() {
   emit('update:index', (props.index - 1 + props.items.length) % props.items.length)
 }
 
-const dialogEl = ref<HTMLElement | null>(null)
-let scrollLocked = false
+useScrollLock(() => props.open)
+useFocusTrap(dialogEl, () => props.open, { onEscape: close })
 
+/** 左右方向键翻页（Esc 与 Tab 交给焦点圈定） */
 function onKeydown(e: KeyboardEvent) {
-  if (!props.open) return
   if (e.key === 'ArrowRight') next()
   if (e.key === 'ArrowLeft') prev()
 }
@@ -43,25 +44,13 @@ function onKeydown(e: KeyboardEvent) {
 watch(
   () => props.open,
   (open) => {
-    if (open && !scrollLocked) {
-      lockBodyScroll()
-      scrollLocked = true
-    } else if (!open && scrollLocked) {
-      unlockBodyScroll()
-      scrollLocked = false
-    }
     if (open) window.addEventListener('keydown', onKeydown)
     else window.removeEventListener('keydown', onKeydown)
   },
   { immediate: true },
 )
 
-useFocusTrap(dialogEl, () => props.open, { onEscape: close })
-
-onBeforeUnmount(() => {
-  if (scrollLocked) unlockBodyScroll()
-  window.removeEventListener('keydown', onKeydown)
-})
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 async function download() {
   if (!current.value) return

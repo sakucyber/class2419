@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppIcon from '@/components/common/AppIcon.vue'
 import { useInteractionStore, type Kind } from '@/store/interaction'
+import { toast } from '@/utils/toast'
 
 const props = defineProps<{
   kind: Kind
@@ -25,8 +26,9 @@ async function share() {
   }
   try {
     await navigator.clipboard.writeText(url)
-    alert('链接已复制，快去分享吧！')
+    toast('链接已复制，快去分享吧！')
   } catch {
+    // 非安全上下文（如局域网 http）拿不到剪贴板权限，只能把地址摆出来让用户手动复制
     alert(url)
   }
 }

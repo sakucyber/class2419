@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 import AppIcon from '@/components/common/AppIcon.vue'
+import Breadcrumb from '@/components/common/Breadcrumb.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
 import MediaActions from '@/components/media/MediaActions.vue'
@@ -32,13 +33,13 @@ const related = computed(() => content.publicVideos.filter((v) => v.id !== video
     />
 
     <template v-else-if="video">
-      <nav class="crumbs" aria-label="面包屑">
-        <RouterLink to="/">首页</RouterLink>
-        <AppIcon name="chevronRight" :size="13" />
-        <RouterLink to="/videos">视频</RouterLink>
-        <AppIcon name="chevronRight" :size="13" />
-        <span class="current">{{ video.title }}</span>
-      </nav>
+      <Breadcrumb
+        :items="[
+          { label: '首页', to: '/' },
+          { label: '视频', to: '/videos' },
+          { label: video.title },
+        ]"
+      />
 
       <div class="layout">
         <div class="main">
@@ -50,13 +51,13 @@ const related = computed(() => content.publicVideos.filter((v) => v.id !== video
               <span v-for="t in video.tags" :key="t" class="chip">#{{ t }}</span>
             </div>
             <h1>{{ video.title }}</h1>
-            <p class="meta">
-              <span class="meta-item">
+            <p class="detail-meta">
+              <span>
                 <AppIcon name="pencil" :size="14" :stroke-width="1.9" />
                 {{ video.author }}
               </span>
               <time class="num" :datetime="video.createdAt">{{ formatDate(video.createdAt) }}</time>
-              <span v-if="video.duration" class="meta-item">
+              <span v-if="video.duration">
                 <AppIcon name="clock" :size="14" :stroke-width="1.9" />
                 {{ video.duration }}
               </span>
@@ -87,30 +88,6 @@ const related = computed(() => content.publicVideos.filter((v) => v.id !== video
 .page {
   padding-top: var(--space-5);
 }
-.crumbs {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: var(--space-4);
-  font-size: var(--fs-xs);
-  color: var(--text-3);
-}
-.crumbs a {
-  color: var(--text-3);
-}
-.crumbs a:hover {
-  color: var(--accent-ink);
-}
-.crumbs .current {
-  max-width: 50vw;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  color: var(--text);
-  font-weight: 600;
-}
-
 .layout {
   display: grid;
   gap: var(--space-5);
@@ -139,23 +116,6 @@ const related = computed(() => content.publicVideos.filter((v) => v.id !== video
 }
 .info h1 {
   font-size: clamp(1.25rem, 3vw, 1.7rem);
-}
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-.meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-  color: var(--text-3);
-  font-size: var(--fs-xs);
-}
-.meta-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
 }
 .desc {
   color: var(--text-2);

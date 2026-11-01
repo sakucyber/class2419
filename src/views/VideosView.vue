@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppIcon from '@/components/common/AppIcon.vue'
+import ContentToolbar from '@/components/common/ContentToolbar.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -11,15 +11,25 @@ import type { VideoItem } from '@/types'
 
 const content = useContentStore()
 
-const { keyword, category, categories, filtered, visible, hasMore, remaining, loadMore, reset, onSearch } =
-  useContentQuery<VideoItem>({
-    items: () => content.publicVideos,
-    searchFields: (v) => [v.title, v.description, v.category, ...v.tags],
-    categoryOf: (v) => v.category,
-    tagsOf: (v) => v.tags,
-    dateOf: (v) => v.createdAt,
-    pageSize: 9,
-  })
+const {
+  keyword,
+  category,
+  categories,
+  filtered,
+  visible,
+  hasMore,
+  remaining,
+  loadMore,
+  reset,
+  onSearch,
+} = useContentQuery<VideoItem>({
+  items: () => content.publicVideos,
+  searchFields: (v) => [v.title, v.description, v.category, ...v.tags],
+  categoryOf: (v) => v.category,
+  tagsOf: (v) => v.tags,
+  dateOf: (v) => v.createdAt,
+  pageSize: 9,
+})
 </script>
 
 <template>
@@ -30,26 +40,14 @@ const { keyword, category, categories, filtered, visible, hasMore, remaining, lo
       subtitle="外链视频跳转播放，本地视频在线播放并自动记忆进度"
     />
 
-    <div class="toolbar card">
-      <label class="search-field">
-        <AppIcon name="search" :size="16" :stroke-width="1.9" />
-        <span class="visually-hidden">搜索视频</span>
-        <input v-model="keyword" type="search" placeholder="搜索视频…" @input="onSearch" />
-      </label>
-      <div class="chips" role="group" aria-label="分类筛选">
-        <button
-          v-for="c in categories"
-          :key="c"
-          class="chip"
-          type="button"
-          :class="{ 'chip--active': category === c }"
-          :aria-pressed="category === c"
-          @click="category = c"
-        >
-          {{ c }}
-        </button>
-      </div>
-    </div>
+    <ContentToolbar
+      v-model:keyword="keyword"
+      v-model:category="category"
+      :categories="categories"
+      placeholder="搜索视频…"
+      search-label="搜索视频"
+      @search="onSearch"
+    />
 
     <ErrorState v-if="content.error" :message="content.error" @retry="content.init()" />
 
@@ -79,9 +77,6 @@ const { keyword, category, categories, filtered, visible, hasMore, remaining, lo
 </template>
 
 <style scoped>
-.page {
-  padding-top: var(--space-6);
-}
 .load-more {
   display: flex;
   justify-content: center;

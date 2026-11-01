@@ -19,12 +19,10 @@ const mdModules = import.meta.glob('../data/articles/*.md', {
   eager: true,
 }) as Record<string, string>
 
-/** 极简 frontmatter 解析（key: value，支持 [a, b] 数组） */
+/** 极简 frontmatter 解析（key: value，支持 [a, b] 数组与去引号） */
 function parseFrontmatter(raw: string): Record<string, string> {
-  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/)
   const meta: Record<string, string> = {}
-  if (!match) return meta
-  for (const line of match[1].split(/\r?\n/)) {
+  for (const line of raw.split(/\r?\n/)) {
     const idx = line.indexOf(':')
     if (idx <= 0) continue
     const key = line.slice(0, idx).trim()
@@ -40,14 +38,16 @@ function parseFrontmatter(raw: string): Record<string, string> {
   return meta
 }
 
-function stripFrontmatter(raw: string): string {
-  return raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
+/** 一次扫描同时取出元信息与正文（原先分两次正则匹配同一段字符串） */
+function parseMarkdownFile(raw: string): { meta: Record<string, string>; content: string } {
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/)
+  if (!match) return { meta: {}, content: raw.trim() }
+  return { meta: parseFrontmatter(match[1]), content: raw.slice(match[0].length).trim() }
 }
 
 const seedArticles: Article[] = Object.values(mdModules)
   .map((raw) => {
-    const meta = parseFrontmatter(raw)
-    const content = stripFrontmatter(raw).trim()
+    const { meta, content } = parseMarkdownFile(raw)
     const tags = (meta.tags || '')
       .split(/[,，]/)
       .map((t) => t.trim())

@@ -246,7 +246,10 @@ export function useVideoSource(options: Options) {
         if (done) break
         if (value) {
           chunks.push(
-            value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength) as ArrayBuffer,
+            value.buffer.slice(
+              value.byteOffset,
+              value.byteOffset + value.byteLength,
+            ) as ArrayBuffer,
           )
           received += value.byteLength
           if (total > 0) upgradePct.value = Math.min(99, Math.round((received / total) * 100))
@@ -292,7 +295,10 @@ export function useVideoSource(options: Options) {
         if (done) break
         if (value) {
           chunks.push(
-            value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength) as ArrayBuffer,
+            value.buffer.slice(
+              value.byteOffset,
+              value.byteOffset + value.byteLength,
+            ) as ArrayBuffer,
           )
           received += value.byteLength
           loadedBytes.value = received
@@ -338,6 +344,8 @@ export function useVideoSource(options: Options) {
 
     const src = source.value
     if (!src) return
+    /** 探测 / 下载都是异步的，用快照判断期间是否已切走 */
+    const videoId = id.value
     try {
       const url = await resolveMediaUrl(src)
       if (!url) {
@@ -353,7 +361,7 @@ export function useVideoSource(options: Options) {
       }
 
       const probe = await probeSource(url)
-      if (id.value !== currentIdOfSource(src)) return
+      if (id.value !== videoId) return
       sourceBytes.value = probe.size
 
       if (probe.ranged === true) {
@@ -376,9 +384,8 @@ export function useVideoSource(options: Options) {
         resolvedSrc.value = url
         return
       }
-      const currentId = id.value
-      const ok = await fetchToBlob(url, currentId)
-      if (!ok && id.value === currentId) {
+      const ok = await fetchToBlob(url, videoId)
+      if (!ok && id.value === videoId) {
         if (streamReason.value !== 'user') streamReason.value = 'auto'
         resolvedSrc.value = url
       }
@@ -387,17 +394,14 @@ export function useVideoSource(options: Options) {
     }
   }
 
-  /** 探测期间路由可能已切走；用一个轻量快照比对，避免把旧结果写进新页面 */
-  let sourceSnapshot = ''
-  function currentIdOfSource(src: string): string {
-    return sourceSnapshot || src
-  }
-
   function onLoadedMetadata() {
     const el = element.value
     if (!el) return
     if (pendingResumeAt > 0) {
-      el.currentTime = Math.min(pendingResumeAt, Math.max(0, (el.duration || pendingResumeAt) - 0.3))
+      el.currentTime = Math.min(
+        pendingResumeAt,
+        Math.max(0, (el.duration || pendingResumeAt) - 0.3),
+      )
       if (pendingResumePlay) void el.play().catch(() => {})
       pendingResumeAt = 0
       pendingResumePlay = false
@@ -418,9 +422,8 @@ export function useVideoSource(options: Options) {
 
   watch(
     () => [id.value, source.value] as const,
-    ([nextId, nextSrc], prev) => {
+    ([, nextSrc], prev) => {
       options.onBeforeSwitch?.()
-      sourceSnapshot = nextId
       // 组件首次挂载时 prev 为 undefined；其余情况都视为切换
       if (prev) {
         pendingResumeAt = 0

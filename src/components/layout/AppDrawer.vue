@@ -5,11 +5,11 @@
  * 必须 Teleport 到 body：.site-header 使用了 backdrop-filter，
  * 它会让 position:fixed 的子孙以 header 为包含块，抽屉留在 header 内会被裁成 60px 高。
  */
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import AppIcon from '@/components/common/AppIcon.vue'
-import { STYLE_OPTIONS } from '@/config/styles'
+import { classMark, STYLE_OPTIONS, THEME_BY_KEY } from '@/config/styles'
 import { mainNav, moreNav } from '@/router'
 import { useSettingsStore } from '@/store/settings'
 import { useUiStore } from '@/store/ui'
@@ -22,8 +22,14 @@ const drawerEl = ref<HTMLElement | null>(null)
 
 useFocusTrap(drawerEl, () => ui.drawerOpen, { onEscape: () => ui.closeDrawer() })
 
-const THEME_ICON = { auto: 'monitor', light: 'sun', dark: 'moon' } as const
-const THEME_LABEL = { auto: '跟随系统', light: '亮色', dark: '暗色' } as const
+const theme = computed(() => THEME_BY_KEY[settings.settings.theme])
+const mark = computed(() => classMark(settings.settings.style))
+
+/** 抽屉里的两组导航：浏览（主菜单）与更多（收藏 / 设置） */
+const navGroups = [
+  { label: '浏览', items: mainNav },
+  { label: '更多', items: moreNav },
+]
 
 watch(
   () => route.fullPath,
@@ -55,7 +61,7 @@ function openSearch() {
         >
           <header class="head">
             <div class="profile">
-              <span class="avatar" aria-hidden="true">19</span>
+              <span class="avatar" aria-hidden="true">{{ mark }}</span>
               <div class="profile-text">
                 <strong>新屋岭中学2419班</strong>
                 <small>聚是一团火，散是满天星</small>
@@ -66,33 +72,24 @@ function openSearch() {
             </button>
           </header>
 
-          <p class="group-label">浏览</p>
-          <RouterLink
-            v-for="item in mainNav"
-            :key="item.path"
-            :to="item.path"
-            class="link"
-            :class="{ active: route.meta.nav === item.path }"
-            @click="ui.closeDrawer()"
-          >
-            <span class="link-icon" aria-hidden="true"><AppIcon :name="item.icon" :size="18" /></span>
-            {{ item.title }}
-            <AppIcon class="arrow" name="chevronRight" :size="15" />
-          </RouterLink>
-
-          <p class="group-label">更多</p>
-          <RouterLink
-            v-for="item in moreNav"
-            :key="item.path"
-            :to="item.path"
-            class="link"
-            :class="{ active: route.meta.nav === item.path }"
-            @click="ui.closeDrawer()"
-          >
-            <span class="link-icon" aria-hidden="true"><AppIcon :name="item.icon" :size="18" /></span>
-            {{ item.title }}
-            <AppIcon class="arrow" name="chevronRight" :size="15" />
-          </RouterLink>
+          <template v-for="group in navGroups" :key="group.label">
+            <p class="group-label">{{ group.label }}</p>
+            <RouterLink
+              v-for="item in group.items"
+              :key="item.path"
+              :to="item.path"
+              class="link"
+              :class="{ active: route.meta.nav === item.path }"
+              :aria-current="route.meta.nav === item.path ? 'page' : undefined"
+              @click="ui.closeDrawer()"
+            >
+              <span class="link-icon" aria-hidden="true">
+                <AppIcon :name="item.icon" :size="18" />
+              </span>
+              {{ item.title }}
+              <AppIcon class="arrow" name="chevronRight" :size="15" />
+            </RouterLink>
+          </template>
 
           <p class="group-label">视觉风格</p>
           <div class="styles" role="group" aria-label="视觉风格">
@@ -119,8 +116,8 @@ function openSearch() {
               全站搜索
             </button>
             <button type="button" class="quick-btn" @click="settings.cycleTheme()">
-              <AppIcon :name="THEME_ICON[settings.settings.theme]" :size="19" />
-              {{ THEME_LABEL[settings.settings.theme] }}
+              <AppIcon :name="theme.icon" :size="19" />
+              {{ theme.label }}
             </button>
             <button type="button" class="quick-btn" @click="scrollTop">
               <AppIcon name="arrowUp" :size="19" />

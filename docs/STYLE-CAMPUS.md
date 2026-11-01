@@ -26,14 +26,14 @@ class2419 的**内容、路由、数据结构、本地存储键、部署配置�
 | `.ticker` 黄底虚线公告条 | `components/layout/AppTicker.vue` | 亮黄底 + 上下 2px 白虚线 + 棕色文字 |
 | `.sec-chip` 歪着的纸条标签 | `src/styles/base.css` `.kicker` | 白底胶囊、`rotate(-1.5deg)`、3px 实色投影 |
 | `.uline` 手绘波浪下划线 | `src/styles/base.css` | `.section-header .title::after` 与 `.page-head .page-title::after` 共用一条 data-URI 波浪线 + 一次性 `scaleX` 动画 |
-| `.board` 黑板班级名片 | `views/HomeView.vue` `.hero` | 11px 木框 + 深绿板面 + 内阴影，文字全部换成粉笔色 |
-| `.note` 便签 | `views/HomeView.vue` `.count` | 浅黄便签 + 顶端胶带 + 极淡横线（便签被拉高时不像空黄块） |
-| `.cork` 软木板 | `views/HomeView.vue` `.notice-list` | 木框 + 软木底色 + 圆点纹理 + 每条公告一枚图钉（`::before`） |
+| `.board` 黑板班级名片 | `components/home/HomeHero.vue` `.hero` | 11px 木框 + 深绿板面 + 内阴影，文字全部换成粉笔色 |
+| `.note` 便签 | `components/home/HomeHero.vue` `.count` | 浅黄便签 + 顶端胶带 + 极淡横线（便签被拉高时不像空黄块） |
+| `.cork` 软木板 | `components/home/HomeNotices.vue` `.notice-list` | 木框 + 软木底色 + 圆点纹理 + 每条公告一枚图钉（`::before`） |
 | `.polaroid` 拍立得 | `components/media/AlbumCard.vue` | 白相纸边 + 胶带 + 奇偶交错 ±1.2° 旋转，悬停回正 |
-| `.stat` 数据卡 | `views/HomeView.vue` `.stats` | 黑板内一行粉笔数字，用虚线分隔 |
+| `.stat` 数据卡 | `components/home/HomeHero.vue` `.stats` | 黑板内一行粉笔数字，用虚线分隔 |
 | 深绿板报页脚 | `components/layout/AppFooter.vue` | 顶部 10px 木框 + 深绿底 + 浅色字，打卡按钮改粉笔描边 |
 | 黄色厚底边按钮 | `src/styles/skins/campus.css` | `--btn-shadow: 0 5px 0 #e8a23d`、按下 `translateY(3px)` |
-| 圆章式班徽 | `components/effects/HeroBadge.vue` | 白底圆章 + 亮黄外圈 + 手账体「叁」（纯 CSS/SVG，3D 已移除） |
+| 圆章式班徽 | `components/common/HeroBadge.vue` | 白底圆章 + 亮黄外圈 + 手账体「叁」（纯 CSS/SVG，3D 已移除） |
 | 手写体标题 / 批注 | `src/styles/skins/campus.css` | `--font-display` 圆体栈、`--font-hand` 楷体栈（不外链，见第 4 节） |
 
 **没有搬过来的东西**：示例里的「星辰中队 / 52 位同学 / 王老师 / 心愿墙表单 / 图书角 / 值日表」等全部内容，
@@ -54,7 +54,7 @@ class2419 的**内容、路由、数据结构、本地存储键、部署配置�
 | `src/store/settings.ts` | 增加 `campus` 的主题色；默认风格改为 `campus`；补一条「无法识别的 style 归位」防御 |
 | `public/theme-init.js` | 默认风格改为 `campus`；风格白名单与主题色同步 |
 | `index.html` | `<html data-style>` 与 `theme-color` 的静态兜底改为 campus |
-| `AppHeader / AppTicker / AppFooter / MobileNav / SectionHeader / CountdownTimer / CheckInButton / AlbumCard / VideoCard / ArticleCard / HeroBadge / AppBackground / HomeView` | 各加一段 `[data-style='campus']` 覆盖（形状、配色、字体、装饰） |
+| `AppHeader / AppTicker / AppFooter / MobileNav / SectionHeader / CountdownTimer / CheckInButton / AlbumCard / VideoCard / ArticleCard / HeroBadge / AppBackground / HomeHero / HomeNotices` | 各加一段 `[data-style='campus']` 覆盖（形状、配色、字体、装饰） |
 | `SettingsView` | 「四种风格共用…」改为按 `STYLE_OPTIONS.length` 渲染，避免以后再加风格时文案过期 |
 | `StyleSwitcher` | 面板加 `max-height: min(70vh, 460px)`，5 项在矮屏上不顶出视口 |
 | `scripts/qa-visual.mjs` / `qa-interact.mjs` | 风格清单加入 `campus`，回归覆盖 5 套 |

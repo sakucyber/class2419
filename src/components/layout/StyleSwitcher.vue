@@ -130,6 +130,10 @@ onBeforeUnmount(() => {
 [data-style='annual'] .panel {
   background: #fff;
 }
+[data-style='annual'][data-theme='dark'] .panel {
+  /* 暗色主题下白底会把浅色的风格名吞掉，换成墨面纸 */
+  background: var(--surface);
+}
 [data-style='brutal'] .panel {
   border-width: 3px;
   box-shadow: 8px 8px 0 #111;

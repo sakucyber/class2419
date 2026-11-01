@@ -4,12 +4,11 @@ import { ref } from 'vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import InstallGuide from '@/components/common/InstallGuide.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
-import type { IconName } from '@/components/common/icons'
-import { STYLE_OPTIONS } from '@/config/styles'
+import { ACCENT_OPTIONS, FONT_SIZE_OPTIONS, STYLE_OPTIONS, THEME_OPTIONS } from '@/config/styles'
 import { useContentStore } from '@/store/content'
 import { useInteractionStore } from '@/store/interaction'
 import { useSettingsStore } from '@/store/settings'
-import type { AccentKey, FontSizeKey, ThemeMode } from '@/types'
+import { pad2 } from '@/utils/format'
 import { canInstall, promptInstall, pwaState } from '@/utils/pwa'
 
 const settingsStore = useSettingsStore()
@@ -17,8 +16,15 @@ const content = useContentStore()
 const interaction = useInteractionStore()
 
 const confirmReset = ref(false)
+/** 数据管理区的反馈消息：成功与失败用不同色调，不再一律绿色 */
 const message = ref('')
+const messageTone = ref<'ok' | 'error'>('ok')
 const importInput = ref<HTMLInputElement | null>(null)
+
+function notify(text: string, tone: 'ok' | 'error' = 'ok'): void {
+  message.value = text
+  messageTone.value = tone
+}
 
 const guideOpen = ref(false)
 const guideVariant = ref<'ios' | 'other'>('ios')
@@ -41,39 +47,26 @@ async function onInstall(): Promise<void> {
   else if (result === 'installed') installNotice.value = '当前已是安装状态'
 }
 
-const themes: { key: ThemeMode; label: string; icon: IconName }[] = [
-  { key: 'light', label: '亮色', icon: 'sun' },
-  { key: 'dark', label: '暗色', icon: 'moon' },
-  { key: 'auto', label: '跟随系统', icon: 'monitor' },
-]
-const accents: { key: AccentKey; label: string; color: string }[] = [
-  { key: 'auto', label: '随风格', color: '' },
-  { key: 'blue', label: '晴空蓝', color: '#1f56d6' },
-  { key: 'green', label: '常青绿', color: '#0d7a6f' },
-  { key: 'orange', label: '活力橙', color: '#b8560f' },
-  { key: 'pink', label: '樱花粉', color: '#b04a80' },
-]
-const fontSizes: { key: FontSizeKey; label: string }[] = [
-  { key: 'sm', label: '小' },
-  { key: 'md', label: '标准' },
-  { key: 'lg', label: '大' },
-]
+const themes = THEME_OPTIONS
+const accents = ACCENT_OPTIONS
+const fontSizes = FONT_SIZE_OPTIONS
 
 async function doReset() {
   try {
     await content.resetUserData()
     interaction.resetAll()
-    message.value = '已恢复为默认内容，本地收藏与观看进度已清空。'
+    notify('已恢复为默认内容，本地收藏与观看进度已清空。')
     confirmReset.value = false
   } catch (e) {
-    message.value = e instanceof Error ? e.message : '重置失败'
+    notify(e instanceof Error ? e.message : '重置失败', 'error')
   }
 }
 
 function backupFileName(): string {
   const d = new Date()
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `class2419-backup-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`
+  const day = `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}`
+  const clock = `${pad2(d.getHours())}${pad2(d.getMinutes())}`
+  return `class2419-backup-${day}-${clock}.json`
 }
 
 async function exportBackup(): Promise<void> {
@@ -93,9 +86,9 @@ async function exportBackup(): Promise<void> {
     a.click()
     a.remove()
     window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-    message.value = '备份已导出：包含本地内容、收藏、观看进度与阅读位置。'
+    notify('备份已导出：包含本地内容、收藏、观看进度与阅读位置。')
   } catch (e) {
-    message.value = e instanceof Error ? e.message : '导出失败'
+    notify(e instanceof Error ? e.message : '导出失败', 'error')
   }
 }
 
@@ -114,9 +107,11 @@ async function onBackupFile(event: Event): Promise<void> {
     const count = (key: string) => (Array.isArray(data[key]) ? (data[key] as unknown[]).length : 0)
     await content.importAll(payload)
     if (payload.interaction) interaction.importState(payload.interaction)
-    message.value = `导入完成：相册 ${count('albums')}、视频 ${count('videos')}、文章 ${count('articles')}、公告 ${count('announcements')}；收藏/进度等互动数据已合并。`
+    notify(
+      `导入完成：相册 ${count('albums')}、视频 ${count('videos')}、文章 ${count('articles')}、公告 ${count('announcements')}；收藏/进度等互动数据已合并。`,
+    )
   } catch (e) {
-    message.value = e instanceof Error ? e.message : '导入失败：文件不是有效的备份 JSON'
+    notify(e instanceof Error ? e.message : '导入失败：文件不是有效的备份 JSON', 'error')
   }
 }
 </script>
@@ -148,11 +143,7 @@ async function onBackupFile(event: Event): Promise<void> {
           @click="settingsStore.settings.style = option.key"
         >
           <span class="style-preview" aria-hidden="true">
-            <i
-              v-for="(color, i) in option.swatches"
-              :key="i"
-              :style="{ background: color }"
-            />
+            <i v-for="(color, i) in option.swatches" :key="i" :style="{ background: color }" />
           </span>
           <span class="style-meta">
             <strong>{{ option.label }}</strong>
@@ -205,7 +196,9 @@ async function onBackupFile(event: Event): Promise<void> {
           {{ a.label }}
         </button>
       </div>
-      <p class="hint-line">「随风格」会使用该风格自带的强调色；显式选择后只替换强调色，纸张与墨色不变。</p>
+      <p class="hint-line">
+        「随风格」会使用该风格自带的强调色；显式选择后只替换强调色，纸张与墨色不变。
+      </p>
 
       <h3 class="sub-title">字号</h3>
       <div class="seg" role="radiogroup" aria-label="字号">
@@ -313,7 +306,14 @@ async function onBackupFile(event: Event): Promise<void> {
         aria-label="选择备份文件"
         @change="onBackupFile"
       />
-      <p v-if="message" class="message" role="status">{{ message }}</p>
+      <p
+        v-if="message"
+        class="message"
+        :class="`message--${messageTone}`"
+        :role="messageTone === 'error' ? 'alert' : 'status'"
+      >
+        {{ message }}
+      </p>
     </section>
 
     <!-- 关于 -->
@@ -327,8 +327,8 @@ async function onBackupFile(event: Event): Promise<void> {
         <li><strong>部署：</strong>纯静态产物，当前托管于 Cloudflare Pages 与阿里云 ESA</li>
         <li><strong>数据来源：</strong>内容以静态 JSON / Markdown 形式随仓库一起发布</li>
         <li>
-          <strong>视觉：</strong>内置
-          {{ STYLE_OPTIONS.map((s) => s.label).join(' / ') }}，共 {{ STYLE_OPTIONS.length }} 套风格，可随时切换
+          <strong>视觉：</strong>内置 {{ STYLE_OPTIONS.map((s) => s.label).join(' / ') }}，共
+          {{ STYLE_OPTIONS.length }} 套风格，可随时切换
         </li>
       </ul>
     </section>
@@ -337,7 +337,7 @@ async function onBackupFile(event: Event): Promise<void> {
 
 <style scoped>
 .page {
-  padding-top: var(--space-6);
+  /* 搜索 / 设置是窄栏阅读版式，比通用容器窄一档 */
   max-width: 860px;
 }
 .block {
@@ -585,6 +585,9 @@ async function onBackupFile(event: Event): Promise<void> {
   color: var(--success);
   font-size: var(--fs-sm);
   font-weight: 600;
+}
+.message--error {
+  color: var(--danger);
 }
 
 .about-list {

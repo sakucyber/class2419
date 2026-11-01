@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 
 import AppBackground from '@/components/common/AppBackground.vue'
+import AppToast from '@/components/common/AppToast.vue'
 import BackToTop from '@/components/common/BackToTop.vue'
 import InstallPrompt from '@/components/common/InstallPrompt.vue'
 import UpdatePrompt from '@/components/common/UpdatePrompt.vue'
@@ -34,4 +35,5 @@ onMounted(() => {
   <BackToTop />
   <InstallPrompt />
   <UpdatePrompt />
+  <AppToast />
 </template>

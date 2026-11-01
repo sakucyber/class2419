@@ -9,6 +9,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
+import { STYLE_OPTIONS } from '@/config/styles'
 import type { AccentKey, SiteSettings, StyleKey, ThemeMode } from '@/types'
 import { getJSON, setJSON } from '@/utils/storage'
 
@@ -41,7 +42,8 @@ const DEFAULTS: SiteSettings = {
   glass: true,
 }
 
-const STYLE_KEYS: StyleKey[] = ['campus', 'annual', 'japandi', 'brutal', 'legacy']
+/** 可识别的风格白名单：直接从元数据推导，新增风格时不会漏改这里 */
+const STYLE_KEYS: StyleKey[] = STYLE_OPTIONS.map((option) => option.key)
 
 /**
  * 读取本地设置。
@@ -80,8 +82,7 @@ export const useSettingsStore = defineStore('settings', () => {
     const meta = document.querySelector('meta[name="theme-color"]')
     if (!meta) return
     const { style, accent } = settings.value
-    const legacyAccent =
-      style === 'legacy' && accent !== 'auto' ? LEGACY_ACCENT_HEX[accent] : null
+    const legacyAccent = style === 'legacy' && accent !== 'auto' ? LEGACY_ACCENT_HEX[accent] : null
     meta.setAttribute(
       'content',
       legacyAccent && resolved === 'light'

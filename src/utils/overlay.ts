@@ -24,6 +24,27 @@ export function unlockBodyScroll(): void {
   if (scrollLockCount === 0) document.body.style.overflow = ''
 }
 
+/**
+ * 组件级滚动锁：`isOpen()` 为 true 期间锁住 body，关闭或卸载时释放。
+ *
+ * 灯箱 / 拍立得 / 安装指引原来各写了一份 `let scrollLocked` 的开关样板，
+ * 换成这个组合式函数后，三处的加解锁时机保持一致，也不会漏掉卸载时释放。
+ */
+export function useScrollLock(isOpen: () => boolean): void {
+  let locked = false
+  const sync = (open: boolean) => {
+    if (open && !locked) {
+      lockBodyScroll()
+      locked = true
+    } else if (!open && locked) {
+      unlockBodyScroll()
+      locked = false
+    }
+  }
+  watch(isOpen, sync, { immediate: true })
+  onBeforeUnmount(() => sync(false))
+}
+
 const FOCUSABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
@@ -94,22 +115,26 @@ export function useFocusTrap(
     }
   }
 
-  watch(isOpen, async (open) => {
-    if (open) {
-      previous = (document.activeElement as HTMLElement | null) ?? null
-      await nextTick()
-      const root = container.value
-      if (!root) return
-      if (!root.hasAttribute('tabindex')) root.setAttribute('tabindex', '-1')
-      const target = getFocusable(root)[0] ?? root
-      target.focus()
-      document.addEventListener('keydown', onKeydown, true)
-    } else {
-      document.removeEventListener('keydown', onKeydown, true)
-      previous?.focus?.()
-      previous = null
-    }
-  })
+  watch(
+    isOpen,
+    async (open) => {
+      if (open) {
+        previous = (document.activeElement as HTMLElement | null) ?? null
+        await nextTick()
+        const root = container.value
+        if (!root) return
+        if (!root.hasAttribute('tabindex')) root.setAttribute('tabindex', '-1')
+        const target = getFocusable(root)[0] ?? root
+        target.focus()
+        document.addEventListener('keydown', onKeydown, true)
+      } else {
+        document.removeEventListener('keydown', onKeydown, true)
+        previous?.focus?.()
+        previous = null
+      }
+    },
+    { immediate: true },
+  )
 
   onBeforeUnmount(() => {
     document.removeEventListener('keydown', onKeydown, true)

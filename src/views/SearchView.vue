@@ -4,7 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 
 import AppIcon from '@/components/common/AppIcon.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import HighlightText from '@/components/common/HighlightText.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { SEARCH_TYPE_LABEL, SEARCH_TYPES, type SearchType } from '@/config/content'
 import { useContentStore } from '@/store/content'
 
 const route = useRoute()
@@ -12,20 +14,25 @@ const router = useRouter()
 const content = useContentStore()
 
 const keyword = ref(String(route.query.q || ''))
-const typeFilter = ref<'all' | 'album' | 'video' | 'article' | 'tag'>('all')
+const typeFilter = ref<'all' | SearchType>('all')
 
 const hits = computed(() => content.search(keyword.value))
 const filtered = computed(() =>
   typeFilter.value === 'all' ? hits.value : hits.value.filter((h) => h.type === typeFilter.value),
 )
 
-const counts = computed(() => ({
-  all: hits.value.length,
-  album: hits.value.filter((h) => h.type === 'album').length,
-  video: hits.value.filter((h) => h.type === 'video').length,
-  article: hits.value.filter((h) => h.type === 'article').length,
-  tag: hits.value.filter((h) => h.type === 'tag').length,
-}))
+/** 各类型的命中数：一次遍历，避免为每个标签各过滤一遍 */
+const counts = computed(() => {
+  const map: Record<'all' | SearchType, number> = {
+    all: hits.value.length,
+    album: 0,
+    video: 0,
+    article: 0,
+    tag: 0,
+  }
+  for (const hit of hits.value) map[hit.type] += 1
+  return map
+})
 
 watch(keyword, () => {
   router.replace({ query: keyword.value ? { q: keyword.value } : {} })
@@ -38,13 +45,7 @@ watch(
   },
 )
 
-const TYPES = ['all', 'album', 'video', 'article', 'tag'] as const
-const typeLabel: Record<string, string> = {
-  album: '相册',
-  video: '视频',
-  article: '文章',
-  tag: '标签',
-}
+const TABS = ['all', ...SEARCH_TYPES] as const
 </script>
 
 <template>
@@ -65,7 +66,7 @@ const typeLabel: Record<string, string> = {
 
     <div class="tabs" role="tablist" aria-label="结果类型">
       <button
-        v-for="t in TYPES"
+        v-for="t in TABS"
         :key="t"
         class="chip"
         type="button"
@@ -74,7 +75,7 @@ const typeLabel: Record<string, string> = {
         :aria-selected="typeFilter === t"
         @click="typeFilter = t"
       >
-        {{ t === 'all' ? '全部' : typeLabel[t] }}
+        {{ t === 'all' ? '全部' : SEARCH_TYPE_LABEL[t] }}
         <span class="count num">{{ counts[t] }}</span>
       </button>
     </div>
@@ -100,10 +101,10 @@ const typeLabel: Record<string, string> = {
           <img v-if="hit.cover" :src="hit.cover" alt="" class="cover" loading="lazy" />
           <span v-else class="cover cover--tag" aria-hidden="true">#</span>
           <div class="meta">
-            <strong>{{ hit.title }}</strong>
-            <small>{{ hit.subtitle }}</small>
+            <strong><HighlightText :text="hit.title" :keyword="keyword" /></strong>
+            <small><HighlightText :text="hit.subtitle || ''" :keyword="keyword" /></small>
           </div>
-          <span class="type">{{ typeLabel[hit.type] }}</span>
+          <span class="type">{{ SEARCH_TYPE_LABEL[hit.type] }}</span>
         </RouterLink>
       </li>
     </ul>
@@ -112,7 +113,7 @@ const typeLabel: Record<string, string> = {
 
 <style scoped>
 .page {
-  padding-top: var(--space-6);
+  /* 搜索 / 设置是窄栏阅读版式，比通用容器窄一档 */
   max-width: 860px;
 }
 .search-box {

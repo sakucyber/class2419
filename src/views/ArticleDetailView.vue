@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import AppIcon from '@/components/common/AppIcon.vue'
+import Breadcrumb from '@/components/common/Breadcrumb.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
 import ProgressBar from '@/components/common/ProgressBar.vue'
@@ -121,6 +122,15 @@ const neighbors = computed(() => {
       <template v-else-if="article">
         <article class="article">
           <div class="article-layout">
+            <div class="article-crumbs">
+              <Breadcrumb
+                :items="[
+                  { label: '首页', to: '/' },
+                  { label: '文章', to: '/articles' },
+                  { label: article.title },
+                ]"
+              />
+            </div>
             <header class="article-head" :class="{ 'has-cover': showCover }">
               <div v-if="showCover" class="head-cover" aria-hidden="true">
                 <img :src="article.cover" alt="" decoding="async" @error="coverFailed = true" />
@@ -131,8 +141,8 @@ const neighbors = computed(() => {
                   <span v-for="t in article.tags" :key="t" class="chip">#{{ t }}</span>
                 </div>
                 <h1>{{ article.title }}</h1>
-                <p class="meta">
-                  <span class="meta-item">
+                <p class="detail-meta">
+                  <span>
                     <AppIcon name="pencil" :size="14" :stroke-width="1.9" />
                     {{ article.author }}
                   </span>
@@ -234,8 +244,14 @@ const neighbors = computed(() => {
   border-radius: 0;
 }
 .page {
-  padding-top: var(--space-6);
   max-width: 1100px;
+}
+/* 面包屑与正文同宽并对齐卡片左边缘（正文在 1024px 以上是两栏，占第 1 列） */
+.article-crumbs {
+  grid-column: 1;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
 }
 
 .article-head {
@@ -287,7 +303,7 @@ const neighbors = computed(() => {
   color: #fff;
   text-shadow: 0 2px 22px rgba(0, 0, 0, 0.42);
 }
-.article-head.has-cover .meta {
+.article-head.has-cover .detail-meta {
   color: rgba(255, 255, 255, 0.82);
 }
 .article-head.has-cover .chip {
@@ -304,28 +320,13 @@ const neighbors = computed(() => {
   filter: grayscale(0.35) contrast(1.03);
 }
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+.article-head .chips {
   margin-bottom: var(--space-3);
 }
 .article-head h1 {
   margin-bottom: var(--space-3);
   font-size: clamp(1.55rem, 4vw, 2.3rem);
   line-height: 1.32;
-}
-.meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-  color: var(--text-3);
-  font-size: var(--fs-xs);
-}
-.meta-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
 }
 .read-now {
   color: var(--accent-ink);
@@ -342,25 +343,36 @@ const neighbors = computed(() => {
   display: grid;
   gap: var(--space-5);
 }
-.article-head,
-.toc-toggle-wrap,
-.prose-wrap {
-  grid-column: 1;
-}
 @media (min-width: 1024px) {
+  /* 用命名区域固定「左侧一列内容 + 右侧目录」的关系：
+     目录跨满全部行，但第 1 行的面包屑不会被它的高度撑高。 */
   .article-layout {
     grid-template-columns: minmax(0, 1fr) 240px;
+    /* 折叠目录按钮在宽屏隐藏，因此不占一行，避免多出一个空行的间距 */
+    grid-template-areas:
+      'crumbs none'
+      'head   toc'
+      'prose  toc';
     align-items: start;
   }
+  .article-crumbs {
+    grid-area: crumbs;
+  }
+  .article-head {
+    grid-area: head;
+  }
+  .toc-toggle-wrap {
+    grid-area: toggle;
+    display: none;
+  }
+  .prose-wrap {
+    grid-area: prose;
+  }
   .toc {
-    grid-column: 2;
-    grid-row: 1 / -1;
+    grid-area: toc;
     position: sticky;
     top: calc(var(--header-h) + 24px);
     display: block !important;
-  }
-  .toc-toggle-wrap {
-    display: none;
   }
 }
 

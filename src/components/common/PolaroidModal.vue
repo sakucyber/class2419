@@ -9,66 +9,21 @@
  * - 年鉴风格下刻意取消倾斜与胶带感（设计规范禁忌），改为方正的照片版；
  *   其余风格保留拍立得手感。
  */
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { ref } from 'vue'
 
 import AppIcon from '@/components/common/AppIcon.vue'
 import type { PolaroidPhoto } from '@/types'
 import { formatDate } from '@/utils/format'
-import { lockBodyScroll, unlockBodyScroll } from '@/utils/overlay'
+import { useFocusTrap, useScrollLock } from '@/utils/overlay'
 
 const props = defineProps<{ photo: PolaroidPhoto | null }>()
 const emit = defineEmits<{ close: [] }>()
 
-const cardRef = ref<HTMLDivElement | null>(null)
-const closeBtn = ref<HTMLButtonElement | null>(null)
-let scrollLocked = false
+/** 焦点圈定的容器：包含关闭按钮，Open 后焦点直接落到它上面 */
+const panelRef = ref<HTMLElement | null>(null)
 
-function lockScroll(lock: boolean): void {
-  if (lock && !scrollLocked) {
-    lockBodyScroll()
-    scrollLocked = true
-  } else if (!lock && scrollLocked) {
-    unlockBodyScroll()
-    scrollLocked = false
-  }
-}
-
-function onKeydown(event: KeyboardEvent): void {
-  if (!props.photo) return
-  if (event.key === 'Escape') {
-    emit('close')
-    return
-  }
-  if (event.key !== 'Tab' || !cardRef.value) return
-  const focusables = Array.from(
-    cardRef.value.querySelectorAll<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])'),
-  ).filter((el) => !el.hasAttribute('disabled'))
-  if (focusables.length === 0) return
-  const first = focusables[0]
-  const last = focusables[focusables.length - 1]
-  if (!event.shiftKey && document.activeElement === last) {
-    event.preventDefault()
-    first.focus()
-  } else if (event.shiftKey && document.activeElement === first) {
-    event.preventDefault()
-    last.focus()
-  }
-}
-
-watch(
-  () => props.photo,
-  (photo) => {
-    lockScroll(photo !== null)
-    if (photo) void nextTick(() => closeBtn.value?.focus())
-  },
-)
-
-onMounted(() => document.addEventListener('keydown', onKeydown))
-
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', onKeydown)
-  lockScroll(false)
-})
+useScrollLock(() => props.photo !== null)
+useFocusTrap(panelRef, () => props.photo !== null, { onEscape: () => emit('close') })
 </script>
 
 <template>
@@ -82,8 +37,8 @@ onBeforeUnmount(() => {
         aria-labelledby="polaroid-caption"
         @click.self="emit('close')"
       >
-        <div class="shell">
-          <div ref="cardRef" class="card">
+        <div ref="panelRef" class="shell">
+          <div class="card">
             <div class="frame">
               <img :src="photo.src" :alt="photo.caption || photo.albumTitle" decoding="async" />
             </div>
@@ -96,13 +51,7 @@ onBeforeUnmount(() => {
               <span>收录于 {{ formatDate(photo.date) }}</span>
             </p>
           </div>
-          <button
-            ref="closeBtn"
-            class="close"
-            type="button"
-            aria-label="关闭"
-            @click="emit('close')"
-          >
+          <button class="close" type="button" aria-label="关闭" @click="emit('close')">
             <AppIcon name="close" :size="15" :stroke-width="2.6" />
           </button>
         </div>
@@ -253,6 +202,21 @@ onBeforeUnmount(() => {
 }
 [data-style='legacy'] .meta {
   color: #7d7688;
+}
+
+/* 暗色：三种「浅色相纸」都换成墨面纸。
+   否则卡片是白的、正文却是浅色（--text），标题会直接看不见。 */
+[data-style='annual'][data-theme='dark'] .card {
+  background: var(--surface);
+}
+[data-style='japandi'][data-theme='dark'] .card {
+  background: var(--surface);
+  box-shadow: 0 26px 60px -30px rgba(0, 0, 0, 0.6);
+}
+[data-style='brutal'][data-theme='dark'] .card {
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: 8px 8px 0 var(--accent-2);
 }
 
 /* 过渡与入场 */

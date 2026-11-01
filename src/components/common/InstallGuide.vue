@@ -8,35 +8,18 @@
  *
  * 示意图是内联 SVG：不引外部图片（CSP 下也不产生额外请求）。
  */
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { ref } from 'vue'
 
 import AppIcon from '@/components/common/AppIcon.vue'
-import { lockBodyScroll, unlockBodyScroll, useFocusTrap } from '@/utils/overlay'
+import { useFocusTrap, useScrollLock } from '@/utils/overlay'
 
 const props = defineProps<{ open: boolean; variant: 'ios' | 'other' }>()
 const emit = defineEmits<{ close: [] }>()
 
 const cardEl = ref<HTMLElement | null>(null)
-let scrollLocked = false
 
-function lockScroll(lock: boolean): void {
-  if (lock && !scrollLocked) {
-    lockBodyScroll()
-    scrollLocked = true
-  } else if (!lock && scrollLocked) {
-    unlockBodyScroll()
-    scrollLocked = false
-  }
-}
-
-watch(
-  () => props.open,
-  (open) => lockScroll(open),
-)
-
+useScrollLock(() => props.open)
 useFocusTrap(cardEl, () => props.open, { onEscape: () => emit('close') })
-
-onBeforeUnmount(() => lockScroll(false))
 </script>
 
 <template>

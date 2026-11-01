@@ -44,17 +44,18 @@ export function useContentQuery<T>(options: QueryOptions<T>) {
     const kw = keyword.value.trim().toLowerCase()
     const list = items().filter((item) => {
       const okCategory = category.value === '全部' || options.categoryOf(item) === category.value
-      const okTag =
-        !withTag || !activeTag.value || options.tagsOf(item).includes(activeTag.value)
+      const okTag = !withTag || !activeTag.value || options.tagsOf(item).includes(activeTag.value)
       const okKeyword =
         !kw || options.searchFields(item).some((field) => field.toLowerCase().includes(kw))
       return okCategory && okTag && okKeyword
     })
     if (!sortable) return list
-    const sorted = [...list]
-    if (sort.value === 'newest') sorted.sort((a, b) => (options.dateOf(a) < options.dateOf(b) ? 1 : -1))
-    else sorted.sort((a, b) => (options.dateOf(a) > options.dateOf(b) ? 1 : -1))
-    return sorted
+    // 日期是 ISO 字符串，可直接比较；「最早优先」反转方向即可
+    const asc = sort.value === 'oldest'
+    return [...list].sort((a, b) => {
+      const [left, right] = [options.dateOf(a), options.dateOf(b)]
+      return asc ? (left > right ? 1 : -1) : left < right ? 1 : -1
+    })
   })
 
   const visible = computed(() => filtered.value.slice(0, shown.value))

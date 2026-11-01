@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
+import { pad2 } from '@/utils/format'
 import { getJSON, setJSON } from '@/utils/storage'
 
 export interface VideoProgress {
@@ -27,23 +28,31 @@ export interface InteractionSnapshot {
 
 export type Kind = 'album' | 'video' | 'article'
 
+/** 从未打卡的初始状态（导入 / 重置时复用同一份形状） */
+const emptyCheckin = (): CheckinState => ({ lastDate: '', total: 0 })
+
 export const useInteractionStore = defineStore('interaction', () => {
   const favorites = ref<Record<string, boolean>>(getJSON('favorites', {}))
   const videoProgress = ref<Record<string, VideoProgress>>(getJSON('videoProgress', {}))
   const articleScroll = ref<Record<string, number>>(getJSON('articleScroll', {}))
 
-  const likeKey = (kind: Kind, id: string) => `${kind}:${id}`
+  /** 收藏键：`kind:id`，避免相册与文章 id 撞车 */
+  const favoriteKey = (kind: Kind, id: string) => `${kind}:${id}`
 
-  function isFavorite(kind: Kind, id: string) {
-    return !!favorites.value[likeKey(kind, id)]
+  function isFavorite(kind: Kind, id: string): boolean {
+    return Boolean(favorites.value[favoriteKey(kind, id)])
   }
 
   function toggleFavorite(kind: Kind, id: string): boolean {
-    const key = likeKey(kind, id)
-    favorites.value = { ...favorites.value, [key]: !favorites.value[key] }
-    if (!favorites.value[key]) delete favorites.value[key]
-    setJSON('favorites', favorites.value)
-    return isFavorite(kind, id)
+    const key = favoriteKey(kind, id)
+    const next = { ...favorites.value }
+    const active = !next[key]
+    // 取消收藏时删键而不是留一个 false，本地数据保持干净
+    if (active) next[key] = true
+    else delete next[key]
+    favorites.value = next
+    setJSON('favorites', next)
+    return active
   }
 
   function setVideoProgress(id: string, time: number, duration: number) {
@@ -71,7 +80,7 @@ export const useInteractionStore = defineStore('interaction', () => {
   /* ─────────────── 今日打卡 ───────────────
    * 纯本地、无后端：只记最后一次打卡日期与累计天数。
    * 换设备或清缓存会丢，因此文案上不承诺"永久记录"。 */
-  const checkin = ref<CheckinState>(getJSON('checkin', { lastDate: '', total: 0 }))
+  const checkin = ref<CheckinState>(getJSON('checkin', emptyCheckin()))
 
   /**
    * 本地时区的 YYYY-MM-DD。
@@ -79,9 +88,7 @@ export const useInteractionStore = defineStore('interaction', () => {
    */
   function todayKey(): string {
     const d = new Date()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${d.getFullYear()}-${m}-${day}`
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
   }
 
   const checkedInToday = computed(() => checkin.value.lastDate === todayKey())
@@ -162,11 +169,11 @@ export const useInteractionStore = defineStore('interaction', () => {
     favorites.value = {}
     videoProgress.value = {}
     articleScroll.value = {}
-    checkin.value = { lastDate: '', total: 0 }
+    checkin.value = emptyCheckin()
     setJSON('favorites', {})
     setJSON('videoProgress', {})
     setJSON('articleScroll', {})
-    setJSON('checkin', { lastDate: '', total: 0 })
+    setJSON('checkin', checkin.value)
   }
 
   return {

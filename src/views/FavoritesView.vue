@@ -123,9 +123,6 @@ function remove(kind: Kind, id: string): void {
 </template>
 
 <style scoped>
-.page {
-  padding-top: var(--space-6);
-}
 .group {
   margin-bottom: var(--space-8);
 }

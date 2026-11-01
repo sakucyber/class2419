@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import AppIcon from '@/components/common/AppIcon.vue'
+import ContentToolbar from '@/components/common/ContentToolbar.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -63,31 +63,15 @@ function toggleTag(tag: string) {
       subtitle="随笔、活动记录、成长复盘 —— 笔尖下的2419"
     />
 
-    <div class="toolbar card">
-      <label class="search-field">
-        <AppIcon name="search" :size="16" :stroke-width="1.9" />
-        <span class="visually-hidden">搜索文章</span>
-        <input
-          v-model="keyword"
-          type="search"
-          placeholder="搜索文章标题或正文…"
-          @input="onSearch"
-        />
-      </label>
-      <div class="chips" role="group" aria-label="分类筛选">
-        <button
-          v-for="c in categories"
-          :key="c"
-          class="chip"
-          type="button"
-          :class="{ 'chip--active': category === c }"
-          :aria-pressed="category === c"
-          @click="setCategory(c)"
-        >
-          {{ c }}
-        </button>
-      </div>
-    </div>
+    <ContentToolbar
+      v-model:keyword="keyword"
+      :category="category"
+      :categories="categories"
+      placeholder="搜索文章标题或正文…"
+      search-label="搜索文章"
+      @update:category="setCategory"
+      @search="onSearch"
+    />
 
     <div v-if="popularTags.length" class="tag-bar" aria-label="热门标签">
       <span class="tag-label">热门标签</span>
@@ -132,9 +116,6 @@ function toggleTag(tag: string) {
 </template>
 
 <style scoped>
-.page {
-  padding-top: var(--space-6);
-}
 .tag-bar {
   display: flex;
   flex-wrap: wrap;

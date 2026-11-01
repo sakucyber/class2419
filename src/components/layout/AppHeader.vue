@@ -7,6 +7,7 @@ import SearchOverlay from '@/components/common/SearchOverlay.vue'
 import ThemeToggle from '@/components/common/ThemeToggle.vue'
 import AppDrawer from '@/components/layout/AppDrawer.vue'
 import StyleSwitcher from '@/components/layout/StyleSwitcher.vue'
+import { classMark } from '@/config/styles'
 import { mainNav } from '@/router'
 import { useSettingsStore } from '@/store/settings'
 import { useUiStore } from '@/store/ui'
@@ -15,12 +16,8 @@ const route = useRoute()
 const settings = useSettingsStore()
 const ui = useUiStore()
 
-/** 徽标文字随风格变化：年鉴/日式用「叁」，粗野用「19」，原版保留「2419」 */
-const brandMark = computed(() => {
-  if (settings.settings.style === 'brutal') return '19'
-  if (settings.settings.style === 'legacy') return '2419'
-  return '叁'
-})
+/** 徽标文字随风格变化：年鉴/日式/校园用「叁」，粗野用「19」，原版保留「2419」 */
+const brandMark = computed(() => classMark(settings.settings.style))
 
 /* 向下滚动时收起导航栏，向上滚动时立刻出现 */
 const navHidden = ref(false)
@@ -54,6 +51,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
           :to="item.path"
           class="nav-link"
           :class="{ active: route.meta.nav === item.path }"
+          :aria-current="route.meta.nav === item.path ? 'page' : undefined"
         >
           {{ item.title }}
         </RouterLink>

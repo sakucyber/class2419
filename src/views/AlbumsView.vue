@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 
 import AppIcon from '@/components/common/AppIcon.vue'
+import ContentToolbar from '@/components/common/ContentToolbar.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -14,16 +15,27 @@ import type { Album } from '@/types'
 const content = useContentStore()
 const layout = ref<'grid' | 'masonry'>('grid')
 
-const { keyword, category, sort, categories, filtered, visible, hasMore, remaining, loadMore, reset, onSearch } =
-  useContentQuery<Album>({
-    items: () => content.publicAlbums,
-    searchFields: (a) => [a.title, a.description, a.category, ...a.tags],
-    categoryOf: (a) => a.category,
-    tagsOf: (a) => a.tags,
-    dateOf: (a) => a.createdAt,
-    pageSize: 8,
-    sortable: true,
-  })
+const {
+  keyword,
+  category,
+  sort,
+  categories,
+  filtered,
+  visible,
+  hasMore,
+  remaining,
+  loadMore,
+  reset,
+  onSearch,
+} = useContentQuery<Album>({
+  items: () => content.publicAlbums,
+  searchFields: (a) => [a.title, a.description, a.category, ...a.tags],
+  categoryOf: (a) => a.category,
+  tagsOf: (a) => a.tags,
+  dateOf: (a) => a.createdAt,
+  pageSize: 8,
+  sortable: true,
+})
 </script>
 
 <template>
@@ -60,40 +72,24 @@ const { keyword, category, sort, categories, filtered, visible, hasMore, remaini
     </PageHeader>
 
     <!-- 工具栏 -->
-    <div class="toolbar card">
-      <label class="search-field">
-        <AppIcon name="search" :size="16" :stroke-width="1.9" />
-        <span class="visually-hidden">搜索相册</span>
-        <input
-          v-model="keyword"
-          type="search"
-          placeholder="搜索相册标题、描述或标签…"
-          @input="onSearch"
-        />
-      </label>
-
-      <div class="chips" role="group" aria-label="分类筛选">
-        <button
-          v-for="c in categories"
-          :key="c"
-          class="chip"
-          type="button"
-          :class="{ 'chip--active': category === c }"
-          :aria-pressed="category === c"
-          @click="category = c"
-        >
-          {{ c }}
-        </button>
-      </div>
-
-      <label class="sort-box">
-        <span class="visually-hidden">排序方式</span>
-        <select v-model="sort" class="select" aria-label="排序方式">
-          <option value="newest">最新优先</option>
-          <option value="oldest">最早优先</option>
-        </select>
-      </label>
-    </div>
+    <ContentToolbar
+      v-model:keyword="keyword"
+      v-model:category="category"
+      :categories="categories"
+      placeholder="搜索相册标题、描述或标签…"
+      search-label="搜索相册"
+      @search="onSearch"
+    >
+      <template #sort>
+        <label class="sort-box">
+          <span class="visually-hidden">排序方式</span>
+          <select v-model="sort" class="select" aria-label="排序方式">
+            <option value="newest">最新优先</option>
+            <option value="oldest">最早优先</option>
+          </select>
+        </label>
+      </template>
+    </ContentToolbar>
 
     <ErrorState v-if="content.error" :message="content.error" @retry="content.init()" />
 
@@ -123,9 +119,6 @@ const { keyword, category, sort, categories, filtered, visible, hasMore, remaini
 </template>
 
 <style scoped>
-.page {
-  padding-top: var(--space-6);
-}
 .view-toggle {
   display: flex;
   gap: var(--space-2);

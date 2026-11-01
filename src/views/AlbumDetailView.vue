@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import AppIcon from '@/components/common/AppIcon.vue'
+import Breadcrumb from '@/components/common/Breadcrumb.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import ErrorState from '@/components/common/ErrorState.vue'
 import LazyImage from '@/components/common/LazyImage.vue'
@@ -51,13 +52,13 @@ async function downloadAll() {
     />
 
     <template v-else-if="album">
-      <nav class="crumbs" aria-label="面包屑">
-        <RouterLink to="/">首页</RouterLink>
-        <AppIcon name="chevronRight" :size="13" />
-        <RouterLink to="/albums">相册</RouterLink>
-        <AppIcon name="chevronRight" :size="13" />
-        <span class="current">{{ album.title }}</span>
-      </nav>
+      <Breadcrumb
+        :items="[
+          { label: '首页', to: '/' },
+          { label: '相册', to: '/albums' },
+          { label: album.title },
+        ]"
+      />
 
       <header class="album-head card">
         <div class="head-info">
@@ -67,12 +68,12 @@ async function downloadAll() {
           </div>
           <h1>{{ album.title }}</h1>
           <p class="desc">{{ album.description }}</p>
-          <p class="meta">
-            <span class="meta-item">
+          <p class="detail-meta">
+            <span>
               <AppIcon name="camera" :size="14" :stroke-width="1.9" />
               {{ album.photos.length }} 张照片
             </span>
-            <span class="meta-item">
+            <span>
               <AppIcon name="pencil" :size="14" :stroke-width="1.9" />
               {{ album.author }}
             </span>
@@ -112,7 +113,9 @@ async function downloadAll() {
             aspect="1 / 1"
             radius="0"
           />
-          <span class="photo-index num" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
+          <span class="photo-index num" aria-hidden="true">{{
+            String(i + 1).padStart(2, '0')
+          }}</span>
           <span v-if="photo.caption" class="photo-cap">{{ photo.caption }}</span>
         </button>
       </div>
@@ -126,26 +129,6 @@ async function downloadAll() {
 .page {
   padding-top: var(--space-5);
 }
-.crumbs {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: var(--space-4);
-  font-size: var(--fs-xs);
-  color: var(--text-3);
-}
-.crumbs a {
-  color: var(--text-3);
-}
-.crumbs a:hover {
-  color: var(--accent-ink);
-}
-.crumbs .current {
-  color: var(--text);
-  font-weight: 600;
-}
-
 .album-head {
   display: flex;
   flex-direction: column;
@@ -164,28 +147,13 @@ async function downloadAll() {
   margin: var(--space-3) 0;
   font-size: clamp(1.4rem, 3vw, 1.95rem);
 }
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
 .desc {
   max-width: 60ch;
   color: var(--text-2);
   font-size: var(--fs-md);
 }
-.meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
+.detail-meta {
   margin-top: var(--space-3);
-  color: var(--text-3);
-  font-size: var(--fs-xs);
-}
-.meta-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
 }
 .head-actions {
   flex: none;

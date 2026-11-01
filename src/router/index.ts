@@ -8,8 +8,6 @@ export interface NavItem {
   title: string
   /** 线性图标名（见 components/common/icons.ts），不再用 emoji */
   icon: IconName
-  /** 是否出现在移动端底部导航 */
-  inBottomNav?: boolean
   /** 特殊行为：不跳转，而是打开右侧抽屉菜单（此时 path 仅作占位） */
   action?: 'drawer'
 }
@@ -23,13 +21,13 @@ export const mainNav: NavItem[] = [
   { path: '/about', title: '关于班级', icon: 'school' },
 ]
 
-/** 移动端底部导航 */
+/**
+ * 移动端底部导航：主菜单的前四项 + 「更多」。
+ * 直接复用 mainNav，避免同一批标题 / 图标在两处各维护一份。
+ */
 export const bottomNav: NavItem[] = [
-  { path: '/', title: '首页', icon: 'home', inBottomNav: true },
-  { path: '/albums', title: '相册', icon: 'image', inBottomNav: true },
-  { path: '/videos', title: '视频', icon: 'video', inBottomNav: true },
-  { path: '/articles', title: '文章', icon: 'article', inBottomNav: true },
-  { path: '#more', title: '更多', icon: 'menu', inBottomNav: true, action: 'drawer' },
+  ...mainNav.slice(0, 4),
+  { path: '#more', title: '更多', icon: 'menu', action: 'drawer' },
 ]
 
 /** 抽屉「更多」分组 */

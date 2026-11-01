@@ -57,6 +57,11 @@ const ui = useUiStore()
   border-top: 3px solid #111;
   background: #fffdf7;
 }
+/* 暗色下保留米色底会让灰色标签几乎看不清，改成墨面 + 亮边 */
+[data-style='brutal'][data-theme='dark'] .bottom-nav {
+  border-top-color: var(--line);
+  background: var(--surface);
+}
 
 .bottom-link {
   position: relative;
