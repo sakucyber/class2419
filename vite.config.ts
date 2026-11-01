@@ -4,7 +4,23 @@ import path from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 
 import vue from '@vitejs/plugin-vue'
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, type Plugin, type ResolvedConfig } from 'vite'
+
+/** 产物目录：下面三个构建期插件都要在 closeBundle 里读写 dist */
+function resolveOutDir(config: ResolvedConfig): string {
+  return path.resolve(config.root, config.build.outDir)
+}
+
+/** 部署基路径，统一补上结尾斜杠 */
+function normalizeBase(base = process.env.VITE_BASE || '/'): string {
+  return base.endsWith('/') ? base : base + '/'
+}
+
+/** 往 </head> 前插一段（保持两格缩进，产出与手写一致） */
+function injectBeforeHeadEnd(html: string, lines: string[]): string {
+  const block = lines.map((line) => `  ${line}`).join('\n')
+  return html.replace('</head>', `${block}\n  </head>`)
+}
 
 /**
  * 按需生成 dist/404.html（index.html 的副本）。
@@ -24,7 +40,7 @@ function spaFallbackPlugin(): Plugin {
     name: 'spa-fallback-404',
     apply: 'build',
     configResolved(config) {
-      outDir = path.resolve(config.root, config.build.outDir)
+      outDir = resolveOutDir(config)
     },
     closeBundle() {
       if (process.env.VITE_SPA_404 !== '1') return
@@ -54,10 +70,9 @@ function cspPlugin(): Plugin {
     transformIndexHtml: {
       order: 'post',
       handler(html) {
-        return html.replace(
-          '</head>',
-          `  <meta http-equiv="Content-Security-Policy" content="${csp}" />\n  </head>`,
-        )
+        return injectBeforeHeadEnd(html, [
+          `<meta http-equiv="Content-Security-Policy" content="${csp}" />`,
+        ])
       },
     },
   }
@@ -83,54 +98,45 @@ function cspPlugin(): Plugin {
  */
 function preloadPlugin(): Plugin {
   let outDir = ''
-  let base = '/'
   return {
     name: 'inject-preload',
     apply: 'build',
     configResolved(config) {
-      outDir = path.resolve(config.root, config.build.outDir)
-      base = process.env.VITE_BASE || '/'
+      outDir = resolveOutDir(config)
     },
     closeBundle() {
       const dist = outDir
       const indexPath = path.join(dist, 'index.html')
       if (!fs.existsSync(indexPath)) return
 
-      const b = base.endsWith('/') ? base : base + '/'
+      const b = normalizeBase()
       const assetsDir = path.join(dist, 'assets')
+      const assets = fs.existsSync(assetsDir) ? fs.readdirSync(assetsDir) : []
       const tags: string[] = []
 
-      // 1) 主 CSS：index-*.css（不含按页面拆分的 chunk CSS，那些是懒加载的）
-      if (fs.existsSync(assetsDir)) {
-        for (const name of fs.readdirSync(assetsDir)) {
-          if (/^index-.*\.css$/.test(name)) {
-            tags.push(`<link rel="preload" as="style" href="${b}assets/${name}" />`)
-          }
+      // 一次遍历挑出两类首屏资源：主 CSS 与字体子集
+      for (const name of assets) {
+        if (/^index-.*\.css$/.test(name)) {
+          tags.push(`<link rel="preload" as="style" href="${b}assets/${name}" />`)
+        }
+        if (/^campus-display-.*\.woff2$/.test(name)) {
+          // 字体必须 crossorigin，否则会因 CORS 不匹配被丢弃，反而多一次请求
+          tags.push(
+            `<link rel="preload" as="font" type="font/woff2" href="${b}assets/${name}" crossorigin />`,
+          )
         }
       }
 
-      // 2) 字体子集：campus-display-*.woff2
-      const fontDir = path.join(dist, 'assets')
-      if (fs.existsSync(fontDir)) {
-        for (const name of fs.readdirSync(fontDir)) {
-          if (/^campus-display-.*\.woff2$/.test(name)) {
-            tags.push(
-              `<link rel="preload" as="font" type="font/woff2" href="${b}assets/${name}" crossorigin />`,
-            )
-          }
-        }
-      }
-
-      // 3) 首屏 hero 图（首页 LCP 元素）
+      // 首屏 hero 图（首页 LCP 元素）
       const hero = 'images/misc/class-card-bg.svg'
       if (fs.existsSync(path.join(dist, hero))) {
         tags.push(`<link rel="preload" as="image" href="${b}${hero}" />`)
       }
 
       if (!tags.length) return
-      let html = fs.readFileSync(indexPath, 'utf8')
-      html = html.replace('</head>', `  ${tags.join('\n  ')}\n  </head>`)
-      fs.writeFileSync(indexPath, html, 'utf8')
+      const html = fs.readFileSync(indexPath, 'utf8')
+      // 只 preload 真正在首屏用到的，别把预缓存变成「下载一切」
+      fs.writeFileSync(indexPath, injectBeforeHeadEnd(html, tags), 'utf8')
       console.warn(`[preload] 注入 ${tags.length} 条 preload 提示`)
     },
   }
@@ -152,7 +158,7 @@ function pwaPrecachePlugin(): Plugin {
     name: 'pwa-precache',
     apply: 'build',
     configResolved(config) {
-      outDir = path.resolve(config.root, config.build.outDir)
+      outDir = resolveOutDir(config)
     },
     closeBundle() {
       const dist = outDir
@@ -162,8 +168,7 @@ function pwaPrecachePlugin(): Plugin {
         throw new Error('[pwa-precache] 找不到 dist/sw.js 或 dist/index.html，无法注入预缓存清单')
       }
 
-      const base = process.env.VITE_BASE || '/'
-      const b = base.endsWith('/') ? base : base + '/'
+      const b = normalizeBase()
       const urls = new Set<string>()
 
       // 1) index.html 里引用的入口资源（Vite 已经把 base 写进去了）
